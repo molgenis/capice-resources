@@ -1,2 +1,2 @@
 # capice-resources
-Repository for 
+Repository for resource files for CAPICE and updating CAPICE model
