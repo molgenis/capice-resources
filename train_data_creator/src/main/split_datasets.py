@@ -5,15 +5,18 @@ import pandas as pd
 
 class SplitDatasets:
     def __init__(self):
-        self.frac = 0.2
+        self.frac = 0.4
 
     def split(self, data: pd.DataFrame):
         print('Splitting into validation and training.')
         pathogenic_set = data[data['binarized_label'] > 0]
+        print(f'Amount of pathogenic variants:{pathogenic_set.shape[0]}')
         benign_set = data[data['binarized_label'] < 1]
+        print(f'Amount of benign variants:{benign_set.shape[0]}')
         validation = pathogenic_set[
             (pathogenic_set['review'] >= 2) | (pathogenic_set['source'] == 'VKGL')
             ].sample(frac=self.frac)
+        print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         validation = validation.append(
             benign_set[
                 (benign_set['review'] >= 2) | (benign_set['source'] == 'VKGL')
