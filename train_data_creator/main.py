@@ -4,6 +4,7 @@ import gc
 
 from src.main.exporter import Exporter
 from src.main.split_datasets import SplitDatasets
+from src.main.sample_weighter import SampleWeighter
 from src.main.data_preprocessor import VKGL, ClinVar
 from src.main.command_line_parser import CommandLineParser
 from src.main.duplicate_processor import DuplicateProcessor
@@ -25,9 +26,9 @@ def main():
     validator.validate_output(output)
     # Parse
     print('Parsing VKGL.')
-    vkgl = VKGL(input_vkgl).parse()
+    vkgl = VKGL().parse(input_vkgl)
     print('Parsing ClinVar.')
-    clinvar = ClinVar(input_clinvar).parse()
+    clinvar = ClinVar().parse(input_clinvar)
 
     # Combine
     print('Combining ClinVar and VKGL')
@@ -39,6 +40,9 @@ def main():
 
     # Dropping duplicates
     data = DuplicateProcessor().process(data)
+
+    # Applying sample weight
+    data = SampleWeighter().apply_sample_weight(data)
 
     # Deviding into train-test and validation
     train_test, validation = SplitDatasets().split(data)
