@@ -18,6 +18,7 @@ class TestSplitDatasets(unittest.TestCase):
                     'ClinVar', 'VKGL'
                 ],
                 'review': [2, 2, 1, 2, 2, 2, 3, 2, 1, 2],
+                'sample_weight': [0.8, 0.8, 0.6, 0.8, 0.8, 0.8, 0.9, 0.8, 0.6, 0.8],
                 'binarized_label': [1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0]
             }
         )

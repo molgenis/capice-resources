@@ -6,6 +6,7 @@ from src.main.exporter import Exporter
 from src.main.split_datasets import SplitDatasets
 from src.main.sample_weighter import SampleWeighter
 from src.main.data_preprocessor import VKGL, ClinVar
+from src.main.utilities import correct_order_vcf_notation
 from src.main.command_line_parser import CommandLineParser
 from src.main.duplicate_processor import DuplicateProcessor
 from src.main.validators.input_validator import InputValidator
@@ -53,7 +54,7 @@ def main():
 
     # Exporting
     exporter = Exporter(output)
-    exporter.export_validation_dataset(validation)
+    exporter.export_validation_dataset(correct_order_vcf_notation(validation))
     exporter.export_train_test_dataset(train_test)
 
 

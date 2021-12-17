@@ -13,14 +13,11 @@ class SplitDatasets:
         print(f'Amount of pathogenic variants:{pathogenic_set.shape[0]}')
         benign_set = data[data['binarized_label'] < 1]
         print(f'Amount of benign variants:{benign_set.shape[0]}')
-        validation = pathogenic_set[
-            (pathogenic_set['review'] >= 2) | (pathogenic_set['source'] == 'VKGL')
-            ].sample(frac=self.frac)
+        validation = pathogenic_set[pathogenic_set['sample_weight'] >= 0.8].sample(frac=self.frac)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         validation = validation.append(
             benign_set[
-                (benign_set['review'] >= 2) | (benign_set['source'] == 'VKGL')
-                ].sample(n=validation.shape[0]), ignore_index=True
+                benign_set['sample_weight'] >= 0.8].sample(n=validation.shape[0]), ignore_index=True
         )
         print(f'Validation dataset made, number of samples: {validation.shape[0]}')
         del pathogenic_set, benign_set
