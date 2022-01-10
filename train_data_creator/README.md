@@ -1,5 +1,5 @@
 # Train data creator
-######Resource module for CAPICE to create new train-test and validation datasets
+###### Resource module for CAPICE to create new train-test and validation datasets
 
 ## Usage
 `python3 main.py -iv path/to/vkgl_consensus.tsv.gz -ic path/to/clinvar.vcf.gz -o path/to/existing/output/directory`
@@ -62,10 +62,10 @@ As of current, the following ClinVar Gold Star ratings are used to apply the fol
 
 | Gold star rating | Sample weight |
 |:----------------:|:-------------:|
-|         0        |      0.2      |
-|         1        |      0.6      |
-|         2        |      0.8      |
-|         3        |      0.9      |
+|         0        |      Removed      |
+|         1        |      0.8      |
+|         2        |      0.9      |
+|         3        |      1.0      |
 |         4        |      1.0      |
 
 Now that sample weights have been mapped and applied, the large dataset can be split into the train-test and validation datasets.
@@ -149,7 +149,7 @@ with gzip.open(file, 'wt') as pseudo_vcf:
     for line in pseudo_header:
         pseudo_vcf.write(f'{line}\n')
 
-x.to_csv(file, sep='\t', na_values='.', index=False, mode='a', compression='gzip')
+x.to_csv(file, sep='\t', na_rep='.', index=False, mode='a', compression='gzip')
 ```
 
 Perform the same steps for both datasets. 
@@ -164,11 +164,11 @@ This script uses picard to liftover GRCh37 variants to GRCh38.
 
 ### Post-VEP (GRCh37)
 
-Now that you have your post-VEP train-test and validation VCF datasets, it is time to use the convert_vep_vcf_to_tsv_capice.sh script to convert the VEP VCF back to TSV.
+Now that you have your post-VEP train-test and validation VCF datasets, it is time to use the `vep_to_tsv.sh` script in utility_scripts to convert the VEP VCF back to TSV.
 Once that is done, you're not done yet, since the CAPICE train protocol still requires some columns that are not present (binarized_label and sample_weight).
-This is done by merging the original output of the train_data_creator to the converted VEP TSV.
+This is done by expanding the originally created ID column.
 
-Merging can be performed in multiple ways, the way I like to do it is as follows:
+Expanding can be performed in multiple ways, the way I like to do it is as follows:
 
 ```python
 import pandas as pd
@@ -176,7 +176,9 @@ import pandas as pd
 x = pd.read_csv('/path/to/vep_converted.tsv.gz', sep='\t', na_values='.')
 # Dropping the variants that are intergenic
 x.drop(index=x[x['%SYMBOL'].isnull()].index, inplace=True)
-x.reset_index(drop=True, inplace=True)
+
+# Making sure that the label is representative for the gene it was originally for
+x.drop(index=x[x['%SYMBOL'] != x['%ID'].str.split('_', expand=True)[4]].index, inplace=True)
 
 # Make sure that you've followed the instructions and the binarized label should be on the 6th element of ID
 x['binarized_label'] = x['%ID'].str.split('_', expand=True)[5].astype(float)
@@ -184,8 +186,8 @@ x['binarized_label'] = x['%ID'].str.split('_', expand=True)[5].astype(float)
 # Make sure that sample_weight is the last element in ID
 x['sample_weight'] = x['%ID'].str.split('_', expand=True)[6].astype(float)
 
-# As of current, the gnomad allele frequency is not used and still in development. It will likely be used in balancing.
-x.drop(columns=['%ID', '%gnomad_AF'], inplace=True)
+# Drop everything that doesn't have a binarized_label, also drop unused columns
+x.drop(index=x[x['binarized_label'].isnull()].index, columns=['%ID', '%gnomAD_AF'], inplace=True)
 
 x.to_csv('/path/to/merge_output.tsv.gz', sep='\t', index=False, compression='gzip', na_rep='.')
 
@@ -208,7 +210,6 @@ import pandas as pd
 x = pd.read_csv('/path/to/vep_converted_grch38.tsv.gz', sep='\t', na_values='.')
 # Dropping the variants that are intergenic
 x.drop(index=x[x['%SYMBOL'].isnull()].index, inplace=True)
-x.reset_index(drop=True, inplace=True)
 
 # Clearning the TSV chromosomes
 x['%CHROM'] = x['%CHROM'].str.split('chr', expand=True)[1]
@@ -224,9 +225,11 @@ x['binarized_label'] = x['%ID'].str.split('_', expand=True)[5].astype(float)
 # Make sure that sample_weight is the last element in ID
 x['sample_weight'] = x['%ID'].str.split('_', expand=True)[6].astype(float)
 
-
 # As of current, the gnomad allele frequency is not used and still in development. It will likely be used in balancing.
-x.drop(columns=['%ID', '%gnomad_AF'], inplace=True)
+x.drop(columns=['%ID', '%gnomAD_AF'], inplace=True)
+
+# Drop duplicate entries
+x.drop_duplicates(inplace=True)
 
 x.to_csv('/path/to/merge_output.tsv.gz', sep='\t', index=False, compression='gzip', na_rep='.')
 
@@ -240,3 +243,7 @@ I'd suggest starting the job with a runtime of 2 days.
 For the JSON, the example json can be used in the CAPICE_example folder of CAPICE itself.
 
 Just run the training protocol of CAPICE through `python3 -v capice.py train -i /path/to/train.tsv.gz -m /path/to/impute.json -o /path/to/output/`.
+
+
+### Performance measurements
+

@@ -179,6 +179,6 @@ class ClinVar:
             data.loc[data[data['review'] == key].index, 'review'] = value
         data['review'] = data['review'].astype(int)
 
-        # Dropping conflicts
-        data.drop(data[data['review'] < 0].index, inplace=True)
+        # Droppin
+        data.drop(data[data['review'] < 1].index, inplace=True)
         return data

@@ -8,8 +8,8 @@ class CommandLineParser:
 
     def _create_argument_parser(self):
         parser = argparse.ArgumentParser(
-            prog='CAPICE-resources',
-            description='Resource files for CAPICE to train new CAPICE models'
+            prog='Train-data-creator',
+            description='Creator of CAPICE train/test and validation datasets.'
         )
         required = parser.add_argument_group('Required arguments')
 

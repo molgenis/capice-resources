@@ -7,10 +7,9 @@ class SampleWeighter:
         print('Applying sample weights')
         sample_weights = {
             4: 1.0,
-            3: 0.9,
-            2: 0.8,
-            1: 0.6,
-            0: 0.2
+            3: 1.0,
+            2: 0.9,
+            1: 0.8
         }
         dataset['sample_weight'] = dataset['review'].map(sample_weights)
         return dataset
