@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='capice-resources',
-    version='0.0.1',
+    version='1.0.0-dev',
     url='https://capice.molgeniscloud.org/',
     license='LGPL-3.0',
     author='Molgenis',
@@ -14,9 +14,10 @@ setup(
     description='Resource files for CAPICE to train new CAPICE models',
     long_description=long_description,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'License :: LGPL-3.0',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10'
     ],
     python_requires='>=3.9.*',
     install_requires=[
