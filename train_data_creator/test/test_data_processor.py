@@ -327,6 +327,8 @@ class TestDataProcessor(unittest.TestCase):
                 )
             ], axis=1
         )
+        # Required since review status 0 get dropped
+        expected.drop(index=expected[expected['review'] == 0].index, inplace=True)
         pd.testing.assert_frame_equal(observed, expected)
 
 
