@@ -224,7 +224,7 @@ x['sample_weight'] = x['%ID'].str.split('_', expand=True)[6].astype(float)
 x.drop(index=x[x['binarized_label'].isnull()].index, columns=['%ID', '%gnomAD_AF'], inplace=True)
 
 # CAPICE 3.0.0-beta1 iteration 1 and 2, and beta 2 iteration 1 contains a bug that causes a binarized label to become 2. Dropping it.
-x.drop(index=x[~x['binarized_label'].isin([0.0, 2.0])].index, inplace=True)
+x.drop(index=x[~x['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
 
 # Also do the same for the sample weights (WARNING: these have to match the initially set sample weights as displayed in the one table at the start of the README.md)
 x.drop(index=x[~x['sample_weight'].isin([0.8, 0.9, 1.0])].index, inplace=True)
