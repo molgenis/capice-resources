@@ -24,7 +24,7 @@ def main():
     validator = InputValidator()
     validator.validate_vkgl(input_vkgl)
     validator.validate_clinvar(input_clinvar)
-    validator.validate_output(output)
+    output = validator.validate_output(output)
     # Parse
     print('Parsing VKGL.')
     vkgl = VKGL().parse(input_vkgl)

@@ -6,7 +6,9 @@
 
 `python3 main.py -iv path/to/vkgl_consensus.tsv.gz -ic path/to/clinvar.vcf.gz -o path/to/existing/output/directory`
 
-_Note: -iv needs to be the non-public VKGL, public will throw an FileNotFoundError_
+_Note: -iv needs to be the non-public VKGL, public will throw an FileNotFoundError._
+
+_Note 2: the parent of the output directory has to exist. train_data_creator will, at most, create only 1 new directory._
 
 ## Theory
 
