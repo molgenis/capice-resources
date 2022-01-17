@@ -18,10 +18,6 @@ class TestInputValidator(unittest.TestCase):
         input_path = os.path.join(project_root_dir, 'test', 'resources', 'smol_clinvar.vcf.gz')
         self.validator.validate_clinvar(input_path)
 
-    def test_output(self):
-        output_path = project_root_dir
-        self.validator.validate_output(output_path)
-
     def test_vkgl_incorr(self):
         input_path = os.path.join(project_root_dir, 'test', 'resources', 'smol_clinvar.vcf.gz')
         self.assertRaises(
@@ -48,12 +44,23 @@ class TestInputValidator(unittest.TestCase):
         )
 
     def test_output_not_directory(self):
-        output = os.path.join(project_root_dir, 'not_a_directory')
+        output = os.path.join('/', 'not_a_directory')
         self.assertRaises(
             OSError,
             self.validator.validate_output,
             output
         )
+
+    def test_output_back_to_parent(self):
+        output = os.path.join(project_root_dir, 'not_a_directory')
+        print(output)
+        self.validator.validate_output(output)
+        directories = os.listdir(project_root_dir)
+        full_directories = []
+        for directory in directories:
+            full_directories.append(str(os.path.join(project_root_dir, directory)))
+        self.assertIn(output, full_directories)
+        os.removedirs(output)
 
 
 if __name__ == '__main__':

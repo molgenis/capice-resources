@@ -28,9 +28,18 @@ ease.
 ### utility_scripts
 
 utility_scripts contains a couple of bash scripts for ease of use, which include but are not limited to lifting over
-variants to GRCh38, running VEP104 and converting a VEP output VCF to TSV. These scripts could be used, mostly on the
-GCC Gearshift cluster, but are not at all fully required except for the vep_to_tsv.sh. The vep_to_tsv.sh converts the
-VEP output VCF back to TSV with all required columns (added features or removed features still require manual handling).
+variants to GRCh38, running VEP104 and converting a VEP VCF output to TSV. 
+It is advised to use these scripts as they maintain a level of consistency throughout the lifespan of CAPICE.
+
+- liftover_variants.sh:
+
+The script liftover_variants.sh converts a VCF containing GRCh37 variants to GRCh38 variants.
+
+- vep_to_tsv.sh:
+
+The vep_to_tsv.sh converts the VEP output VCF back to TSV with all required columns 
+(added features or removed features have to be manually added and/or removed according to the decisions made.
+For instance, if feature `CADD_score` is added, within the pre_header `\tCADD_score` has to be added, according to the column name the new feature has.).
 
 ## Usage
 
@@ -40,43 +49,46 @@ _(For a more detailed explanation on creating the train-test and validation data
 train_data_creator)_
 
 1. Make new CAPICE release, containing added or removed processors and/or code changes supporting a new model.
-2. Download latest non-public VKGL (GCC cluster /apps/data/VKGL)
+2. Download latest non-public GRCh37 VKGL (GCC cluster `/apps/data/VKGL`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets.
-3. Use train_data_creator to create a train-test and validation VCFs.
+3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs.
 4. Make capice-resources GitHub release. 
 5. Attach both train-test and validation VCFs to capice-resources release.
-6. Use GCC cluster to annotate the VCF files (optional addition when comparing an XGBoost 0.71.1 model to a new model: upload the validation.vcf to CADD1.4-GRCh37 for annotation).
-7. Lift over not-annotated VCFs to GRCh38.
-8. VEP annotate GRCh38 VCFs (optional addition when comparing an XGBoost 0.71.1 model to a new model: upload the validation.vcf to CADD1.4-GRCh38 for annotation).
-9. (Optional when new feature is introduced or removed) Add (or remove) feature to pre_header in bash
-   script `vep_to_tsv.sh`.
-10. Convert VEP annotated VCFs back to TSV.
-11. Process TSV (GRCh37):
-12. Dropping duplicates (duplicated over all columns).
-13. Dropping variants without genes.
-14. Dropping variants where the genes from ID and SYMBOL mismatch.
-15. Add back binarized_label and sample_weight from ID.
-16. Drop variants without binarized_label (sample_weight is not necessary).
-17. Drop variants that do not have a binarized_label of either 0.0 or 1.0.
-18. Drop variants that do not have a sample_weight of 0.8, 0.9 or 1.0.
-19. Drop the ID and (if present) gnomAD_AF columns.
-20. Export to TSV.
-21. Repeat for validation (GRCh37).
-22. Repeat for train-test and validation (GRCh38), __but__ additionally process the chromosome column to have the column
+6. Download the latest VEP release from the [Molgenis Cloud](https://download.molgeniscloud.org/downloads/vip/images/)
+7. Use the singularity image, combined with the latest VEP cache to annotate the VCF files.
+8. (Optional for XGBoost 0.72.1 models) Upload the validation.vcf to CADD1.4-GRCh37 for annotation.
+9. Lift over not-annotated VCFs to GRCh38.
+10. Use the VEP singularity image to annotate the GRCh38 VCF files.
+11. (Optional for XGBoost 0.71.1 models) Upload the validation.vcf to CADD1.4-GRCh38 for annotation.
+12. (Optional when new feature is introduced or removed) Add (or remove) feature to pre_header in bash
+    script `vep_to_tsv.sh`.
+13. Convert VEP annotated VCFs back to TSV.
+14. Process TSV (GRCh37):
+15. Dropping duplicates (duplicated over all columns).
+16. Dropping variants without genes.
+17. Dropping variants where the genes from ID and SYMBOL mismatch.
+18. Add back binarized_label and sample_weight from ID.
+19. Drop variants without binarized_label (sample_weight is not necessary).
+20. Drop variants that do not have a binarized_label of either 0.0 or 1.0.
+21. Drop variants that do not have a sample_weight of 0.8, 0.9 or 1.0.
+22. Drop the ID and (if present) gnomAD_AF columns.
+23. Export to TSV.
+24. Repeat for validation (GRCh37).
+25. Repeat for train-test and validation (GRCh38), __but__ additionally process the chromosome column to have the column
     only contain 1 through 22, X, Y and MT.
-23. Update imputing JSON accordingly to the newly features added and/or removed.
-24. Train new model with processed train-test TSV.
-25. Attach new models to CAPICE release.
-26. Use new model to generate CAPICE results file of the validation TSV.
-27. Use old model to generate CAPICE results file of the same validation TSV.
-28. Merge old results with new results, in combination with their true original binarized label and Consequence (true original label and Consequence can be obtained from the VEP output VCF/TSV, combination of the ID column and Consequence column).
-29. Plot global AUC comparison between old and new results and violinplot comparison between old and new scores.
-30. Repeat step 23 but for each and every Consequence.
-31. Export plots to the validation directory, following the release structure.
+26. Update imputing JSON accordingly to the newly features added and/or removed.
+27. Train new model with processed train-test TSV.
+28. Attach new models to CAPICE release.
+29. Use new model to generate CAPICE results file of the validation TSV.
+30. Use old model to generate CAPICE results file of the same validation TSV.
+31. Merge old results with new results, in combination with their true original binarized label and Consequence (true original label and Consequence can be obtained from the VEP output VCF/TSV, combination of the ID column and Consequence column).
+32. Plot global AUC comparison between old and new results and violinplot comparison between old and new scores.
+33. Repeat step 23 but for each and every Consequence.
+34. Export plots to the validation directory, following the release structure.
 
 ## Making train-test and validation VCF files
 
-Download the latest non-public VKGL (GCC /apps/data/VKGL/GRCh37/vkgl_consensus_*.tsv)
+Download the latest non-public GRCh37 VKGL (GCC `/apps/data/VKGL/GRCh37/vkgl_consensus_*.tsv`)
 and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets and simply supply them to main.py within
 train_data_creator. For further details, use `python3 main.py -h` or refer to the README in the train_data_creator
 module.
@@ -273,15 +285,16 @@ auc_new = round(roc_auc_score(merge['binarized_label'], merge['score_new']), 4)
 ax_auc = fig_auc.add_subplot(nrows, ncols, index)
 ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
 ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-ax_auc.set_title('Global')
+ax_auc.set_title(f'Global (n={merge.shape[0]})')
 ax_auc.set_xticks([1, 2], ['Old', 'New'])
 ax_auc.set_xlim(0.0, 3.0)
 ax_auc.set_ylim(0.0, 1.0)
+ax_auc.legend(loc='lower right')
 
 # Plotting Violinplot for global
 ax_vio = fig_vio.add_subplot(nrows, ncols, index)
 ax_vio.violinplot(merge[['score_old', 'binarized_label', 'score_new']])
-ax_vio.set_title('Global')
+ax_vio.set_title(f'Global (n={merge.shape[0]})')
 ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
 ax_vio.set_xlim(0.0, 4.0)
 ax_vio.set_ylim(0.0, 1.0)
@@ -310,15 +323,16 @@ for consequence in consequences:
     ax_auc = fig_auc.add_subplot(nrows, ncols, index)
     ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
     ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-    ax_auc.set_title(consequence)
+    ax_auc.set_title(f'{consequence} (n={subset.shape[0]})')
     ax_auc.set_xticks([1, 2], ['Old', 'New'])
     ax_auc.set_xlim(0.0, 3.0)
     ax_auc.set_ylim(0.0, 1.0)
+    ax_auc.legend(loc='lower right')
 
     # Plotting Violinplot for global
     ax_vio = fig_vio.add_subplot(nrows, ncols, index)
     ax_vio.violinplot(subset[['score_old', 'binarized_label', 'score_new']])
-    ax_vio.set_title(consequence)
+    ax_vio.set_title(f'{consequence} (n={subset.shape[0]})')
     ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
     ax_vio.set_xlim(0.0, 4.0)
     ax_vio.set_ylim(0.0, 1.0)
