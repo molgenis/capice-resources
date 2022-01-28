@@ -6,12 +6,12 @@ class InputValidator:
     def validate_vkgl(self, input_path):
         self._validate_file_exist(input_path, 'VKGL')
         if not input_path.endswith(('.tsv.gz', '.tsv')):
-            raise FileNotFoundError('Input VKGL is not a (gzipped) tsv!')
+            raise IOError('Input VKGL is not a (gzipped) tsv!')
 
     def validate_clinvar(self, input_path):
         self._validate_file_exist(input_path, 'ClinVar')
         if not input_path.endswith(('.vcf', '.vcf.gz')):
-            raise FileNotFoundError('Input ClinVar is not a (gzipped) vcf!')
+            raise IOError('Input ClinVar is not a (gzipped) vcf!')
 
     @staticmethod
     def _validate_file_exist(input_path, file_type):
@@ -29,6 +29,8 @@ class InputValidator:
                 raise OSError(f'Output path {output_path} is not writable!')
             else:
                 makedir = True
+        elif not os.access(output_path, os.W_OK):
+            raise OSError(f'Output path {output_path} is not writable!')
         if makedir:
             os.makedirs(output_path)
         return output_path

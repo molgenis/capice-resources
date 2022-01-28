@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from src.main.sample_weighter import SampleWeighter
+from train_data_creator.src.main.sample_weighter import SampleWeighter
 
 
 class TestSampleWeighter(unittest.TestCase):
@@ -12,11 +12,9 @@ class TestSampleWeighter(unittest.TestCase):
                 'review': [3, 4, 1, 2]
             }
         )
-        copy_dataset = dataset.copy(deep=True)
-        observed = SampleWeighter().apply_sample_weight(dataset)
         expected = pd.concat(
             [
-                copy_dataset,
+                dataset,
                 pd.DataFrame(
                     {
                         'sample_weight': [1.0, 1.0, 0.8, 0.9]
@@ -24,6 +22,7 @@ class TestSampleWeighter(unittest.TestCase):
                 )
             ], axis=1
         )
+        observed = SampleWeighter().apply_sample_weight(dataset)
         pd.testing.assert_frame_equal(observed, expected)
 
 

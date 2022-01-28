@@ -5,19 +5,24 @@ import pandas as pd
 
 class SplitDatasets:
     def __init__(self):
-        self.frac = 0.4
+        self.frac = 0.5
 
     def split(self, data: pd.DataFrame):
         print('Splitting into validation and training.')
-        pathogenic_set = data[data['binarized_label'] > 0]
+        pathogenic_set = data[data['binarized_label'] == 1]
         print(f'Amount of pathogenic variants:{pathogenic_set.shape[0]}')
-        benign_set = data[data['binarized_label'] < 1]
+        benign_set = data[data['binarized_label'] == 0]
         print(f'Amount of benign variants:{benign_set.shape[0]}')
-        validation = pathogenic_set[pathogenic_set['sample_weight'] >= 0.8].sample(frac=self.frac)
+        validation = pathogenic_set[pathogenic_set['sample_weight'] >= 0.9].sample(frac=self.frac)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
+        if benign_set[benign_set['sample_weight'] >= 0.9].shape[0] < validation.shape[0]:
+            raise ValueError(
+                f'Not enough benign variants to match pathogenic variants, unable to create '
+                f'validation set.'
+            )
         validation = validation.append(
             benign_set[
-                benign_set['sample_weight'] >= 0.8].sample(n=validation.shape[0]), ignore_index=True
+                benign_set['sample_weight'] >= 0.9].sample(n=validation.shape[0]), ignore_index=True
         )
         print(f'Validation dataset made, number of samples: {validation.shape[0]}')
         del pathogenic_set, benign_set

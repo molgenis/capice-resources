@@ -2,7 +2,8 @@ import unittest
 
 import pandas as pd
 
-from src.main.utilities import correct_order_vcf_notation, equalize_class, apply_binarized_label
+from train_data_creator.src.main.utilities import correct_order_vcf_notation, equalize_class, \
+    apply_binarized_label
 
 
 class TestUtilities(unittest.TestCase):

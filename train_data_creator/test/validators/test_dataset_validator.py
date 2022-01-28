@@ -3,7 +3,7 @@ import unittest
 
 import pandas as pd
 
-from train_data_creator.src.main.utilities import project_root_dir
+from train_data_creator.test import get_project_root_dir
 from train_data_creator.src.main.validators.dataset_validator import DatasetValidator
 
 
@@ -11,11 +11,11 @@ class TestDatasetValidator(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.vkgl = pd.read_csv(
-            os.path.join(project_root_dir, 'test', 'resources', 'smol_vkgl.tsv.gz'),
+            os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl.tsv.gz'),
             sep='\t'
         )
         cls.clinvar = pd.read_csv(
-            os.path.join(project_root_dir, 'test', 'resources', 'smol_clinvar.vcf.gz'),
+            os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_clinvar.vcf.gz'),
             sep='\t',
             skiprows=27
         )
@@ -40,11 +40,18 @@ class TestDatasetValidator(unittest.TestCase):
         self.assertRaises(
             KeyError,
             self.validator.validate_clinvar,
-            pd.read_csv(
-                os.path.join(project_root_dir, 'test', 'resources', 'smol_clinvar.vcf.gz'),
-                sep='\t',
-                skiprows=26
-            )
+            self.clinvar.rename(columns={'#CHROM': 'chr', 'INFO': 'something_not_info'})
+        )
+
+    def test_raise_no_variants(self):
+        # No variants in the file raise EOFError
+        vkgl_novars = pd.read_csv(
+            os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl_novars.tsv.gz')
+        )
+        self.assertRaises(
+            EOFError,
+            self.validator.validate_vkgl,
+            vkgl_novars
         )
 
 

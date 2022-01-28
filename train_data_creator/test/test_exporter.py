@@ -3,12 +3,12 @@ import unittest
 
 import pandas as pd
 
-from src.main.exporter import Exporter
-from src.main.utilities import project_root_dir
+from train_data_creator.test import get_project_root_dir
+from train_data_creator.src.main.exporter import Exporter
 
 
 class TestExporter(unittest.TestCase):
-    __test_dir__ = os.path.join(project_root_dir, '.test_dir')
+    __test_dir__ = os.path.join(get_project_root_dir(), '.test_dir')
 
     @classmethod
     def tearDownClass(cls) -> None:

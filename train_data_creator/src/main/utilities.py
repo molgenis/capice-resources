@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
@@ -15,9 +13,6 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame):
     pseudo_vcf.drop(columns='order', inplace=True)
     pseudo_vcf.reset_index(drop=True, inplace=True)
     return pseudo_vcf
-
-
-columns_of_interest = ['#CHROM', 'POS', 'REF', 'ALT', 'gene', 'class', 'review', 'source']
 
 
 def equalize_class(data: pd.DataFrame, equalize_dict: dict):
@@ -38,6 +33,3 @@ def apply_binarized_label(data: pd.DataFrame):
     data.loc[data[data['class'].isin(['LP', 'P'])].index, 'binarized_label'] = 1
     data.drop(index=data[data['binarized_label'].isnull()].index, inplace=True)
     return data
-
-
-project_root_dir = Path(__file__).parent.parent.parent

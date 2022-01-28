@@ -2,24 +2,23 @@ import unittest
 
 import pandas as pd
 
-from src.main.split_datasets import SplitDatasets
+from train_data_creator.src.main.split_datasets import SplitDatasets
 
 
 class TestSplitDatasets(unittest.TestCase):
     def test_split(self):
         dataset = pd.DataFrame(
             {
-                '#CHROM': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-                'POS': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-                'REF': ['A', 'A', 'G', 'C', 'A', 'A', 'G', 'C', 'T', 'CG'],
-                'ALT': ['T', 'T', 'C', 'G', 'T', 'T', 'C', 'G', 'A', 'AT'],
+                '#CHROM': ['1', '2', '4', '5', '6', '7', '8', '10'],
+                'POS': [100, 200, 400, 500, 600, 700, 800, 1000],
+                'REF': ['A', 'A', 'C', 'A', 'A', 'G', 'C', 'CG'],
+                'ALT': ['T', 'T', 'G', 'T', 'T', 'C', 'G', 'AT'],
                 'source': [
-                    'VKGL', 'VKGL', 'ClinVar', 'VKGL', 'VKGL', 'ClinVar', 'ClinVar', 'ClinVar',
-                    'ClinVar', 'VKGL'
+                    'VKGL', 'VKGL', 'VKGL', 'VKGL', 'ClinVar', 'ClinVar', 'ClinVar', 'VKGL'
                 ],
-                'review': [2, 2, 1, 2, 2, 2, 3, 2, 1, 2],
-                'sample_weight': [0.8, 0.8, 0.6, 0.8, 0.8, 0.8, 0.9, 0.8, 0.6, 0.8],
-                'binarized_label': [1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0]
+                'review': [2, 2, 2, 2, 2, 3, 2, 2],
+                'sample_weight': [0.9, 0.9, 0.9, 0.9, 0.9, 1.0, 0.9, 0.9],
+                'binarized_label': [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
             }
         )
         splitter = SplitDatasets()

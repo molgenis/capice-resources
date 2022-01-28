@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from src.main.duplicate_processor import DuplicateProcessor
+from train_data_creator.src.main.duplicate_processor import DuplicateProcessor
 
 
 class TestDuplicateProcessor(unittest.TestCase):

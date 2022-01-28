@@ -6,7 +6,7 @@
 
 `python3 main.py -iv path/to/vkgl_consensus.tsv.gz -ic path/to/clinvar.vcf.gz -o path/to/existing/output/directory`
 
-_Note: -iv needs to be the non-public VKGL, public will throw an FileNotFoundError._
+_Note: -iv needs to be the non-public VKGL, public will throw an KeyNotFoundError._
 
 _Note 2: the parent of the output directory has to exist. train_data_creator will, at most, create only 1 new directory._
 
@@ -62,11 +62,11 @@ are dropped if all of the following columns are duplicates:
 - class
 
 Since the keep in pandas.DataFrame.drop_duplicates() is not defined, the first duplicate will remain present while the
-rest are dropped.
+rest are dropped. Since VKGL is appended to the ClinVar dataset, the ClinVar variant will be kept.
 _Note: it might be possible that duplicate variants are still present with conflicting classes, since those do not count
 as duplicates. We don't think this will be an issue due to the amount of samples._
 
-Now that we have an assembled large dataset, we can start building the train-test and validation datasets. __But be fore
+Now that we have an assembled large dataset, we can start building the train-test and validation datasets. __But before
 we can do that__, it is useful to apply the sample weights already. Sample weights is what tells XGBoost (and other
 machine learning algorithms) how well it should trust the particular sample. As of current, the following ClinVar Gold
 Star ratings are used to apply the following sample weights:
@@ -79,19 +79,22 @@ Star ratings are used to apply the following sample weights:
 |         3        |      1.0      |
 |         4        |      1.0      |
 
+These sample weights follow the idea that [Li et al.](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00775-w) originally had for the initial model.
+Applying sample weights that are lower than 0.8 have the chance to influence the end score too much in such a way that scores will not reach 0.0 for benign and 1.0 for pathogenic (beta1 iteration 1). 
+Higher quality variants (2 labs or more confirming the consensus) should be rewarded with a higher sample weight.
+
 Now that sample weights have been mapped and applied, the large dataset can be split into the train-test and validation
 datasets.
 
 (split_datasets.py)
 
 The most important part about the splitting of the large dataset into the train-test and validation datasets is that the
-validation dataset is of high quality. This is done by randomly sampling 20% of high quality pathogenic variants (review
-score 2 or higher / originated from VKGL). Then the same amount of high quality benign variants (same requirements) is
-sampled.
-
-To remove the randomly sampled validation dataset variants from the train-test dataset, the validation variants are
-added back to the train-test dataset and then the drop_duplicates() pandas method is called with the keep parameter set
-to False, this means that any and all duplicates are thrown away.
+validation dataset is of high quality. This is done by randomly sampling 50% of high quality pathogenic variants (review
+score 2 or higher, which means at least 2 labs have confirmed the consensus). 
+Once 50% of high quality pathogenic variants have been sampled, an equal amount of benign samples of the same quality is sampled.
+These sampled variants now form the validation dataset. 
+These validation samples are then merged back to the training dataset, after which an `pd.drop_duplicates(keep=False)` is performed, 
+so all validation samples that were still in the train-test dataset are removed (since `sample` does not remove the dataframe entries).
 
 This results in the train-test and validation datasets, 
 that are exported to the output argument after adding a pseudo-vcf header and pseudo-vcf columns (and merging critical information to the ID column).

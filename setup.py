@@ -26,5 +26,10 @@ setup(
         'matplotlib==3.5.1',
         'xgboost==1.4.2',
         'scikit-learn==1.0.2'
-    ]
+    ],
+    extras_require={
+        'test': [
+            'pytest',
+        ]
+    }
 )

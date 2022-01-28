@@ -6,6 +6,8 @@ set -e
 # Defines error echo.
 errcho() { echo "$@" 1>&2; }
 
+readonly PRE_HEADER="%CHROM\t%POS\t%ID\t%REF\t%ALT\t%Consequence\t%SYMBOL\t%SYMBOL_SOURCE\t%Gene\t%Feature\t%cDNA_position\t%CDS_position\t%Protein_position\t%Amino_acids\t%STRAND\t%SIFT\t%PolyPhen\t%DOMAINS\t%MOTIF_NAME\t%HIGH_INF_POS\t%MOTIF_SCORE_CHANGE\t%EXON\t%INTRON"
+
 # Usage.
 readonly USAGE="Slightly modified version of the CAPICE supplied VEP VCF output to CAPICE TSV converter
 
@@ -102,9 +104,7 @@ processFile() {
   local output="${output%.gz}" # Strips '.gz' to better work with code below.
   local output_tmp="${output}.tmp"
 
-  local -r pre_header="%CHROM\t%POS\t%ID\t%REF\t%ALT\t%Consequence\t%SYMBOL\t%SYMBOL_SOURCE\t%HGNC_ID\t%Feature\t%cDNA_position\t%CDS_position\t%Protein_position\t%Amino_acids\t%STRAND\t%SIFT\t%PolyPhen\t%DOMAINS\t%MOTIF_NAME\t%HIGH_INF_POS\t%MOTIF_SCORE_CHANGE\t%EXON\t%INTRON"
-
-  local format="${pre_header}\n"
+  local format="${PRE_HEADER}\n"
 
   local args=()
   args+=("+split-vep")
@@ -119,7 +119,7 @@ processFile() {
 
   echo "BCFTools finished, building output file."
 
-  echo -e "${pre_header}" | cat - "${output_tmp}" > "${output}" && rm "${output_tmp}"
+  echo -e "${PRE_HEADER}" | cat - "${output_tmp}" > "${output}" && rm "${output_tmp}"
 
   echo "Output file ready, gzipping."
 

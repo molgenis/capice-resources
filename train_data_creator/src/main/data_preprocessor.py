@@ -1,9 +1,12 @@
 import gzip
+import warnings
 import pandas as pd
 
-from src.main.utilities import correct_order_vcf_notation, columns_of_interest, \
-    equalize_class, apply_binarized_label
-from src.main.validators.dataset_validator import DatasetValidator
+from train_data_creator.src.main.utilities import correct_order_vcf_notation, equalize_class, \
+    apply_binarized_label
+from train_data_creator.src.main.validators.dataset_validator import DatasetValidator
+
+_COLUMNS_OF_INTEREST = ['#CHROM', 'POS', 'REF', 'ALT', 'gene', 'class', 'review', 'source']
 
 
 class VKGL:
@@ -13,13 +16,13 @@ class VKGL:
     def parse(self, file_location):
         data = pd.read_csv(file_location, sep='\t')
         self.validator.validate_vkgl(data)
-        data = self._correct_column_names(data)
-        data = self._correct_single_consensus(data)
-        data = correct_order_vcf_notation(data)
-        data = self._apply_review_status(data)
+        self._correct_column_names(data)
+        self._correct_single_consensus(data)
+        correct_order_vcf_notation(data)
+        self._apply_review_status(data)
         data['source'] = 'VKGL'
-        data = data[columns_of_interest]
-        data = equalize_class(
+        data = data[_COLUMNS_OF_INTEREST]
+        equalize_class(
             data,
             equalize_dict={
                 'Likely benign': 'LB',
@@ -30,7 +33,7 @@ class VKGL:
                 '(Likely) pathogenic': 'LP'
             }
         )
-        data = apply_binarized_label(data)
+        apply_binarized_label(data)
         data.reset_index(drop=True, inplace=True)
         return data
 
@@ -95,12 +98,12 @@ class ClinVar:
         skiprows = self._get_n_header(file_location)
         data = pd.read_csv(file_location, sep='\t', skiprows=skiprows)
         self.validator.validate_clinvar(data)
-        data = self._obtain_class(data)
-        data = self._obtain_gene(data)
-        data = self._obtain_review(data)
+        self._obtain_class(data)
+        self._obtain_gene(data)
+        self._obtain_review(data)
         data['source'] = 'ClinVar'
-        data = data[columns_of_interest]
-        data = equalize_class(
+        data = data[_COLUMNS_OF_INTEREST]
+        equalize_class(
             data,
             equalize_dict={
                 'Uncertain_significance': 'VUS',
@@ -112,7 +115,7 @@ class ClinVar:
                 'Pathogenic/Likely_pathogenic': 'LP'
             }
         )
-        data = apply_binarized_label(data)
+        apply_binarized_label(data)
         data.reset_index(drop=True, inplace=True)
         return data
 
@@ -158,6 +161,7 @@ class ClinVar:
             'criteria_provided,_conflicting_interpretations': -1,
             'no_assertion_provided': 0,
             'no_assertion_criteria_provided': 0,
+            'no_assertion_for_individual_variant': 0,
             'criteria_provided,_single_submitter': 1,
             'criteria_provided,_multiple_submitters,_no_conflicts': 2,
             'reviewed_by_expert_panel': 3,
@@ -172,7 +176,7 @@ class ClinVar:
         # Dropping uninteresting review status
         for status in data['review'].unique():
             if status not in stars.keys():
-                data.drop(index=data[data['review'] == status].index, inplace=True)
+                warnings.warn(f'Found unknown review status: {status}')
 
         # Mapping to Gold Stars values
         for key, value in stars.items():

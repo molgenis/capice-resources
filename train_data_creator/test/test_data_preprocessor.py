@@ -4,18 +4,18 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from train_data_creator.src.main.utilities import project_root_dir
+from train_data_creator.test import get_project_root_dir
 from train_data_creator.src.main.data_preprocessor import VKGL, ClinVar
 
 
 class TestDataProcessor(unittest.TestCase):
-    __chrom__ = '#CHROM'
+    __CHROM__ = '#CHROM'
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.vkgl = os.path.join(project_root_dir, 'test', 'resources', 'smol_vkgl.tsv.gz')
-        cls.clinvar = os.path.join(project_root_dir, 'test', 'resources', 'smol_clinvar.vcf.gz')
-        cls.dataset = pd.DataFrame(
+    def setUp(self) -> None:
+        self.vkgl = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl.tsv.gz')
+        self.clinvar = os.path.join(get_project_root_dir(), 'test', 'resources',
+                                   'smol_clinvar.vcf.gz')
+        self.dataset = pd.DataFrame(
             {
                 'INFO': [
                     'SOMEVALUE=1003;CLNSIG=VUS;SOMEOTHERVALUE=103438;'
@@ -30,16 +30,16 @@ class TestDataProcessor(unittest.TestCase):
         vkgl = VKGL()
         observed = vkgl.parse(self.vkgl)
         expected = pd.DataFrame(
-            {self.__chrom__: {0: 2, 1: 2, 2: 2, 3: 7, 4: 7, 5: 7, 6: 7, 7: 10,
-                        8: 11, 9: 11, 10: 11, 11: 11, 12: 11, 13: 11,
-                        14: 11, 15: 12, 16: 13, 17: 13, 18: 13, 19: 13,
-                        20: 13, 21: 13, 22: 13, 23: 13, 24: 13, 25: 13,
-                        26: 13, 27: 13, 28: 13, 29: 13, 30: 13, 31: 13,
-                        32: 13, 33: 13, 34: 13, 35: 13, 36: 14, 37: 16,
-                        38: 17, 39: 17, 40: 17, 41: 17, 42: 17, 43: 17,
-                        44: 17, 45: 17, 46: 17, 47: 17, 48: 17, 49: 17,
-                        50: 17, 51: 17, 52: 17, 53: 17, 54: 17, 55: 17,
-                        56: 17, 57: 17, 58: 17, 59: 17, 60: 19},
+            {self.__CHROM__: {0: 2, 1: 2, 2: 2, 3: 7, 4: 7, 5: 7, 6: 7, 7: 10,
+                              8: 11, 9: 11, 10: 11, 11: 11, 12: 11, 13: 11,
+                              14: 11, 15: 12, 16: 13, 17: 13, 18: 13, 19: 13,
+                              20: 13, 21: 13, 22: 13, 23: 13, 24: 13, 25: 13,
+                              26: 13, 27: 13, 28: 13, 29: 13, 30: 13, 31: 13,
+                              32: 13, 33: 13, 34: 13, 35: 13, 36: 14, 37: 16,
+                              38: 17, 39: 17, 40: 17, 41: 17, 42: 17, 43: 17,
+                              44: 17, 45: 17, 46: 17, 47: 17, 48: 17, 49: 17,
+                              50: 17, 51: 17, 52: 17, 53: 17, 54: 17, 55: 17,
+                              56: 17, 57: 17, 58: 17, 59: 17, 60: 19},
              'POS': {0: 47600591, 1: 47614114, 2: 47698179, 3: 6026708,
                      4: 6029452, 5: 6043386, 6: 124475296, 7: 89623860,
                      8: 108119615, 9: 108119615, 10: 108121410,
@@ -162,10 +162,13 @@ class TestDataProcessor(unittest.TestCase):
         clinvar = ClinVar()
         observed = clinvar.parse(self.clinvar)
         expected = pd.DataFrame(
-            {self.__chrom__: {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1,
-                        12: 1, 13: 1, 14: 1, 15: 1, 16: 1, 17: 1, 18: 1, 19: 1, 20: 1, 21: 1, 22: 1,
-                        23: 1, 24: 1, 25: 1, 26: 1, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1, 32: 1, 33: 1,
-                        34: 1, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1, 41: 1, 42: 1, 43: 1},
+            {self.__CHROM__: {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1,
+                              11: 1,
+                              12: 1, 13: 1, 14: 1, 15: 1, 16: 1, 17: 1, 18: 1, 19: 1, 20: 1, 21: 1,
+                              22: 1,
+                              23: 1, 24: 1, 25: 1, 26: 1, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1, 32: 1,
+                              33: 1,
+                              34: 1, 35: 1, 36: 1, 37: 1, 38: 1, 39: 1, 40: 1, 41: 1, 42: 1, 43: 1},
              'POS': {0: 865519, 1: 865545, 2: 865567, 3: 865579, 4: 865584, 5: 865625, 6: 865627,
                      7: 865628, 8: 865662, 9: 865665, 10: 865694, 11: 865700, 12: 865705,
                      13: 865723, 14: 865726, 15: 866404, 16: 866422, 17: 866431, 18: 866438,
@@ -275,18 +278,16 @@ class TestDataProcessor(unittest.TestCase):
         )
         observed = VKGL()._correct_column_names(dataset)
         expected = pd.DataFrame(
-            columns=[self.__chrom__, 'POS', 'REF', 'ALT', 'class', 'foo', 'bar']
+            columns=[self.__CHROM__, 'POS', 'REF', 'ALT', 'class', 'foo', 'bar']
         )
         pd.testing.assert_frame_equal(observed, expected)
 
     def test_clinvar__get_n_header(self):
-        file = os.path.join(project_root_dir, 'test', 'resources', 'hashtag_file.txt')
+        file = os.path.join(get_project_root_dir(), 'test', 'resources', 'hashtag_file.txt')
         observed = ClinVar()._get_n_header(file)
         self.assertEqual(observed, 14)
 
     def test_clinvar__obtain_class(self):
-        copy_dataset = self.dataset.copy(deep=True)
-        observed = ClinVar()._obtain_class(copy_dataset)
         expected = pd.concat(
             [
                 self.dataset,
@@ -297,11 +298,10 @@ class TestDataProcessor(unittest.TestCase):
                 )
             ], axis=1
         )
+        observed = ClinVar()._obtain_class(self.dataset)
         pd.testing.assert_frame_equal(observed, expected)
 
     def test_clinvar__obtain_gene(self):
-        copy_dataset = self.dataset.copy(deep=True)
-        observed = ClinVar()._obtain_gene(copy_dataset)
         expected = pd.concat(
             [
                 self.dataset,
@@ -312,23 +312,22 @@ class TestDataProcessor(unittest.TestCase):
                 )
             ], axis=1
         )
+        observed = ClinVar()._obtain_gene(self.dataset)
         pd.testing.assert_frame_equal(observed, expected)
 
     def test_clinvar__obtain_review(self):
-        copy_dataset = self.dataset.copy(deep=True)
-        observed = ClinVar()._obtain_review(copy_dataset)
+        # Slightly modified expected since review status 0 is dropped
         expected = pd.concat(
             [
-                self.dataset,
+                pd.DataFrame(data=self.dataset.iloc[1, :].values, columns=['INFO'], index=[1]),
                 pd.DataFrame(
                     {
-                        'review': [0, 3]
-                    }
+                        'review': [3]
+                    }, index=[1]
                 )
             ], axis=1
         )
-        # Required since review status 0 get dropped
-        expected.drop(index=expected[expected['review'] == 0].index, inplace=True)
+        observed = ClinVar()._obtain_review(self.dataset)
         pd.testing.assert_frame_equal(observed, expected)
 
 

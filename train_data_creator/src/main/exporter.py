@@ -54,7 +54,6 @@ class Exporter:
         data['INFO'] = '.'
 
         # Making sure that the variant can be mapped back after VEP
-        print(data)
         data['ID'] = data[
             [
                 '#CHROM',
