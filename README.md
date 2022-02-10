@@ -44,6 +44,17 @@ _(For a more detailed explanation on creating the train-test and validation data
 [train_data_creator](./train_data_creator/README.md))_
 
 1. Make new [CAPICE](https://github.com/molgenis/capice) release, containing added or removed processors and/or code changes supporting a new model.
+   1. Steps:
+   2. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/CAPICE_example/example_impute_values.json) and/or deprecated features have been removed.
+   3. Apply changes in features to PRE_HEADER in the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh).
+   4. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: <PLACEHOLDER_LINK_train_example_raw.vcf.gz>) (note: use `-t` when using the conversion tool)
+   5. Make training TSV train ready using <PLACEHOLDER_LINK_vep_to_train.py>.
+   6. Use newly generated training TSV to create new [PoC](https://github.com/molgenis/capice/blob/master/tests/resources/xgb_booster_poc.pickle.dat) model.
+   7. Update <PLACEHOLDER_LINK_capice_input.tsv.gz> (raw file: <PLACEHOLDER_LINK_capice_input_raw.vcf.gz>) with altered features.
+   8. Update [breakends_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends_vep.tsv.gz) (raw file: [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)) with altered features.
+   9. Update [edge_cases_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases_vep.tsv.gz) (raw file: [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)) with altered features.
+   10. Update [symbolic_alleles_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles_vep.tsv.gz) (raw file: [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)) with altered features.
+   11. Run [CAPICE](https://github.com/molgenis/capice) tests.
 2. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets.
 3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs.
@@ -57,14 +68,12 @@ _(For a more detailed explanation on creating the train-test and validation data
 9. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`. 
    1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not supply an extension as it doesn't produce a single file)
 10. Use the VEP singularity image to annotate the GRCh38 VCF files.
-11. (Optional when new feature is introduced or removed) Add (or remove) feature to PRE_HEADER in bash
-    script `vep_to_tsv.sh`.
-12. Convert VEP annotated VCFs back to TSV using `vep_to_tsv.sh`
-    1. `./utility_scripts/vep_to_tsh.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz>`
+12. Convert VEP annotated VCFs back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
+    1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
 13. Process GRCH37 TSV 
     1. `python3 ./utility_scripts/vep_to_train.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
-14. Repeat for GRCh37 validation (see step 13)
-15. Repeat steps 12 and 13 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
+14. Repeat for GRCh37 validation (see step 12)
+15. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
 16. Update imputing JSON accordingly to the newly features added and/or removed.
 17. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)

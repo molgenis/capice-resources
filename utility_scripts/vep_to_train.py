@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import argparse
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -19,6 +22,7 @@ class CommandLineDigest:
                         'PLEASE NOTE: This script does NOT validate your input!'
         )
         required = parser.add_argument_group('Required arguments')
+        optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
             '-i',
@@ -34,11 +38,10 @@ class CommandLineDigest:
             required=True,
             help='Output path + filename'
         )
-        required.add_argument(
+        optional.add_argument(
             '-a',
             '--assembly',
             action='store_true',
-            required=True,
             help='Flag to enable GRCh38 mode.'
         )
         return parser
@@ -113,8 +116,16 @@ def main():
     print(data[['binarized_label', 'sample_weight']].value_counts())
     print('')
 
+    print(f'Final shape of data: {data.shape}')
+    print(f'Of which benign: {data[data["binarized_label"] == 0].shape[0]}')
+    print(f'Of which pathogenic: {data[data["binarized_label"] == 1].shape[0]}')
+    n_other = data[~data["binarized_label"].isin([0, 1])].shape[0]
+    if n_other > 0:
+        warnings.warn(f'Of which other: {n_other}')
+    print('')
+
     print(f'Done! Exporting to {output}')
-    data.to_csv(output, index=False, compression='gzip', na_rep='.')
+    data.to_csv(output, index=False, compression='gzip', na_rep='.', sep='\t')
 
 
 if __name__ == '__main__':
