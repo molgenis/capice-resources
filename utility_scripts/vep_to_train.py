@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 
+import os
 import argparse
 import warnings
 
 import numpy as np
 import pandas as pd
+
+
+# Defining errors
+class IncorrectFileError(Exception):
+    pass
+
+
+class DataError(Exception):
+    pass
 
 
 SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
@@ -19,7 +29,6 @@ class CommandLineDigest:
         parser = argparse.ArgumentParser(
             prog='Make VEP TSV train ready',
             description='Converts an VEP output TSV (after conversion) to make it train ready.'
-                        'PLEASE NOTE: This script does NOT validate your input!'
         )
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
@@ -53,6 +62,30 @@ class CommandLineDigest:
         return value
 
 
+class Validator:
+    @staticmethod
+    def validate_input_cla(input_path):
+        if not input_path.endswith(('.tsv.gz', '.tsv')):
+            raise IncorrectFileError('Input file is not a TSV!')
+
+    @staticmethod
+    def validate_output_cla(output_path):
+        if not output_path.endswith('.tsv.gz'):
+            raise IncorrectFileError('Output file has to be defined as .tsv.gz!')
+        # This is intentional.
+        # You have more than enough time to prepare directories when VEP is running.
+        if not os.path.isdir(os.path.dirname(output_path)):
+            raise NotADirectoryError('Output file has to be placed in an directory that already '
+                                     'exists!')
+
+    @staticmethod
+    def validate_input_dataset(input_data):
+        columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID']
+        for column in columns_must_be_present:
+            if column not in input_data.columns:
+                raise DataError(f'Missing required column: {column}')
+
+
 def main():
     print('Parsing CLI')
     cli = CommandLineDigest()
@@ -61,8 +94,15 @@ def main():
     grch38 = cli.get_argument('assembly')
     print('')
 
+    print('Validating input arguments.')
+    validator = Validator()
+    validator.validate_input_cla(data_path)
+    validator.validate_output_cla(output)
+
     print('Reading in dataset')
     data = pd.read_csv(data_path, sep='\t', na_values='.')
+    print('Validating dataset')
+    validator.validate_input_dataset(data)
     print('Read in dataset.')
     print(f'Shape: {data.shape}')
     print(f'Head:\n{data.head()}\n')

@@ -68,28 +68,25 @@ _(For a more detailed explanation on creating the train-test and validation data
 9. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`. 
    1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not supply an extension as it doesn't produce a single file)
 10. Use the VEP singularity image to annotate the GRCh38 VCF files.
-12. Convert VEP annotated VCFs back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
+11. Convert VEP annotated VCFs back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
     1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
-13. Process GRCH37 TSV 
+12. Process GRCH37 TSV 
     1. `python3 ./utility_scripts/vep_to_train.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
-14. Repeat for GRCh37 validation (see step 12)
-15. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
-16. Update imputing JSON accordingly to the newly features added and/or removed.
-17. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
+13. Repeat for GRCh37 validation (see step 12)
+14. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
+15. Update imputing JSON accordingly to the newly features added and/or removed.
+16. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)
-18. Use the JSON made in step 16 and the train-test TSV made in step 12 to start the train protocol of CAPICE
+17. Use the JSON made in step 16 and the train-test TSV made in step 12 to start the train protocol of CAPICE
     1. You may want to use a custom script that loads the latest Python module, activates the virtual environment and activates the and then activates the train protocol. It can take 5 hours for a new model to train.
     2. `module load <python>`
     3. `source ./capice/venv/bin/activate`
     4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>` 
-19. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
-20. Use new model generated in step 20 to generate CAPICE results file of the validation TSV.
-21. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-22. Merge old results with new results, in combination with their true original binarized label and Consequence (true original label and Consequence can be obtained from the VEP output VCF/TSV, combination of the ID column and Consequence column). 
-    1. Steps 22 through 25 are shown in [Validate](#Validate).
-23. Plot global AUC comparison between old and new results and violinplot comparison between old and new scores.
-24. Repeat step 23 but for each and every Consequence.
-25. Export plots to the validation directory, following the release structure. 
+18. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
+19. Use new model generated in step 20 to generate CAPICE results file of the validation TSV.
+20. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
+21. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model.
+    1. `compare_old_model.py --old_model_results </path/to/old_capice_results.tsv> --vep_processed_capice_input </path/to/validation_vep.tsv.gz> --new_model_results </path/to/validation_vep_capice.tsv.gz> --output </path/to/rcX>`
 
 ## Making train-test and validation VCF files
 
@@ -102,9 +99,9 @@ module.
 
 VEP is used to add annotations to the train-test and validation files. The following command is a good representation of what VEP command should be called:
 ```commandline
-vep --input_file <path to your input file> --format vcf --output_file <path to your output file> --vcf --compress_output gzip --regulatory --sift s --polyphen s --domains --numbers --canonical --symbol --shift_3prime 1 --allele_number --no_stats --offline --cache --dir_cache */path/to/latest/vep/cache* --species "homo_sapiens" --assembly *GRCh37 or GRCh38* --refseq --use_given_ref --exclude_predicted --use_given_ref --flag_pick_allele --force_overwrite --fork 4 --dont_skip --allow_non_variant --per_gene
+vep --input_file <path to your input file> --format vcf --output_file <path to your output file> --vcf --compress_output gzip --sift s --polyphen s --numbers --symbol --shift_3prime 1 --allele_number --no_stats --offline --cache --dir_cache */path/to/latest/vep/cache* --species "homo_sapiens" --assembly *GRCh37 or GRCh38* --refseq --use_given_ref --exclude_predicted --use_given_ref --flag_pick_allele --force_overwrite --fork 4 --dont_skip --allow_non_variant --per_gene
 ```
-_(--input_file, --output_file and --assembly have to be manually altered)_
+_(`--input_file`, `--output_file` and `--assembly` have to be manually altered)_
 
 _Command can vary based on the training features._
 
@@ -144,154 +141,17 @@ Work in Progress
 
 ## Validate
 
-The 2 old and new result files have to be merged back together, combined with their true original binarized_label and the variant Consequence.
-Both binarized_label and Consequence can be found in the VEP output VCF or TSV (if it still contains the ID column).
+Merging the old and new validation datafiles happens within `utility_scripts/compare_old_model.py`. 
+This script merges the old results file with a file containing the original labels (the direct output of a TSV converted VEP output using the `-t` flag of `conver_vep_vcf_to_tsv_capice.sh` of [CAPICE](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) is perfect). 
+After that merge and some cleanup of columns that are not going to be used anymore, 
+the new results file is merged on top of the old results merged with their original true labels.
 
-Clean up the variants that can't be merged with their true binarized_label or to their new label.
+After this merge, AUC is calculated globally, as well as an absolute score difference between the predicted score and the true label.
+These global results are then plotted, and AUC calculations are performed over all consequences present within the **old capice** datafile, as well as the absolute score difference.
 
-Then use matplotlib (or seaborn, or whatever) to plot the "old" AUC vs the "new" AUC, combined with Violinplots of the distribution of the score values of the old model, new model and their true labels.
-Do the same on a per Consequence level.
+This absolute score difference tells us something of how close the scores are to the true label, where 1 means the score is far off from the true label and 0 means the score matches the label. We want 0.
 
-Comparing an "old" model (generated with CAPICE 1.3.1) to a new model (CAPICE-3.0.0-beta1) will look something like this:
-
-```python3
-import numpy as np
-from matplotlib import pyplot as plt
-from sklearn.metrics import roc_auc_score
-import pandas as pd
-import math
-
-# Reading in data
-cadd = pd.read_csv('/path/to/old_capice_output.txt', sep='\t')
-original_labels = pd.read_csv('/path/to/vep_output_validation.tsv.gz', sep='\t')
-vep = pd.read_csv('/path/to/new_capice_output.tsv.gz', sep='\t')
-
-# Making merge column
-cadd['ID'] = cadd[['chr_pos_ref_alt', 'GeneName']].astype(str).agg('_'.join, axis=1)
-vep['ID'] = vep[['chr', 'pos', 'ref', 'alt', 'gene_name']].astype(str).agg('_'.join, axis=1)
-
-# Getting the true original labels
-original_labels['binarized_label'] = original_labels['%ID'].str.split('_', expand=True)[5].astype(float)
-original_labels['ID'] = original_labels['%ID'].str.split('_', expand=True)[:5].astype(str).agg('_'.join, axis=1)
-
-# Preparing all datasets
-vep = vep[['ID', 'score']]
-vep._is_copy = None
-vep.rename(columns={'score': 'score_new'}, inplace=True)
-cadd.rename(columns={'probabilities': 'score_old'})
-original_labels = original_labels[['ID', 'binarized_label']]
-original_labels._is_copy = None
-
-# Merging
-merge = cadd.merge(original_labels, on='ID', how='left')
-merge.drop(index=merge[merge['binarized_label'].isnull()].index, inplace=True)
-merge = merge.merge(vep, on='ID', how='left')
-merge.drop(index=merge[merge['score_new'].isnull()].index, inplace=True)
-
-# Preparing plots
-consequences = merge['Consequence'].unique()
-ncols = 4
-nrows = math.ceil((consequences.size / ncols) + 1)
-index = 1
-fig_auc = plt.figure(figsize=(20, 40))
-fig_auc.suptitle('Old model vs new model AUC comparison.')
-fig_vio = plt.figure(figsize=(20, 40))
-fig_vio.suptitle('Old model vs new model score distributions.')
-fig_box = plt.figure(figsize=(20, 40))
-fig_box.suptitle('Old model vs new model score closeness (difference to true label)')
-
-# Calculating global AUC
-auc_old = round(roc_auc_score(merge['binarized_label'], merge['score_old']), 4)
-auc_new = round(roc_auc_score(merge['binarized_label'], merge['score_new']), 4)
-
-# Plotting global AUC
-ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
-ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-ax_auc.set_title(f'Global (n={merge.shape[0]})')
-ax_auc.set_xticks([1, 2], ['Old', 'New'])
-ax_auc.set_xlim(0.0, 3.0)
-ax_auc.set_ylim(0.0, 1.0)
-ax_auc.legend(loc='lower right')
-
-# Plotting Violinplot for global
-ax_vio = fig_vio.add_subplot(nrows, ncols, index)
-ax_vio.violinplot(merge[['score_old', 'binarized_label', 'score_new']])
-ax_vio.set_title(f'Global (n={merge.shape[0]})')
-ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
-ax_vio.set_xlim(0.0, 4.0)
-ax_vio.set_ylim(0.0, 1.0)
-
-# Plotting the score differences to the true label
-merge['score_diff_old'] = abs(merge['binarized_label'] - merge['score_old'])
-merge['score_diff_new'] = abs(merge['binarized_label'] - merge['score_new'])
-ax_box = fig_box.add_subplot(nrows, ncols, index)
-ax_box.boxplot(
-    [
-        merge[merge['binarized_label'] == 0]['score_diff_old'],
-        merge[merge['binarized_label'] == 0]['score_diff_new'],
-        merge[merge['binarized_label'] == 1]['score_diff_old'],
-        merge[merge['binarized_label'] == 1]['score_diff_new']
-    ], labels=['B_old', 'B_new', 'P_old', 'P_new']
-)
-ax_box.set_title(f'Global (n={merge.shape[0]})')
-
-# Global plots have been made, now for each consequence
-index = 2
-for consequence in consequences:
-    print(f'Currently processing: {consequence}')
-    # Subsetting
-    subset = merge[merge['Consequence'] == consequence]
-
-    # Calculating
-    # Try except because when an consequence is encountered with only 1 label, roc_auc_score will throw an error
-    try:
-        auc_old = round(roc_auc_score(subset['binarized_label'], subset['score_old']), 4)
-    except ValueError:
-        print(f'For consequence {consequence}, AUC old could not be calculated.')
-        continue
-    try:
-        auc_new = round(roc_auc_score(subset['binarized_label'], subset['score_new']), 4)
-    except ValueError:
-        print(f'For consequence {consequence}, AUC new could not be calculated.')
-        continue
-
-    # Plotting auc
-    ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-    ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
-    ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-    ax_auc.set_title(f'{consequence} (n={subset.shape[0]})')
-    ax_auc.set_xticks([1, 2], ['Old', 'New'])
-    ax_auc.set_xlim(0.0, 3.0)
-    ax_auc.set_ylim(0.0, 1.0)
-    ax_auc.legend(loc='lower right')
-
-    # Plotting Violinplot for global
-    ax_vio = fig_vio.add_subplot(nrows, ncols, index)
-    ax_vio.violinplot(subset[['score_old', 'binarized_label', 'score_new']])
-    ax_vio.set_title(f'{consequence} (n={subset.shape[0]})')
-    ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
-    ax_vio.set_xlim(0.0, 4.0)
-    ax_vio.set_ylim(0.0, 1.0)
-
-    # Plotting boxplots
-    ax_box = fig_box.add_subplot(nrows, ncols, index)
-    ax_box.boxplot(
-        [
-            subset[subset['binarized_label'] == 0]['score_diff_old'],
-            subset[subset['binarized_label'] == 0]['score_diff_new'],
-            subset[subset['binarized_label'] == 1]['score_diff_old'],
-            subset[subset['binarized_label'] == 1]['score_diff_new']
-        ], labels=['B_old', 'B_new', 'P_old', 'P_new']
-    )
-    ax_box.set_title(f'{consequence} (n={subset.shape[0]})')
-
-    index += 1
-
-fig_auc.savefig('/path/to/save/directory/aucs.png')
-fig_vio.savefig('/path/to/save/directory/violins.png')
-fig_box.savefig('/path/to/save/directory/box.png')
-```
+Furthermore, a table of the feature importances of the new model is plotted aswell, so you can see what is and what is not important.
 
 Compare the results of Old vs New and discus within the team, decide on next steps.
 
