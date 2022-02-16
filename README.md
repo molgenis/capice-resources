@@ -45,12 +45,12 @@ _(For a more detailed explanation on creating the train-test and validation data
 
 1. Make new [CAPICE](https://github.com/molgenis/capice) release, containing added or removed processors and/or code changes supporting a new model.
    1. Steps:
-   2. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/CAPICE_example/example_impute_values.json) and/or deprecated features have been removed.
+   2. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/resources/train_impute_values.json) and/or deprecated features have been removed.
    3. Apply changes in features to PRE_HEADER in the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh).
-   4. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: <PLACEHOLDER_LINK_train_example_raw.vcf.gz>) (note: use `-t` when using the conversion tool)
-   5. Make training TSV train ready using <PLACEHOLDER_LINK_vep_to_train.py>.
+   4. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: [train_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/train_input_raw.vcf.gz)) (note: use `-t` when using the conversion tool)
+   5. Make training TSV train ready using `utility_scripts/vep_to_train.py`.
    6. Use newly generated training TSV to create new [PoC](https://github.com/molgenis/capice/blob/master/tests/resources/xgb_booster_poc.pickle.dat) model.
-   7. Update <PLACEHOLDER_LINK_capice_input.tsv.gz> (raw file: <PLACEHOLDER_LINK_capice_input_raw.vcf.gz>) with altered features.
+   7. Update [predict_input.tsv.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input.tsv.gz) (raw file: [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input_raw.vcf.gz)) with altered features.
    8. Update [breakends_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends_vep.tsv.gz) (raw file: [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)) with altered features.
    9. Update [edge_cases_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases_vep.tsv.gz) (raw file: [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)) with altered features.
    10. Update [symbolic_alleles_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles_vep.tsv.gz) (raw file: [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)) with altered features.
