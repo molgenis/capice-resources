@@ -115,17 +115,19 @@ def main():
 
     if grch38:
         print('Converting chromosome column')
+        data['%CHROM'] = data['%CHROM'].str.split('chr', expand=True)[1]
         y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
-        print(
-            f'Dropping {data.drop(data[~data["%CHROM"].isin(y)].shape[0])} '
-            f'rows due to unknown chromosome.'
-        )
+        before_drop = data.shape[0]
         data.drop(data[~data["%CHROM"].isin(y)].index, inplace=True)
+        after_drop = data.shape[0]
+        print(f'Dropped {before_drop-after_drop} rows due to unknown chromosome.')
         print('Conversion done.\n')
 
     print('Dropping full duplicates')
-    print(f'Dropping {data[data.duplicated()].shape[0]} duplicates')
+    before_drop = data.shape[0]
     data.drop_duplicates(inplace=True)
+    after_drop = data.shape[0]
+    print(f'Dropped {before_drop-after_drop} duplicates')
     print('Dropping duplicates done.\n')
     
     print('Dropping mismatching gene entries.')
