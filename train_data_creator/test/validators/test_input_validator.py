@@ -1,6 +1,6 @@
 import os
 import unittest
-from stat import S_IREAD
+import stat
 
 from train_data_creator.test import get_project_root_dir
 from train_data_creator.src.main.validators.input_validator import InputValidator
@@ -19,6 +19,10 @@ class TestInputValidator(unittest.TestCase):
         if cls.__DIRECTORY__ in os.listdir(get_project_root_dir()):
             os.removedirs(os.path.join(get_project_root_dir(), cls.__DIRECTORY__))
         if cls.__READONLY_DIRECTORY__ in os.listdir(get_project_root_dir()):
+            # Fix for Windows because you can't delete an readonly directory
+            os.chmod(
+                os.path.join(get_project_root_dir(), cls.__READONLY_DIRECTORY__), stat.S_IWRITE
+            )
             os.removedirs(os.path.join(get_project_root_dir(), cls.__READONLY_DIRECTORY__))
 
     def test_vkgl_corr(self):
@@ -65,7 +69,7 @@ class TestInputValidator(unittest.TestCase):
     def test_output_not_writable(self):
         output = os.path.join(get_project_root_dir(), self.__READONLY_DIRECTORY__)
         os.mkdir(os.path.join(output))
-        os.chmod(output, S_IREAD)
+        os.chmod(output, stat.S_IREAD)
         # Testing if an existing not writable directory raises OSError
         self.assertRaises(
             OSError,

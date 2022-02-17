@@ -1,5 +1,6 @@
 import gzip
 import warnings
+import numpy as np
 import pandas as pd
 
 from train_data_creator.src.main.utilities import correct_order_vcf_notation, equalize_class, \
@@ -181,7 +182,7 @@ class ClinVar:
         # Mapping to Gold Stars values
         for key, value in stars.items():
             data.loc[data[data['review'] == key].index, 'review'] = value
-        data['review'] = data['review'].astype(int)
+        data['review'] = data['review'].astype(np.int64)
 
         # Droppin
         data.drop(data[data['review'] < 1].index, inplace=True)
