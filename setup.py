@@ -25,7 +25,8 @@ setup(
         'numpy==1.21.4',
         'matplotlib==3.5.1',
         'xgboost==1.4.2',
-        'scikit-learn==1.0.2'
+        'scikit-learn==1.0.2',
+        'graphviz==0.19.1'
     ],
     extras_require={
         'test': [
