@@ -155,6 +155,26 @@ Furthermore, a table of the feature importances of the new model is plotted aswe
 
 Compare the results of Old vs New and discus within the team, decide on next steps.
 
+## Visualizing the XGBoost tree
+
+Visualizing the XGBoost tree is a useful tool to see how each and every individual sample is scored. 
+To use this functionality, one must load in the pickled model. Also import matplotlib pyplot and plot_tree from xgboost.
+Then use matplotlib to make a very high resolution figure, use plot_tree to visualize the tree and then matplotlib again to export the figure.
+You will get some code that is similar to this:
+
+```python
+from matplotlib import pyplot as plt
+from xgboost import plot_tree
+import pickle
+
+with open('/path/to/model.pickle.dat', 'rb') as model_file:
+    model = pickle.load(model_file)
+
+fig, ax = plt.subplots(figsize=(160,160))  # Note: (160,160) might still be too low of a resolution
+# Note: the num_trees=model.best_iteration is still in concept till I figure out that XGBoost always uses the best model, or all models (there could easily be 300+ booster objects within an XGBClassifier class).
+plot_tree(model, num_trees=model.best_iteration, ax=ax)  # If this says that the object is too large, adjust resolution
+fig.savefig('/path/to/save_fig.png')
+```
 
 ## Common issues
 
