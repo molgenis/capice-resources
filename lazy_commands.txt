@@ -1,0 +1,5 @@
+from utilities import LeafObtainer
+import pickle
+with open('./var/v3.0.0-v1_grch37.pickle.dat', 'rb') as model_file:
+    model = pickle.load(model_file)
+obtainer = LeafObtainer(model)
