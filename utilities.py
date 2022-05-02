@@ -30,7 +30,7 @@ class LeafObtainer:
             dump_format='json'
         )[0:self.total_trees]
 
-    def get_leaf_scores(self, progress_timer: int = 30):
+    def get_leaf_scores(self, progress_timer: int = 5):
         """
         Method to obtain the leaf scores given a Pandas series.
 
