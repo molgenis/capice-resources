@@ -1,8 +1,7 @@
 import json
-import math
-import numpy as np
-import pandas as pd
+import time
 
+import pandas as pd
 import xgboost as xgb
 
 
@@ -17,48 +16,29 @@ class LeafObtainer:
         model : xgboost.XGBClassifier
             Un-pickled instance of the to be investigated xgboost XGBClassifier model.
         """
-        # Leaf specific variables.
-        # In lists because the recursive get_leaf_scores would throw errors
-        # because the variable was assigned before made.
-        self.leaves = []
-        # Path specific variables.
-        self.paths = []
-        self.current_path = []
-        self.dict_current_path = {}
-        self.dict_paths = []
-        self.current_feat = [0]
         # Linking parents
         self.parents = {}  # Child node ID is key, parent node ID is value
         self.node_ids = {}  # Linking a node ID to the "split"
         self.node_paths = {}  # Node ID is key, path is the value
+        self.final_node_paths = {}  # Node ID is key, path is the value
+        self.node_path_collection = []
+        self.max_length = 0
         # Saving trees.
+        self.total_trees = model.best_iteration+1
         self.trees = model.get_booster().get_dump(
             with_stats=True,
             dump_format='json'
-        )[0:model.best_iteration+1]
+        )[0:self.total_trees]
 
-    def reset(self):
-        """
-        Resets the node to be obtained and the leaves. Use full for an while loop (or apply)
-        over a given dataset.
-        """
-        self.leaves = []
-        self.current_path = []
-        self.parents = {}
-
-    def get_leaf_scores(self, reset=True, calculate_score=False):
+    def get_leaf_scores(self, progress_timer: int = 30):
         """
         Method to obtain the leaf scores given a Pandas series.
 
-        Parameters
-        ----------
-        data : pandas.Series
-            The series over which the leaves of the xgboost.XGBClassifier have to be obtained.
-        reset : bool
-            Whenever to reset the obtain_node and leaves after all leaves have been obtained for
-            data.
-        calculate_score : bool
-            Whenever to instantly return the calculated score of 1/(1+np.exp(-1*sum_of_leaves)).
+        Parameter
+        ---------
+        progress_timer : int
+            Interval time in seconds to print progression statements.
+
         Returns
         -------
         leaves : numpy.ndarray
@@ -66,6 +46,7 @@ class LeafObtainer:
             Please note: if calculate_score is set to True, leaves will be returned a single value.
         """
         first_iter = True
+        print('Starting extracting trees from model.')
         for tree in self.trees:
             tree = json.loads(tree)
             if first_iter:
@@ -75,86 +56,103 @@ class LeafObtainer:
                 self.node_paths[node_id] = [node_feature]
                 first_iter = False
             self._obtain_leaf_scores(tree)
-            self.paths.append("->".join(self.current_path))
-            self.current_path = []
-            self.current_feat = [0]
-            self.dict_paths.append(self.dict_current_path)
-            self.dict_current_path = {}
-            break
-            # self.parents = {}
-            # self.node_ids = {}
-            # self.node_paths = {}
-        result = np.array(self.leaves)
-        if reset:
-            self.reset()
-        if calculate_score:
-            result = 1/(1 + np.exp(-1*result.sum()))
+            self._remove_paths_no_leaf()
+            self._obtain_max_length()
+            self._convert_dict_to_list()
+            self.parents = {}
+            self.node_ids = {}
+            self.node_paths = {}
+            self.final_node_paths = {}
+        print('Finished extracting trees from model.')
+
+        print('Starting converting string to arrays.')
+        arrays = self._string_to_array(progress_timer)
+        print('Finished converting string to arrays.')
+
+        print('Starting converting arrays to dataframe.')
+        result = self._arrays_to_dataframe(arrays)
+        print('Finished converting arrays to dataframe.')
+
         return result
 
-    def get_paths(self, kind: str = 'list'):
-        """
-        Getter function to obtain the paths this class has processed.
+    def _remove_paths_no_leaf(self):
+        for key, value in self.node_paths.items():
+            if value.endswith('leaf'):
+                self.final_node_paths[key] = value
 
-        Parameters
-        ----------
-        kind : str (Optional, default='list')
-            The kind of path to return. Can be either list or dict.
+    def _obtain_max_length(self):
+        for value in self.final_node_paths.values():
+            length = len(value.split('->'))
+            if length > self.max_length:
+                self.max_length = length
 
-        Returns
-        -------
-        paths : list
-            A list containing all the paths in string format as following: feature(
-            split_value)->feature(split_value)->UP/DOWN
-        """
-        if kind != 'list' and kind != 'dict':
-            raise AttributeError(f'Kind can be either list or dict, not {kind}')
-        if kind == list:
-            return self.paths
-        else:
-            return self.dict_paths
+    def _convert_dict_to_list(self):
+        for value in self.final_node_paths.values():
+            self.node_path_collection.append(value)
+
+    def _string_to_array(self, progress_timer):
+        arrays = []
+        current_path = 0
+        total_paths = len(self.node_path_collection)
+
+        time_bl = time.time()
+
+        for entry in self.node_path_collection:
+            time_il = time.time()
+            if time_il - time_bl > progress_timer:
+                print('Progression converting string to array:')
+                print(f'Converted {current_path}/{total_paths}')
+                time_bl = time_il
+            length = len(entry.split('->'))
+            if length > self.max_length:
+                self.max_length = length
+            features = []
+            values = []
+            leaf = 0
+            for f in entry.split('->'):
+                value, feature = f.split('|')
+                if feature == 'leaf':
+                    leaf = value
+                    break
+                features.append(feature)
+                values.append(value)
+            feats = {}
+            for i in range(1, length):
+                feats[f'feature_{i}'] = features[i - 1]
+                feats[f'value_{i}'] = values[i - 1]
+            feats['leaf'] = leaf
+            arrays.append(pd.Series(feats).T)
+            current_path += 1
+        return arrays
+
+    def _arrays_to_dataframe(self, arrays: list):
+        reindex = []
+        for i in range(1, self.max_length):
+            reindex.append(f'feature_{i}')
+            reindex.append(f'value_{i}')
+        reindex.append('leaf')
+        return pd.concat(arrays, axis=1).reindex(reindex).T
 
     def _obtain_leaf_scores(self, tree: dict):
-        # .2
+        has_child = False
         if 'children' in tree.keys():
+            has_child = True
+
+        if has_child:
             self._add_parent_child(parent=tree, children=tree['children'])
 
-        # .3
-        # Temporary check
-        if 'children' in tree.keys():
-            self._add_path_to_node_id(tree)
-
-        self._process_leaf(tree)
+        self._add_path_to_node_id(tree)
+        if has_child:
+            self._process_leaf(tree)
 
     def _process_leaf(self, tree: dict):
-        if 'children' in tree.keys():
-            # TODO list:
-            # .1: Save node ID as key and the split string as value: DONE
-            # .2: Save child node ID as key and parent node ID as value: DONE
-            # .3: Save node ID as key and current path as value in list: DONE
-            # .4: Remove dependency on yes/no path: DONE
-            # .5: Add split value to current path described in .3
-            # ONCE LEAF IS REACHED:
-            # .4: Map node ID's back to string
-            # .5: Export paths
+        current_node = tree['nodeid']
+        required_feature = tree['split']
 
-            self.current_feat.append(self.current_feat[-1] + 1)
-            current_node = tree['nodeid']
-            required_feature = tree['split']
+        self.node_ids[current_node] = required_feature
 
-            # .1: Save node ID as key and the split string as value
-            self.node_ids[current_node] = required_feature
-
-            required_value = tree['split_condition']
-            self.dict_current_path[f'feat_{self.current_feat[-1]}'] = required_feature
-            self.dict_current_path[f'value_{self.current_feat[-1]}'] = required_value
-            self.current_path.append(required_feature)
-
-            for child in tree['children']:
-                self._obtain_leaf_scores(child)
-        else:
-            self.dict_current_path['leaf'] = tree['leaf']
-            self.leaves.append(tree['leaf'])
-            self._add_leaf_path(tree['leaf'])
+        for child in tree['children']:
+            self._obtain_leaf_scores(child)
 
     def _add_parent_child(self, parent: dict, children: list):
         for child in children:
@@ -162,20 +160,14 @@ class LeafObtainer:
 
     def _add_path_to_node_id(self, current_tree: dict):
         current_node = current_tree['nodeid']
-        current_feature = current_tree['split']
-        print('DEBUG MODE')
-        print(current_node)
-        print(current_feature)
-        print(self.parents)
-        print(self.node_paths)
+        if 'split' in current_tree.keys():
+            current_feature = '|'.join(
+                [str(current_tree['split_condition']), current_tree['split']]
+            )
+        else:
+            current_feature = '|'.join([str(current_tree['leaf']), 'leaf'])
         if current_node in self.parents.keys():
             parent_path = self.node_paths[self.parents[current_node]]
             self.node_paths[current_node] = '->'.join([parent_path, current_feature])
         else:
             self.node_paths[current_node] = current_feature
-
-    def _add_leaf_path(self, leaf: (float, int)):
-        if leaf > 0:
-            self.current_path.append('UP')
-        else:
-            self.current_path.append('DOWN')
