@@ -131,7 +131,12 @@ class LeafObtainer:
             reindex.append(f'feature_{i}')
             reindex.append(f'value_{i}')
         reindex.append('leaf')
-        return pd.concat(arrays, axis=1).reindex(reindex).T
+        df = pd.concat(arrays, axis=1).reindex(reindex).T
+        before_drop = df.shape[0]
+        df.drop_duplicates(inplace=True)
+        after_drop = df.shape[0]
+        print(f'Dropped {before_drop - after_drop} entries due to being duplicated.')
+        return df.reset_index(drop=True)
 
     def _obtain_leaf_scores(self, tree: dict):
         has_child = False
