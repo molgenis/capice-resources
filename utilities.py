@@ -18,6 +18,7 @@ class LeafObtainer:
         """
         # Linking parents
         self.parents = {}  # Child node ID is key, parent node ID is value
+        self.yes_no_dict = {}  # Node ID is key, child is either "yes" or "no"
         self.node_ids = {}  # Linking a node ID to the "split"
         self.node_paths = {}  # Node ID is key, path is the value
         self.final_node_paths = {}  # Node ID is key, path is the value
@@ -60,6 +61,7 @@ class LeafObtainer:
             self._obtain_max_length()
             self._convert_dict_to_list()
             self.parents = {}
+            self.yes_no_dict = {}
             self.node_ids = {}
             self.node_paths = {}
             self.final_node_paths = {}
@@ -145,6 +147,7 @@ class LeafObtainer:
 
         if has_child:
             self._add_parent_child(parent=tree, children=tree['children'])
+            self._obtain_yes_no_ids(tree=tree)
 
         self._add_path_to_node_id(tree)
         if has_child:
@@ -159,6 +162,10 @@ class LeafObtainer:
         for child in tree['children']:
             self._obtain_leaf_scores(child)
 
+    def _obtain_yes_no_ids(self, tree):
+        self.yes_no_dict[tree['yes']] = 'yes'
+        self.yes_no_dict[tree['no']] = 'no'
+
     def _add_parent_child(self, parent: dict, children: list):
         for child in children:
             self.parents[child['nodeid']] = parent['nodeid']
@@ -170,7 +177,8 @@ class LeafObtainer:
                 [str(current_tree['split_condition']), current_tree['split']]
             )
         else:
-            current_feature = '|'.join([str(current_tree['leaf']), 'leaf'])
+            leaf_value = str(current_tree['leaf']) + f'({self.yes_no_dict[current_node]})'
+            current_feature = '|'.join([leaf_value, 'leaf'])
         if current_node in self.parents.keys():
             parent_path = self.node_paths[self.parents[current_node]]
             self.node_paths[current_node] = '->'.join([parent_path, current_feature])
