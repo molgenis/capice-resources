@@ -177,10 +177,40 @@ class LeafObtainer:
                 [str(current_tree['split_condition']), current_tree['split']]
             )
         else:
-            leaf_value = str(current_tree['leaf']) + f'({self.yes_no_dict[current_node]})'
+            leaf_value = str(current_tree['leaf']) + \
+                         f'({self.yes_no_dict[current_node]})' + \
+                         f'({self.parents[current_node]})'
             current_feature = '|'.join([leaf_value, 'leaf'])
         if current_node in self.parents.keys():
             parent_path = self.node_paths[self.parents[current_node]]
             self.node_paths[current_node] = '->'.join([parent_path, current_feature])
         else:
             self.node_paths[current_node] = current_feature
+
+
+def process_duplicates(data: pd.DataFrame, timer=5):
+    data_copy = data.copy(deep=True)
+    cols = data_copy.columns.difference(['leaf', 'yes/no', 'parent_node'])
+    minimum = data_copy[data_copy.duplicated(subset=cols, keep=False)]['parent_node'].min()
+    maximum = data_copy[data_copy.duplicated(subset=cols, keep=False)]['parent_node'].max()
+    timer_bl = time.time()
+    current = 0
+    total = maximum + 1
+    for i in range(minimum, maximum + 1):
+        timer_il = time.time()
+        if timer_il - timer_bl > timer:
+            print(f'Processing: {current}/{total}')
+            timer_bl = time.time()
+        node_data = data_copy[
+            (data_copy.duplicated(subset=cols, keep=False)) &
+            (data_copy['parent_node'] == i)
+            ]
+        if node_data.shape[0] == 0:
+            continue
+        first_hit = node_data.index[0]
+        indexes_to_remove = list(node_data.index[1:])
+        sum_of_leaves = node_data['leaf'].sum()
+        data_copy.loc[first_hit, 'leaf'] = sum_of_leaves
+        data_copy.drop(index=indexes_to_remove, inplace=True)
+        current += 1
+    return data_copy
