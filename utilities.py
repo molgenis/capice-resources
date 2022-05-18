@@ -190,22 +190,19 @@ class LeafObtainer:
 
 def process_duplicates(data: pd.DataFrame, timer=5):
     data_copy = data.copy(deep=True)
-    cols = data_copy.columns.difference(['leaf', 'yes/no', 'parent_node'])
-    minimum = data_copy[data_copy.duplicated(subset=cols, keep=False)]['parent_node'].min()
-    maximum = data_copy[data_copy.duplicated(subset=cols, keep=False)]['parent_node'].max()
+    cols = data_copy.columns.difference(['leaf', 'yes/no', 'parent_node'], sort=False)
+    data_copy['uids'] = data_copy[cols].astype(str).agg('_'.join, axis=1)
+    uuids = data_copy['uids'].unique()
     timer_bl = time.time()
     current = 0
-    total = maximum + 1
-    for i in range(minimum, maximum + 1):
+    total = len(uuids)
+    for uid in uuids:
         timer_il = time.time()
         if timer_il - timer_bl > timer:
             print(f'Processing: {current}/{total}')
             timer_bl = time.time()
-        node_data = data_copy[
-            (data_copy.duplicated(subset=cols, keep=False)) &
-            (data_copy['parent_node'] == i)
-            ]
-        if node_data.shape[0] == 0:
+        node_data = data_copy[data_copy['uids'] == uid]
+        if node_data.shape[0] < 2:
             continue
         first_hit = node_data.index[0]
         indexes_to_remove = list(node_data.index[1:])
