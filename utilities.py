@@ -190,12 +190,14 @@ class LeafObtainer:
 
 def process_duplicates(data: pd.DataFrame, timer=5):
     data_copy = data.copy(deep=True)
-    cols = data_copy.columns.difference(['leaf', 'yes/no', 'parent_node'], sort=False)
+    cols = data_copy.columns.difference(['leaf', 'parent_node'], sort=False)
     data_copy['uids'] = data_copy[cols].astype(str).agg('_'.join, axis=1)
     uuids = data_copy['uids'].unique()
     timer_bl = time.time()
     current = 0
     total = len(uuids)
+    skipped = 0
+    actually_processed_uids = []
     for uid in uuids:
         timer_il = time.time()
         if timer_il - timer_bl > timer:
@@ -203,11 +205,17 @@ def process_duplicates(data: pd.DataFrame, timer=5):
             timer_bl = time.time()
         node_data = data_copy[data_copy['uids'] == uid]
         if node_data.shape[0] < 2:
+            skipped += 1
+            current += 1
             continue
-        first_hit = node_data.index[0]
-        indexes_to_remove = list(node_data.index[1:])
-        sum_of_leaves = node_data['leaf'].sum()
-        data_copy.loc[first_hit, 'leaf'] = sum_of_leaves
-        data_copy.drop(index=indexes_to_remove, inplace=True)
-        current += 1
-    return data_copy
+        else:
+            actually_processed_uids.append(uid)
+            first_hit = node_data.index[0]
+            indexes_to_remove = list(node_data.index[1:])
+            sum_of_leaves = node_data['leaf'].sum()
+            data_copy.loc[first_hit, 'leaf'] = sum_of_leaves
+            data_copy.drop(index=indexes_to_remove, inplace=True)
+            current += 1
+    print(f'Done! processed {total} entries, skipped {skipped}.')
+    # data_copy.drop(columns=['uids'], inplace=True)
+    return data_copy, actually_processed_uids

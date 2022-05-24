@@ -43,3 +43,9 @@
 # 09-05-2022 @ 09:58: dev (WARNING: Duplicates are yes/no leaves for the final feature. Adjust LeafObtainer to process.)
 # 09-05-2022 @ 10:00: dev (ERROR: Ignore idea @9:58: some nodes have a leaf and another node as outcomes, which would make that impossible. Add postprocessing to seemingly duplicated leaves.)
 # 10-05-2022 @ 11:30: dev (PASS: Implemented idea to include a yes/no dictionary that marks a leaf as yes outcome or a no outcome.)
+# 24-05-2022 @ 12:26: GO/NOGO: find out if semi-squashed csv still produces the right scores.
+# 24-05-2022 @ 12:30: dev: find a way to obtain leaf scores from CSV
+# 24-05-2022 @ 12:30: WARNING: currently not possible when in a tree the leaf is "no" instead of "yes" for a node in the middle of the tree
+# 24-05-2022 @ 13:26: RETHINK: We might be on a road that will become too complex for either explain or to see how important a feature truely is.
+# 24-05-2022 @ 13:26: TO DO: Investigate the XGBoost documentation on all possible statistic extractions
+
