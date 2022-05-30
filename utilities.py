@@ -67,18 +67,20 @@ class LeafObtainer:
         required_value = tree['split_condition']
         data_value = data[required_feature]
 
-        self._save_path_information(required_feature, required_value)
-
         if data_value < required_value or math.isnan(data_value):
             self.obtain_node.append(tree['yes'])
+            yesno = 'yes'
         else:
             self.obtain_node.append(tree['no'])
+            yesno = 'no'
+
+        self._save_path_information(required_feature, required_value, yesno)
 
         for child in tree['children']:
             self._obtain_node_information(child, data)
 
-    def _save_path_information(self, feature, value):
-        self.current_path.append(f'{feature}({value})')
+    def _save_path_information(self, feature, value, yesno):
+        self.current_path.append(f'{feature}({value})({yesno})')
 
     def _add_leaf(self, tree):
         leaf = tree['leaf']
