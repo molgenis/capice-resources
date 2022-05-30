@@ -1,4 +1,10 @@
-from utilities import process_duplicates
+import pickle
+import numpy as np
 import pandas as pd
-x = pd.read_csv('./capice_300_grch38_all_trees.csv.gz')
-x_new = x.copy(deep=True)
+from utilities import LeafObtainer, calculate_capice_score
+with open('./var/v3.0.0-v1_grch37.pickle.dat', 'rb') as model_file:
+    model = pickle.load(model_file)
+data = pd.read_csv('./var/some_file.tsv', sep='\t')
+series = data.loc[0,:]
+score = model.predict_proba(data[model.get_booster().feature_names])[0, 1]
+obtainer = LeafObtainer(model)
