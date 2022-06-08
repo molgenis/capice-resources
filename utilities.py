@@ -108,7 +108,7 @@ class LeafObtainer:
 
 def process_duplicates(data: pd.DataFrame, timer=5):
     data_copy = data.copy(deep=True)
-    cols = data_copy.columns.difference(['leaf', 'parent_node'], sort=False)
+    cols = data_copy.columns.difference(['leaf', 'tree_number'], sort=False)
     data_copy['uids'] = data_copy[cols].astype(str).agg('_'.join, axis=1)
     uuids = data_copy['uids'].unique()
     timer_bl = time.time()
@@ -125,7 +125,6 @@ def process_duplicates(data: pd.DataFrame, timer=5):
         if node_data.shape[0] < 2:
             skipped += 1
             current += 1
-            continue
         else:
             actually_processed_uids.append(uid)
             first_hit = node_data.index[0]
@@ -135,7 +134,7 @@ def process_duplicates(data: pd.DataFrame, timer=5):
             data_copy.drop(index=indexes_to_remove, inplace=True)
             current += 1
     print(f'Done! processed {total} entries, skipped {skipped}.')
-    # data_copy.drop(columns=['uids'], inplace=True)
+    data_copy.drop(columns=['uids'], inplace=True)
     return data_copy, actually_processed_uids
 
 
