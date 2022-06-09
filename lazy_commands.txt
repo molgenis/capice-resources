@@ -1,13 +1,11 @@
 import pickle
 import numpy as np
 import pandas as pd
-from utilities import LeafObtainer, calculate_capice_score, convert_paths_list_to_dataframe, process_duplicates
+from utilities import LeafObtainer, calculate_capice_score
 with open('./var/v3.0.0-v1_grch37.pickle.dat', 'rb') as model_file:
     model = pickle.load(model_file)
 data = pd.read_csv('./testing_samples.tsv.gz', sep='\t')
 series = data.loc[0,:]
 score = model.predict_proba(data[model.get_booster().feature_names])[0, 1]
 obtainer = LeafObtainer(model)
-paths = obtainer.process_sample(series)
-df = convert_paths_list_to_dataframe(paths)
-dfl, processed_uids = process_duplicates(df)
+df = obtainer.process_sample(series)
