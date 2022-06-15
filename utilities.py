@@ -37,9 +37,15 @@ class LeafObtainer:
 
         Returns
         -------
-        leaves : numpy.ndarray
-            A single dimension numpy array containing all leaf scores for data.
-            Please note: if calculate_score is set to True, leaves will be returned a single value.
+        paths : pandas.DataFrame
+            An X by Y dimensional DataFrame containing the tree number, the features, the data
+            values for the features, the model values for said features and if the path goes to
+            the YES side or NO side of a node. Final column is always "leaf".
+
+            X dimension depends on the amount of features within the model and the complexity of
+            the model. More features = more complexity = more dimensions.
+            Y dimension depends on the best training iteration of the XGBoost model. The faster
+            the model reaches it's peak performance, the less Y dimensions you will end up with.
         """
         self.obtain_node = [0]
         self.current_path = []
