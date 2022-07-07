@@ -26,15 +26,26 @@ utility_scripts contains a couple of bash scripts for ease of use, which include
 variants to GRCh38, running VEP104 and converting a VEP VCF output to TSV. 
 It is advised to use these scripts as they maintain a level of consistency throughout the lifespan of CAPICE.
 
+- compare_build37_build38_models.py:
+
+...
+
+- compare_old_model.py:
+
+...
+
 - liftover_variants.sh:
 
 The script liftover_variants.sh converts a VCF containing GRCh37 variants to GRCh38 variants.
 
-- vep_to_tsv.sh:
+- slurm_run_vep:
 
-The vep_to_tsv.sh converts the VEP output VCF back to TSV with all required columns.
-If features are added/removed, be sure to adjust the `pre_header` variable within this bash script accordingly.
-For instance, if feature `CADD_score` is added, within pre_header `\tCADD_score` has to be added.
+Template sbatch script to run VEP on a Slurm cluster. Ensure it is up-to-date and values are adjusted accordingly before using!
+
+- vep_to_train.py:
+
+...
+
 
 ## Usage
 
@@ -43,49 +54,53 @@ For instance, if feature `CADD_score` is added, within pre_header `\tCADD_score`
 _(For a more detailed explanation on creating the train-test and validation datasets, please see the README in
 [train_data_creator](./train_data_creator/README.md))_
 
-1. Make new [CAPICE](https://github.com/molgenis/capice) release, containing added or removed processors and/or code changes supporting a new model.
-   1. Steps:
-   2. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/resources/train_impute_values.json) and/or deprecated features have been removed.
-   3. Apply changes in features to PRE_HEADER in the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh).
-   4. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: [train_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/train_input_raw.vcf.gz)) (note: use `-t` when using the conversion tool)
-   5. Make training TSV train ready using `utility_scripts/vep_to_train.py`.
-   6. Use newly generated training TSV to create new [PoC](https://github.com/molgenis/capice/blob/master/tests/resources/xgb_booster_poc.pickle.dat) model.
-   7. Update [predict_input.tsv.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input.tsv.gz) (raw file: [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input_raw.vcf.gz)) with altered features.
-   8. Update [breakends_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends_vep.tsv.gz) (raw file: [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)) with altered features.
-   9. Update [edge_cases_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases_vep.tsv.gz) (raw file: [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)) with altered features.
-   10. Update [symbolic_alleles_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles_vep.tsv.gz) (raw file: [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)) with altered features.
-   11. Run [CAPICE](https://github.com/molgenis/capice) tests.
+1. Make new [CAPICE](https://github.com/molgenis/capice) release, containing added or removed processors and/or code changes supporting a new model:
+   1. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/resources/train_impute_values.json) and/or deprecated features have been removed.
+   2. Apply changes in features to PRE_HEADER in the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh).
+   3. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: [train_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/train_input_raw.vcf.gz)) (note: use `-t` when using the conversion tool)
+   4. Make training TSV train ready using `utility_scripts/vep_to_train.py`.
+   5. Use newly generated training TSV to create new [PoC](https://github.com/molgenis/capice/blob/master/tests/resources/xgb_booster_poc.pickle.dat) model.
+   6. Update [predict_input.tsv.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input.tsv.gz) (raw file: [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input_raw.vcf.gz)) with altered features.
+   7. Update [breakends_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends_vep.tsv.gz) (raw file: [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)) with altered features.
+   8. Update [edge_cases_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases_vep.tsv.gz) (raw file: [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)) with altered features.
+   9. Update [symbolic_alleles_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles_vep.tsv.gz) (raw file: [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)) with altered features.
+   10. Run [CAPICE](https://github.com/molgenis/capice) tests.
+   11. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and the [VEP command](https://github.com/molgenis/capice#vep) if needed.
 2. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets.
-3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs.
-   1. `python3 ./train_data_creator/main.py --input_input_vkgl </path/to/vkgl_nonpublic.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output>`
+3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs:  
+   `python3 ./train_data_creator/main.py --input_input_vkgl </path/to/vkgl_nonpublic.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output>`
 4. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release, matching the CAPICE release in step 1. 
 5. Attach both train-test and validation VCFs to [capice-resources](https://github.com/molgenis/capice-resources) release.
-6. Download the latest VEP release from the [Molgenis Cloud](https://download.molgeniscloud.org/downloads/vip/images/)
-7. Use the VEP singularity image, combined with the latest VEP cache to annotate the VCF files.
-   1. `singularity exec --bind /apps,/groups,/tmp vep <command>` (See [VEP](#VEP) for the command)
-8. (Optional for XGBoost 0.72.1 models) Upload the validation.vcf to [CADD1.4-GRCh37](https://cadd.gs.washington.edu/score) for annotation.
-9. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`. 
-   1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not supply an extension as it doesn't produce a single file)
-10. Use the VEP singularity image to annotate the GRCh38 VCF files.
-11. Convert VEP annotated VCFs back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
+6. Prepare for running VEP:
+   1. Download the latest VEP release from the [Molgenis Cloud](https://download.molgeniscloud.org/downloads/vip/images/)
+   2. Download the [VEP cache](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html) belonging to the VEP version:  
+      `wget ftp://ftp.ensembl.org/pub/release-<version>/variation/vep/homo_sapiens_refseq_vep_<version>_GRCh<number>.tar.gz`
+   3. Download the [required VEP plugins for CAPICE](https://github.com/molgenis/capice#requirements) from [here](https://github.com/Ensembl/VEP_plugins). 
+7. Run the VEP singularity image in combination with [this VEP command](https://github.com/molgenis/capice#VEP) on train-test & validation VCF files (separately!):  
+   `singularity exec --bind /apps,/groups,/tmp vep <command>`  
+   __IMPORTANT:__ If running on a cluster, be sure to add `--buffer_size 500` (or something similar) to reduce memory usage (at the cost of speed).  
+   An example sbatch script for running this on the cluster can be found in [utility_scripts/slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh)
+8. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`. 
+    1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not supply an extension as it doesn't produce a single file)
+9. Use the VEP singularity image to annotate the GRCh38 VCF files.
+10. Convert GRCh37 VEP annotated train-test & validation VCFs (separately!) back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
     1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
-12. Process GRCH37 TSV 
+11. Process GRCH37 train-test & validation TSVs (separately!)
     1. `python3 ./utility_scripts/vep_to_train.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
-13. Repeat for GRCh37 validation (see step 12)
-14. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
-15. Update imputing JSON accordingly to the newly features added and/or removed.
-16. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
+13. Repeat steps 10 and 11 for train-test and validation of GRCh38 (add the `-a` flag to the `vep_to_train.py`).
+14. Update imputing JSON accordingly to the newly features added and/or removed.
+15. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)
-17. Use the JSON made in step 16 and the train-test TSV made in step 12 to start the train protocol of CAPICE
+16. Use the JSON made in step 14 and the processed train-test TSV made in step 11 to start the train protocol of CAPICE
     1. You may want to use a custom script that loads the latest Python module, activates the virtual environment and activates the and then activates the train protocol. It can take 5 hours for a new model to train.
     2. `module load <python>`
     3. `source ./capice/venv/bin/activate`
     4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>` 
-18. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
-19. Use new model generated in step 20 to generate CAPICE results file of the validation TSV.
-20. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-21. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model.
+17. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
+18. Use the new model to generate CAPICE results file of the validation TSV.
+19. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
+20. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model.
     1. `compare_old_model.py --old_model_results </path/to/old_capice_results.tsv> --vep_processed_capice_input </path/to/validation_vep.tsv.gz> --new_model_results </path/to/validation_vep_capice.tsv.gz> --output </path/to/rcX>`
 
 ## Making train-test and validation VCF files
