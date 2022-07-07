@@ -2,6 +2,8 @@ import os
 import gzip
 import pandas as pd
 
+ID_SEPARATOR = '!'
+
 
 class Exporter:
     def __init__(self, output):
@@ -64,7 +66,7 @@ class Exporter:
                 'binarized_label',
                 'sample_weight'
             ]
-        ].astype(str).agg('_'.join, axis=1)
+        ].astype(str).agg(ID_SEPARATOR.join, axis=1)
         data[
             ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
         ].to_csv(export_loc, mode='a', sep='\t', index=False, compression='gzip', na_rep='.')
