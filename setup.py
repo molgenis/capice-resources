@@ -22,7 +22,7 @@ setup(
     python_requires='>=3.9.*',
     install_requires=[
         'pandas==1.3.4',
-        'numpy==1.21.4',
+        'numpy==1.22.0',
         'matplotlib==3.5.1',
         'xgboost==1.4.2',
         'scikit-learn==1.0.2',
