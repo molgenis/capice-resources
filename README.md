@@ -78,7 +78,7 @@ _(For a more detailed explanation on creating the train-test and validation data
       `wget ftp://ftp.ensembl.org/pub/release-<version>/variation/vep/homo_sapiens_refseq_vep_<version>_GRCh<number>.tar.gz`
    3. Download the [required VEP plugins for CAPICE](https://github.com/molgenis/capice#requirements) from [here](https://github.com/Ensembl/VEP_plugins). 
 7. Run the VEP singularity image in combination with [this VEP command](https://github.com/molgenis/capice#VEP) on train-test & validation VCF files (separately!):  
-   `singularity exec --bind /apps,/groups,/tmp vep <command>`  
+   `singularity exec --bind /apps,/groups,/tmp vep <command>` (add `--per_gene` for the train-test dataset)  
    __IMPORTANT:__ If running on a cluster, be sure to add `--buffer_size 500` (or something similar) to reduce memory usage (at the cost of speed).  
    An example sbatch script for running this on the cluster can be found in [utility_scripts/slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh)
 8. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`. 

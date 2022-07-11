@@ -9,6 +9,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=2gb
 #SBATCH --nodes=1
+#SBATCH --export=NONE
+#SBATCH --get-user-env=L60
 
 ml load vip
 
@@ -26,6 +28,7 @@ vep_plugins_path="/path/to/plugins/vep/"
 
 # Ensure command below is up-to-date with https://github.com/molgenis/capice/#vep!!!
 # Ensure `--buffer_size 500` is added (or something similar) te reduce memory usage on a cluster.
+# If used for the train-test dataset, be sure to add `--per_gene` to the command below!
 run_vep() {
   singularity exec --bind /apps,/groups,/tmp "${vep_image_path}" \
   vep --input_file "$1" --format vcf --output_file "$2" --vcf --compress_output gzip --sift s \
