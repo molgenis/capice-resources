@@ -53,6 +53,13 @@ class CommandLineDigest:
             action='store_true',
             help='Flag to enable GRCh38 mode.'
         )
+        optional.add_argument(
+            '-p',
+            '--pseudo_af',
+            action='store_true',
+            help='Add a randomly generated allele frequency column `MAX_AF` to the output data. '
+                 'Useful for creating a new CAPICE PoC testing resources model.'
+        )
         return parser
 
     def get_argument(self, argument_key):
@@ -92,6 +99,7 @@ def main():
     data_path = cli.get_argument('input')
     output = cli.get_argument('output')
     grch38 = cli.get_argument('assembly')
+    create_fake_af = cli.get_argument('pseudo_af')
     print('')
 
     print('Validating input arguments.')
@@ -165,6 +173,11 @@ def main():
     if n_other > 0:
         warnings.warn(f'Of which other: {n_other}')
     print('')
+
+    if create_fake_af:
+        print('Creating randomly generated allele frequency column.')
+        data['MAX_AF'] = np.random.uniform(0, 1, size=data.shape[0])
+        print('')
 
     print(f'Done! Exporting to {output}')
     data.to_csv(output, index=False, compression='gzip', na_rep='.', sep='\t')
