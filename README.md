@@ -100,8 +100,7 @@ _(For a more detailed explanation on creating the train-test and validation data
 17. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
 18. Use the new model to generate CAPICE results file of the validation TSV.
 19. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-20. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model.
-    1. `compare_old_model.py --old_model_results </path/to/old_capice_results.tsv> --vep_processed_capice_input </path/to/validation_vep.tsv.gz> --new_model_results </path/to/validation_vep_capice.tsv.gz> --output </path/to/rcX>`
+20. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model (currently bugged, see [this issue](https://github.com/molgenis/capice-resources/issues/14)).
 
 ## Making train-test and validation VCF files
 
