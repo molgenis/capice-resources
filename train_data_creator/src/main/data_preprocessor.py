@@ -183,8 +183,7 @@ class ClinVar:
         data.drop(index=data[~data['review'].isin(stars.keys())].index, inplace=True)
 
         # Mapping to Gold Stars values
-        for key, value in stars.items():
-            data.loc[data[data['review'] == key].index, 'review'] = value
+        data['review'] = data['review'].map(stars)
         data['review'] = data['review'].astype(np.int64)
 
         # Droppin
