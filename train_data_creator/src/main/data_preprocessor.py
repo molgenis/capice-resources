@@ -162,7 +162,7 @@ class ClinVar:
             'criteria_provided,_conflicting_interpretations': -1,
             'no_assertion_provided': 0,
             'no_assertion_criteria_provided': 0,
-            'no_assertion_for_individual_variant': 0,
+            'no_interpretation_for_the_single_variant': 0,
             'criteria_provided,_single_submitter': 1,
             'criteria_provided,_multiple_submitters,_no_conflicts': 2,
             'reviewed_by_expert_panel': 3,
@@ -178,6 +178,9 @@ class ClinVar:
         for status in data['review'].unique():
             if status not in stars.keys():
                 warnings.warn(f'Found unknown review status: {status}')
+
+        # Ensuring that mapping to Gold Stars values can be performed
+        data.drop(index=data[~data['review'].isin(stars.keys())].index, inplace=True)
 
         # Mapping to Gold Stars values
         for key, value in stars.items():
