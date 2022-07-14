@@ -211,7 +211,7 @@ def main():
     labels_model_2 = pd.read_csv(m2_labels, sep='\t', na_values='.')
     original_columns_lm2 = labels_model_2.columns
     labels_model_2.columns = correct_column_names(labels_model_2)
-    validator.validate_bl_column_present(labels_model_2)
+    validator.validate_bl_column_present(labels_model_2, 2)
     validator.validate_consequence_column_present(scores_model_2, labels_model_2, 2)
     if scores_model_2.shape[0] != labels_model_2.shape[0]:
         warnings.warn('Shapes for the different files for model 2 mismatch, attempting to merge.')
@@ -226,51 +226,13 @@ def main():
     print('Data read.\n')
 
     print('Calculating stats')
-    b_37_merged['binarized_label'] = b_37_merged['%ID'].str.split('_', expand=True)[5].astype(float)
-    b_37_merged['score_diff'] = abs(b_37_merged['score'] - b_37_merged['binarized_label'])
-    b_38_merged['binarized_label'] = b_38_merged['%ID'].str.split('_', expand=True)[5].astype(float)
-    b_38_merged['score_diff'] = abs(b_38_merged['score'] - b_38_merged['binarized_label'])
+    m1['score_diff'] = abs(m1['score'] - m1['binarized_label'])
+    m2['score_diff'] = abs(m2['score'] - m2['binarized_label'])
     print('Stats calculated.\n')
 
     print('Processing the consequences. ')
-    processed_cons = [
-        'is_regulatory_region_variant',
-        'is_regulatory_region_ablation',
-        'is_regulatory_region_amplification',
-        'is_missense_variant',
-        'is_intron_variant',
-        'is_upstream_gene_variant',
-        'is_downstream_gene_variant',
-        'is_synonymous_variant',
-        'is_TF_binding_site_variant',
-        'is_splice_donor_variant',
-        'is_coding_sequence_variant',
-        'is_splice_region_variant',
-        'is_stop_gained',
-        'is_splice_acceptor_variant',
-        'is_frameshift_variant',
-        'is_3_prime_UTR_variant',
-        'is_inframe_insertion',
-        'is_inframe_deletion',
-        'is_5_prime_UTR_variant',
-        'is_start_lost',
-        'is_non_coding_transcript_exon_variant',
-        'is_non_coding_transcript_variant',
-        'is_TFBS_ablation',
-        'is_TFBS_amplification',
-        'is_protein_altering_variant',
-        'is_stop_lost',
-        'is_stop_retained_variant',
-        'is_transcript_ablation',
-        'is_intergenic_variant',
-        'is_start_retained_variant',
-        'is_transcript_amplification',
-        'is_incomplete_terminal_codon_variant',
-        'is_mature_miRNA_variant',
-        'is_NMD_transcript_variant',
-        'is_feature_elongation',
-        'is_feature_truncation'
-    ]
+    processed_cons = m1['Consequence'].unique()
+    print(f'Processing the following consequences (originated from Model 1): {", ".join(processed_cons)}')
     splitted_consequences_37 = b_37_merged['%Consequence'].str.split('&', expand=True)
     splitted_consequences_38 = b_38_merged['%Consequence'].str.split('&', expand=True)
     processed_consequences = []
