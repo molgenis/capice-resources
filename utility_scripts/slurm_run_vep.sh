@@ -20,11 +20,11 @@ output_path='/path/to/train_test_annotated.vcf.gz'
 
 # Ensure paths below are still up-to-date!
 vep_image_path='/path/to/vep-105.0.sif'
-vep_cache_dir='/path/to/Ensembl/VEP/105/'
-splice_ai_snv_path='/path/to/SpliceAI/GRCh37/spliceai_scores.raw.snv.vcf.gz'
-splice_ai_indel_path='/path/to/SpliceAI/GRCh37/spliceai_scores.raw.indel.vcf.gz'
-gnomad_sites_path='/path/to/gnomAD/v2.1.1/gnomad.total.r2.1.1.sites.stripped.vcf.gz'
-vep_plugins_path="/path/to/plugins/vep/"
+vep_cache_dir='/apps/data/Ensembl/VEP/105'
+splice_ai_snv_path='/apps/data/SpliceAI/GRCh37/spliceai_scores.raw.snv.vcf.gz'
+splice_ai_indel_path='/apps/data/SpliceAI/GRCh37/spliceai_scores.raw.indel.vcf.gz'
+gnomad_sites_path='/apps/data/gnomAD/v2.1.1/gnomad.total.r2.1.1.sites.stripped.vcf.gz'
+vep_plugins_path="${EBROOTVIP}/plugins/vep/"
 
 # Ensure command below is up-to-date with https://github.com/molgenis/capice/#vep!!!
 # Ensure `--buffer_size 500` is added (or something similar) te reduce memory usage on a cluster.
