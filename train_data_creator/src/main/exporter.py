@@ -2,7 +2,7 @@ import os
 import gzip
 import pandas as pd
 
-ID_SEPARATOR = '!'
+ID_SEPARATOR = '!'  # Ensure it is equal to `utility_scripts/vep_to_train.py`
 
 
 class Exporter:

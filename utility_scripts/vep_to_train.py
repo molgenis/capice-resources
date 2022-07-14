@@ -18,7 +18,7 @@ class DataError(Exception):
 
 
 SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
-ID_SEPARATOR = '!'
+ID_SEPARATOR = '!'  # Ensure it is equal to `train_data_creator/src/main/exporter.py`
 
 
 class CommandLineDigest:
