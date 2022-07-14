@@ -2,7 +2,7 @@
 
 import os
 import math
-import pickle
+import typing
 import argparse
 import warnings
 
@@ -11,6 +11,11 @@ import pandas as pd
 import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
+
+ID_SEPARATOR = '!'
+MERGE_COLUMNS = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+USE_COLUMNS = ['Consequence', 'score' , 'binarized_label']
+
 
 
 # Defining errors
@@ -33,58 +38,58 @@ class CommandLineParser:
 
     def _create_argument_parser(self):
         parser = argparse.ArgumentParser(
-            prog='Compare Build 37 and Build 38 models',
-            description='Compares the performance of a GRCh37 with a GRCh38 build model of the '
-                        'same iteration.'
+            prog='Compare models',
+            description='Compares the performance of 2 different XGBoost style models. '
+                        'Please note that model 1 is leading for the per-consequence performance measurements. '
+                        'If the size of the label file does not match the size of the scores file, an attempt will be '
+                        'made to map the labels to the scores through the use of the columns: '
+                        '`CHROM`, `POS`, `REF`, `ALT` and `SYMBOL`. '
+                        'Will error if one of these columns is missing in either '
+                        'the score file or the label file, assuming sizes differ.'
         )
         required = parser.add_argument_group('Required arguments')
 
         required.add_argument(
-            '--build_37_predicted',
+            '-s1',
+            '--score_file_model_1',
             type=str,
             required=True,
-            help='Input location of the GRCh37 CAPICE predicted output TSV. '
-                 'Has to be a (gzipped) TSV!'
+            help='Input location of the file containing the scores for model 1. '
+                 'Column `Consequence` is required to be present in either the score file or the label file (or both). '
+                 'Has to contain the `score` and column and must be supplied in either TSV or gzipped TSV format! '
+                 'Leading for per-consequence performance metrics.'
         )
 
         required.add_argument(
-            '--build_37_vep',
+            '-l1',
+            '--label_file_model_1',
             type=str,
             required=True,
-            help='Input location of the GRCh37 VEP output TSV. '
-                 'This TSV should be the TSV you put in CAPICE for prediction. '
-                 'Has to be a (gzipped) TSV!'
+            help='Input location of the file containing the labels for the model 1 score file. '
+                 'Column `Consequence` is required to be present in either the score file or the label file (or both). '
+                 'Has to contain the `binarized_label` column and '
+                 'must be supplied in either TSV or gzipped TSV format! '
+                 'Leading for per-consequence performance metrics.'
         )
 
         required.add_argument(
-            '--build_37_model',
+            '-s2',
+            '--score_file_model_2',
             type=str,
             required=True,
-            help='Input location of the GRCh37 model. Has to be .pickle.dat format!'
+            help='Input location of the file containing the scores for model 2. '
+                 'Column `Consequence` is required to be present in either the score file or the label file (or both). '
+                 'Has to contain the `score` column and must be supplied in either TSV or gzipped TSV format!'
         )
 
         required.add_argument(
-            '--build_38_predicted',
+            '-l2',
+            '--label_file_model_2',
             type=str,
             required=True,
-            help='Input location of the GRCh38 CAPICE predicted output TSV. '
-                 'Has to be a (gzipped) TSV!'
-        )
-
-        required.add_argument(
-            '--build_38_vep',
-            type=str,
-            required=True,
-            help='Input location of the GRCh38 VEP output TSV. '
-                 'This TSV should be the TSV you put in CAPICE for prediction. '
-                 'Has to be a (gzipped) TSV!'
-        )
-
-        required.add_argument(
-            '--build_38_model',
-            type=str,
-            required=True,
-            help='Input location of the GRCh38 model. Has to be .pickle.dat format!'
+            help='Input location of the file containing the labels for model 2. '
+                 'Column `Consequence` is required to be present in either the score file or the label file (or both). '
+                 'Has to contain the `binarized_label` column and must be supplied in either TSV or gzipped TSV format!'
         )
 
         required.add_argument(
@@ -104,34 +109,42 @@ class CommandLineParser:
 
 
 class Validator:
-    def validate_is_pickled_model(self, path):
-        self._validate_file_extension(path, '.pickle.dat')
-
-    def validate_is_gzipped_tsv(self, path):
-        self._validate_file_extension(path, ('.tsv', '.tsv.gz'))
-
     @staticmethod
-    def _validate_file_extension(path, extension):
-        if not path.endswith(extension):
+    def validate_is_gzipped_tsv(path: str):
+        extensions = ('.tsv', '.tsv.gz')
+        if not path.endswith(extensions):
             raise IncorrectFileError(f'Input path {path} does not meet the required extension: '
-                                     f'{extension}')
+                                     f'{", ".join(extensions)}')
 
     @staticmethod
     def validate_is_xgbclassifier(model):
         if not isinstance(model, xgb.XGBClassifier):
             raise DataError('Supplied model is not of an XGBClassifier class!')
 
-    @staticmethod
-    def validate_model_versions_match(build_37_model, build_38_model):
-        if not build_37_model.CAPICE_version == build_38_model.CAPICE_version:
-            raise FileMismatchError(
-                'Supplied build 37 and 38 models do not originate from the same CAPICE version!'
+    def validate_score_column_present(self, score_dataset: pd.DataFrame, model_number: int):
+        self._validate_column_present('score', score_dataset, 'score', model_number)
+
+    def validate_bl_column_present(self, label_dataset: pd.DataFrame, model_number: int):
+        self._validate_column_present('binarized_label', label_dataset, 'label', model_number)
+
+    def validate_consequence_column_present(self, scores_dataset, labels_dataset, model_number):
+        if not 'Consequence' in scores_dataset.columns and not 'Consequence' in labels_dataset.columns:
+            raise IncorrectFileError(
+                f'Required column Consequence not found in scores or labels dataset for model {model_number}'
             )
 
     @staticmethod
-    def validate_id_column_present(loaded_vep_dataset):
-        if '%ID' not in loaded_vep_dataset.columns:
-            raise IncorrectFileError('The ID column has to be present within the VEP dataset!')
+    def validate_merge_columns_present(model_dataset: pd.DataFrame, model_number: int):
+        for col in MERGE_COLUMNS:
+            if col not in model_dataset.columns:
+                raise FileMismatchError(
+                    f'Attempt to merge model {model_number} scores and labels failed, column: {col} is missing.'
+                )
+
+    @staticmethod
+    def _validate_column_present(column: str, dataset: pd.DataFrame, type_file: str, model_number: int):
+        if column not in dataset.columns:
+            raise IncorrectFileError(f'The {type_file} file of model {model_number} does not contain {column}!')
 
     @staticmethod
     def validate_output_argument(output):
@@ -144,47 +157,72 @@ class Validator:
                 exit(1)
 
 
+def correct_column_names(columns: typing.Iterable):
+    processed_columns = []
+    for column in columns:
+        if column.startswith('%'):
+            processed_columns.append(column.split('%')[1])
+        else:
+            processed_columns.append(column)
+    return processed_columns
+
+
 def main():
     print('Obtaining CLA')
     cla = CommandLineParser()
-    b37_predicted = cla.get_argument('build_37_predicted')
-    b37_vep = cla.get_argument('build_37_vep')
-    b37_model = cla.get_argument('build_37_model')
-    b38_predicted = cla.get_argument('build_38_predicted')
-    b38_vep = cla.get_argument('build_38_vep')
-    b38_model = cla.get_argument('build_38_model')
+    m1_scores = cla.get_argument('score_file_model_1')
+    m1_labels = cla.get_argument('label_file_model_1')
+    m2_scores = cla.get_argument('score_file_model_2')
+    m2_labels = cla.get_argument('label_file_model_1')
     output = cla.get_argument('output')
     print('Validating CLA')
     validator = Validator()
-    validator.validate_is_gzipped_tsv(b37_predicted)
-    validator.validate_is_gzipped_tsv(b37_vep)
-    validator.validate_is_gzipped_tsv(b38_predicted)
-    validator.validate_is_gzipped_tsv(b38_vep)
-    validator.validate_is_pickled_model(b37_model)
-    validator.validate_is_pickled_model(b38_model)
+    validator.validate_is_gzipped_tsv(m1_scores)
+    validator.validate_is_gzipped_tsv(m1_labels)
+    validator.validate_is_gzipped_tsv(m2_scores)
+    validator.validate_is_gzipped_tsv(m2_labels)
     validator.validate_output_argument(output)
-    with open(b37_model, 'rb') as build_37_model:
-        model_37 = pickle.load(build_37_model)
-    with open(b38_model, 'rb') as build_38_model:
-        model_38 = pickle.load(build_38_model)
-    validator.validate_is_xgbclassifier(model_37)
-    validator.validate_is_xgbclassifier(model_38)
-    validator.validate_model_versions_match(model_37, model_38)
-    print('Validation complete.\n')
+    print('Input arguments passed.\n')
 
     print('Reading in data.')
-    b_37_prediction_data = pd.read_csv(b37_predicted, sep='\t', na_values='.')
-    b_37_vep_data = pd.read_csv(b37_vep, sep='\t', na_values='.')
-    validator.validate_id_column_present(b_37_vep_data)
-    if b_37_prediction_data.shape[0] != b_37_vep_data.shape[0]:
-        raise FileMismatchError('Build 37 prediction and VEP files do not match in sample size!')
-    b_37_merged = pd.concat([b_37_prediction_data, b_37_vep_data], axis=1)
-    b_38_prediction_data = pd.read_csv(b38_predicted, sep='\t', na_values='.')
-    b_38_vep_data = pd.read_csv(b38_vep, sep='\t', na_values='.')
-    validator.validate_id_column_present(b_38_vep_data)
-    if b_38_prediction_data.shape[0] != b_38_vep_data.shape[0]:
-        raise FileMismatchError('Build 38 prediction and VEP files do not match in sample size!')
-    b_38_merged = pd.concat([b_38_prediction_data, b_38_vep_data], axis=1)
+    scores_model_1 = pd.read_csv(m1_scores, sep='\t', na_values='.')
+    original_columns_sm1 = scores_model_1.columns
+    scores_model_1.columns = correct_column_names(scores_model_1.columns)
+    validator.validate_score_column_present(scores_model_1, 1)
+    labels_model_1 = pd.read_csv(m1_labels, sep='\t', na_values='.')
+    original_columns_lm1 = labels_model_1.columns
+    labels_model_1.columns = correct_column_names(labels_model_1.columns)
+    validator.validate_bl_column_present(labels_model_1, 1)
+    validator.validate_consequence_column_present(scores_model_1, labels_model_1, 1)
+    if scores_model_1.shape[0] != labels_model_1.shape[0]:
+        warnings.warn('Shapes for the different files for model 1 mismatch, attempting to merge.')
+        validator.validate_merge_columns_present(scores_model_1, 1)
+        validator.validate_merge_columns_present(labels_model_1, 1)
+        scores_model_1['merge_column'] = scores_model_1[MERGE_COLUMNS].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        labels_model_1['merge_column'] = labels_model_1[MERGE_COLUMNS].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        m1 = scores_model_1.merge(labels_model_1, on='merge_column', how='left')
+    else:
+        m1 = pd.concat([scores_model_1, labels_model_1], axis=1)
+    m1.drop(columns=m1.columns.difference(USE_COLUMNS), inplace=True)
+    scores_model_2 = pd.read_csv(m2_scores, sep='\t', na_values='.')
+    original_columns_sm2 = scores_model_2.columns
+    scores_model_2.columns = correct_column_names(scores_model_2.columns)
+    validator.validate_score_column_present(scores_model_2, 2)
+    labels_model_2 = pd.read_csv(m2_labels, sep='\t', na_values='.')
+    original_columns_lm2 = labels_model_2.columns
+    labels_model_2.columns = correct_column_names(labels_model_2)
+    validator.validate_bl_column_present(labels_model_2)
+    validator.validate_consequence_column_present(scores_model_2, labels_model_2, 2)
+    if scores_model_2.shape[0] != labels_model_2.shape[0]:
+        warnings.warn('Shapes for the different files for model 2 mismatch, attempting to merge.')
+        validator.validate_merge_columns_present(scores_model_2, 2)
+        validator.validate_merge_columns_present(labels_model_2, 2)
+        scores_model_2['merge_column'] = scores_model_2[MERGE_COLUMNS].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        labels_model_2['merge_column'] = labels_model_2[MERGE_COLUMNS].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        m2 = scores_model_2.merge(labels_model_2, on='merge_column', how='left')
+    else:
+        m2 = pd.concat([scores_model_2, labels_model_2], axis=1)
+    m2.drop(columns=m2.columns.difference(USE_COLUMNS))
     print('Data read.\n')
 
     print('Calculating stats')
