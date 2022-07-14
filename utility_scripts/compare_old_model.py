@@ -10,6 +10,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
 
+# Must be equal to `train_data_creator/src/main/exporter.py` & files in `utility_scripts`
+ID_SEPARATOR = '!'
 
 # Defining errors
 class IncorrectFileError(Exception):
@@ -178,14 +180,16 @@ def main():
 
     print('Starting making merge columns.')
     # Making merge column
-    cadd['ID'] = cadd[['chr_pos_ref_alt', 'GeneName']].astype(str).agg('_'.join, axis=1)
-    vep['ID'] = vep[['chr', 'pos', 'ref', 'alt', 'gene_name']].astype(str).agg('_'.join, axis=1)
+    cadd['ID'] = cadd[['chr_pos_ref_alt', 'GeneName']].astype(str).agg(ID_SEPARATOR.join, axis=1)
+    vep['ID'] = vep[['chr', 'pos', 'ref', 'alt', 'gene_name']].astype(str).agg(ID_SEPARATOR.join,
+                                                                               axis=1)
 
     # Getting the true original labels
-    original_labels['binarized_label'] = original_labels['%ID'].str.split('_', expand=True)[
+    original_labels['binarized_label'] = original_labels['%ID'].str.split(ID_SEPARATOR,
+                                                                          expand=True)[
         5].astype(float)
-    original_labels['ID'] = original_labels['%ID'].str.split('_', expand=True).loc[:, :4].astype(
-        str).agg('_'.join, axis=1)
+    original_labels['ID'] = original_labels['%ID'].str.split(ID_SEPARATOR, expand=True).loc[
+                            :, :4].astype(str).agg(ID_SEPARATOR.join, axis=1)
     print('Merge columns made, starting cleaning.')
 
     # Preparing all datasets
