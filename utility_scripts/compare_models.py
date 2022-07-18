@@ -12,7 +12,8 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 
 ID_SEPARATOR = '!'
-MERGE_COLUMNS = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+MERGE_COLUMNS_LABELS = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+MERGE_COLUMNS_SCORES = ['chr', 'pos', 'ref', 'alt', 'gene_name']
 USE_COLUMNS = ['Consequence', 'score', 'binarized_label']
 BINARIZED_LABEL = 'binarized_label'
 SCORE = 'score'
@@ -138,20 +139,28 @@ class Validator:
         self._validate_column_present(BINARIZED_LABEL, label_dataset, 'label', model_number)
 
     @staticmethod
-    def validate_consequence_column_present(scores_dataset, labels_dataset):
+    def validate_consequence_column_present(labels_dataset):
         has_consequence = True
-        if 'Consequence' not in scores_dataset.columns and 'Consequence' not in \
-                labels_dataset.columns:
+        if 'Consequence' not in labels_dataset.columns:
             has_consequence = False
         return has_consequence
 
     @staticmethod
-    def validate_merge_columns_present(model_dataset: pd.DataFrame, model_number: int):
-        for col in MERGE_COLUMNS:
-            if col not in model_dataset.columns:
+    def validate_merge_columns_present_labels(labels_dataset: pd.DataFrame, model_number: int):
+        for col in MERGE_COLUMNS_LABELS:
+            if col not in labels_dataset.columns:
                 raise FileMismatchError(
                     f'Attempt to merge model {model_number} scores and labels failed, '
-                    f'column: {col} is missing.'
+                    f'column: {col} is missing in the labels dataset.'
+                )
+
+    @staticmethod
+    def validate_merge_columns_present_scores(scores_dataset: pd.DataFrame, model_number: int):
+        for col in MERGE_COLUMNS_SCORES:
+            if col not in scores_dataset.columns:
+                raise FileMismatchError(
+                    f'Attempt to merge model {model_number} scores and labels failed, '
+                    f'column: {col} is missing in the scores dataset.'
                 )
 
     @staticmethod
@@ -212,16 +221,17 @@ def main():
     labels_model_1 = pd.read_csv(m1_labels, sep='\t', na_values='.')
     labels_model_1.columns = correct_column_names(labels_model_1.columns)
     validator.validate_bl_column_present(labels_model_1, 1)
-    m1_cons = validator.validate_consequence_column_present(scores_model_1, labels_model_1)
+    m1_cons = validator.validate_consequence_column_present(labels_model_1)
     if scores_model_1.shape[0] != labels_model_1.shape[0]:
         warnings.warn('Shapes for the different files for model 1 mismatch, attempting to merge.')
-        validator.validate_merge_columns_present(scores_model_1, 1)
-        validator.validate_merge_columns_present(labels_model_1, 1)
-        scores_model_1['merge_column'] = scores_model_1[MERGE_COLUMNS].astype(str).agg(
+        validator.validate_merge_columns_present_scores(scores_model_1, 1)
+        validator.validate_merge_columns_present_labels(labels_model_1, 1)
+        scores_model_1['merge_column'] = scores_model_1[MERGE_COLUMNS_SCORES].astype(str).agg(
             ID_SEPARATOR.join, axis=1)
-        labels_model_1['merge_column'] = labels_model_1[MERGE_COLUMNS].astype(str).agg(
+        labels_model_1['merge_column'] = labels_model_1[MERGE_COLUMNS_LABELS].astype(str).agg(
             ID_SEPARATOR.join, axis=1)
         m1 = scores_model_1.merge(labels_model_1, on='merge_column', how='left')
+        print('Merge successful.')
     else:
         m1 = pd.concat([scores_model_1, labels_model_1], axis=1)
     m1.drop(columns=m1.columns.difference(USE_COLUMNS), inplace=True)
@@ -231,21 +241,24 @@ def main():
     labels_model_2 = pd.read_csv(m2_labels, sep='\t', na_values='.')
     labels_model_2.columns = correct_column_names(labels_model_2)
     validator.validate_bl_column_present(labels_model_2, 2)
-    m2_cons = validator.validate_consequence_column_present(scores_model_2, labels_model_2)
+    m2_cons = validator.validate_consequence_column_present(labels_model_2)
     if scores_model_2.shape[0] != labels_model_2.shape[0]:
         warnings.warn('Shapes for the different files for model 2 mismatch, attempting to merge.')
-        validator.validate_merge_columns_present(scores_model_2, 2)
-        validator.validate_merge_columns_present(labels_model_2, 2)
-        scores_model_2['merge_column'] = scores_model_2[MERGE_COLUMNS].astype(str).agg(
+        validator.validate_merge_columns_present_scores(scores_model_2, 2)
+        validator.validate_merge_columns_present_labels(labels_model_2, 2)
+        scores_model_2['merge_column'] = scores_model_2[MERGE_COLUMNS_SCORES].astype(str).agg(
             ID_SEPARATOR.join, axis=1)
-        labels_model_2['merge_column'] = labels_model_2[MERGE_COLUMNS].astype(str).agg(
+        labels_model_2['merge_column'] = labels_model_2[MERGE_COLUMNS_LABELS].astype(str).agg(
             ID_SEPARATOR.join, axis=1)
         m2 = scores_model_2.merge(labels_model_2, on='merge_column', how='left')
+        print('Merge successful.')
     else:
         m2 = pd.concat([scores_model_2, labels_model_2], axis=1)
     m2.drop(columns=m2.columns.difference(USE_COLUMNS))
+    print(m1_cons)
+    print(m2_cons)
     process_consequences = True
-    if not m1_cons and not m2_cons:
+    if not m1_cons or not m2_cons:
         warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
                       'performance metrics.')
         process_consequences = False
@@ -264,8 +277,8 @@ def main():
         figsize = (20, 40)
     else:
         processed_consequences = None
-        ncols = 1,
-        nrows = 1,
+        ncols = 1
+        nrows = 1
         figsize = (10, 15)  # Default values
     index = 1
     fig_auc = plt.figure(figsize=figsize)
@@ -291,6 +304,8 @@ def main():
         f'Model 1 labels: {m1_labels}\n'
         f'Model 2 scores: {m2_scores}\n'
         f'Model 2 labels: {m2_labels}\n'
+        f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+        f'Pathogenic)\n'
     )
     fig_score_diff = plt.figure(figsize=figsize)
     fig_score_diff.suptitle(
@@ -337,9 +352,11 @@ def main():
     ax_scores_dist = fig_score_dist.add_subplot(nrows, ncols, index)
     ax_scores_dist.boxplot(
         [
-            m1[SCORE],
-            m2[SCORE]
-        ], labels=['Model 1', 'Model 2']
+            m1[m1[BINARIZED_LABEL] == 0][SCORE],
+            m1[m1[BINARIZED_LABEL] == 1][SCORE],
+            m2[m2[BINARIZED_LABEL] == 0][SCORE],
+            m2[m2[BINARIZED_LABEL] == 1][SCORE],
+        ], labels=['M1B', 'M1P', 'M2B', 'M2P']
     )
     ax_scores_dist.set_title('Global')
 
@@ -402,9 +419,11 @@ def main():
             ax_scores_dist = fig_score_dist.add_subplot(nrows, ncols, index)
             ax_scores_dist.boxplot(
                 [
-                    subset_m1[SCORE],
-                    subset_m2[SCORE]
-                ], labels=['Model 1', 'Model 2']
+                    subset_m1[subset_m1[BINARIZED_LABEL] == 0][SCORE],
+                    subset_m1[subset_m1[BINARIZED_LABEL] == 1][SCORE],
+                    subset_m2[subset_m2[BINARIZED_LABEL] == 0][SCORE],
+                    subset_m2[subset_m2[BINARIZED_LABEL] == 1][SCORE]
+                ], labels=['M1B', 'M1P', 'M2B', 'M2P']
             )
             ax_scores_dist.set_title(f'{consequence}')
 
