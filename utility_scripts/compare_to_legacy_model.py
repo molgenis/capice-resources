@@ -5,10 +5,11 @@ import argparse
 import warnings
 
 import math
-import pickle
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
+
+ID_SEPARATOR = '!'
 
 
 # Defining errors
@@ -27,9 +28,8 @@ class CommandLineDigest:
 
     def _create_argument_parser(self):
         parser = argparse.ArgumentParser(
-            prog='Make VEP TSV train ready',
-            description='Converts an VEP output TSV (after conversion) to make it train ready.'
-                        'PLEASE NOTE: This script does NOT validate your input!'
+            prog='Compare to legacy model',
+            description='Compares a new model to the legacy model created by Li et al.'
         )
         required = parser.add_argument_group('Required arguments')
 
@@ -37,31 +37,33 @@ class CommandLineDigest:
             '--old_model_results',
             type=str,
             required=True,
-            help='Input location of the results file generated with the old CAPICE model '
+            help='Input location of the scores file generated with the old Li et al. CAPICE model '
                  '(XGBoost >= 0.90). Has to be a (gzipped) tsv!'
+        )
+
+        required.add_argument(
+            '--old_model_cadd_input',
+            type=str,
+            required=True,
+            help='Location of the input VCF that is uploaded to CADD for annotations using CADD '
+                 '1.4 as an input for the legacy Li et al. CAPICE model. Has to be a gzipped VCF!'
         )
 
         required.add_argument(
             '--new_model_results',
             type=str,
             required=True,
-            help='Input location of the results file generated with the new CAPICE model '
+            help='Input location of the scores file generated with the new CAPICE model '
                  '(XGBoost == 1.4.2). Has to be a gzipped tsv!'
         )
 
         required.add_argument(
-            '--vep_processed_capice_input',
+            '--new_model_capice_input',
             type=str,
             required=True,
-            help='Input location of the new CAPICE (XGBoost == 1.4.2) input TSV, processed using '
-                 'the -t flag in the conversion script. Has to be a gzipped tsv!'
-        )
-
-        required.add_argument(
-            '--new_model',
-            type=str,
-            required=True,
-            help='Input location of the XGBoost == 1.4.2 model. Has to be a .pickle.dat!'
+            help='Location of the file to generate the scores from `new_model_results`. Has to '
+                 'contain the binarized_labels to that file! Has to match the `new_model_results` '
+                 'sample size! Required in (gzipped) tsv!'
         )
 
         required.add_argument(
@@ -82,17 +84,14 @@ class CommandLineDigest:
 
 class Validator:
 
-    def validate_old_input_argument(self, old_input_path):
+    def validate_old_scores_argument(self, old_input_path):
         self._validate_argument(old_input_path, ('.tsv', '.tsv.gz'))
 
-    def validate_ol_input_argument(self, ol_input_path):
-        self._validate_argument(ol_input_path, '.tsv.gz')
+    def validate_old_labels_argument(self, ol_input_path):
+        self._validate_argument(ol_input_path, '.vcf.gz')
 
     def validate_new_input_argument(self, new_input_path):
         self._validate_argument(new_input_path, '.tsv.gz')
-
-    def validate_model_input_argument(self, model_input_path):
-        self._validate_argument(model_input_path, '.pickle.dat')
 
     @staticmethod
     def _validate_argument(argument, extension):
@@ -112,17 +111,29 @@ class Validator:
                 print(f'Error encoutered creating output path: {e}')
                 exit(1)
 
-    def validate_old_dataset(self, data):
+    def validate_old_scores_dataset(self, data):
         required_columns = ['chr_pos_ref_alt', 'GeneName', 'probabilities']
-        self._validate_dataframe(data, required_columns, 'Old CAPICE generated dataset')
+        self._validate_dataframe(data, required_columns, 'Old CAPICE scores dataset')
 
-    def validate_ol_dataset(self, data):
+    def validate_old_labels_dataset(self, data):
         required_columns = ['%ID']
-        self._validate_dataframe(data, required_columns, 'Original labels dataset')
+        self._validate_dataframe(data, required_columns, 'Old CAPICE CADD input')
 
-    def validate_new_dataset(self, data):
+    def validate_new_scores_dataset(self, data):
         required_columns = ['score', 'chr', 'pos', 'ref', 'alt', 'gene_name']
-        self._validate_dataframe(data, required_columns, 'New CAPICE generated dataset')
+        self._validate_dataframe(data, required_columns, 'New CAPICE scores dataset')
+
+    def validate_new_labels_dataset(self, data):
+        required_columns = ['binarized_label']
+        self._validate_dataframe(data, required_columns, 'New CAPICE labels dataset')
+
+    def validate_can_merge_new_scores(self, data):
+        required_columns = ['chr', 'pos', 'ref', 'alt', 'gene_name']
+        self._validate_dataframe(data, required_columns, 'New CAPICE scores dataset for merging')
+
+    def validate_can_merge_new_labels(self, data):
+        required_columns = ['%CHROM', '%POS', '%REF', '%ALT', '%SYMBOL']
+        self._validate_dataframe(data, required_columns, 'New CAPICE labels dataset for merging')
 
     @staticmethod
     def _validate_dataframe(data, required_columns, dataset):
@@ -132,90 +143,85 @@ class Validator:
 
 
 def main():
+    warnings.warn('This script will become obsolete once the performance of the newer models '
+                  'match or surpass the performance of the model by Li et al.', DeprecationWarning)
     print('Obtaining command line arguments')
     cla = CommandLineDigest()
-    cadd_location = cla.get_argument('old_model_results')
-    ol_location = cla.get_argument('vep_processed_capice_input')
-    vep_location = cla.get_argument('new_model_results')
-    model_location = cla.get_argument('new_model')
+    old_scores = cla.get_argument('old_model_results')
+    old_labels = cla.get_argument('old_model_cadd_input')
+    new_scores = cla.get_argument('new_model_results')
+    new_labels = cla.get_argument('new_model_capice_input')
     output = cla.get_argument('output')
     print('Validating command line arguments')
     validator = Validator()
-    validator.validate_old_input_argument(cadd_location)
-    validator.validate_ol_input_argument(ol_location)
-    validator.validate_new_input_argument(vep_location)
-    validator.validate_model_input_argument(model_location)
+    validator.validate_old_scores_argument(old_scores)
+    validator.validate_old_labels_argument(old_labels)
+    validator.validate_new_input_argument(new_scores)
+    validator.validate_new_input_argument(new_labels)
     validator.validate_output_argument(output)
     print('Arguments passed\n')
 
     # Reading in data
     print('Reading data')
-    cadd = pd.read_csv(cadd_location, sep='\t')
-    original_labels = pd.read_csv(ol_location, sep='\t')
-    vep = pd.read_csv(vep_location, sep='\t')
+    old_scores = pd.read_csv(old_scores, sep='\t')
+    old_labels = pd.read_csv(old_labels, sep='\t')
+    new_scores = pd.read_csv(new_scores, sep='\t')
+    new_labels = pd.read_csv(new_labels, sep='\t')
     print('Validating data')
-    validator.validate_old_dataset(cadd)
-    validator.validate_ol_dataset(original_labels)
-    validator.validate_new_dataset(vep)
+    validator.validate_old_scores_dataset(old_scores)
+    validator.validate_old_labels_dataset(old_labels)
+    validator.validate_new_scores_dataset(new_scores)
+    validator.validate_new_labels_dataset(new_labels)
+    if new_scores.shape[0] != new_labels.shape[0]:
+        warnings.warn('Score and label file of the new CAPICE model mismatch in size, attempting '
+                      'to merge back together.')
+        validator.validate_can_merge_new_scores(new_scores)
+        validator.validate_can_merge_new_labels(new_labels)
+        new_scores['merge_column']
+        raise IncorrectFileError('Score and label file of the new CAPICE model should match in '
+                                 'size!')
     print('Data passed, processing model data')
 
-    with open(model_location, 'rb') as model_file:
-        model = pickle.load(model_file)
-    importances = model.get_booster().get_score(importance_type='gain')
-    importances_dataframe = pd.DataFrame(data=list(importances.values()),
-                                         index=list(importances.keys()),
-                                         columns=['score']).sort_values(by='score', ascending=False)
-    importances_dataframe['feature'] = importances_dataframe.index
-    importances_dataframe.reset_index(drop=True, inplace=True)
     print('All data loaded:')
-    print(f'Amount of variants within old CAPICE generated dataset: {cadd.shape[0]}. '
-          f'Columns: {cadd.shape[1]}')
-    print(f'Amount of variants within the original labels dataset: {original_labels.shape[0]}. '
-          f'Columns: {original_labels.shape[1]}')
-    print(f'Amount of variants within new CAPICE generated dataset '
-          f'(should match the original labels dataset!): {vep.shape[0]}. '
-          f'Columns: {vep.shape[1]}\n')
+    print(f'Amount of variants within the old CAPICE scores dataset: {old_scores.shape[0]}. '
+          f'Columns: {old_scores.shape[1]}')
+    print(f'Amount of variants within the old CAPICE labels dataset: {old_labels.shape[0]}. '
+          f'Columns: {old_labels.shape[1]}')
+    print(f'Amount of variants within the new CAPICE scores dataset" {new_scores.shape[0]}. '
+          f'Columns: {new_scores.shape[1]}')
+    print(f'Amount of variants within the new CAPICE labels dataset" {new_labels.shape[0]}. '
+          f'Columns: {new_labels.shape[1]}')
 
-    print('Starting making merge columns.')
+    print('Merging datasets.')
     # Making merge column
-    cadd['ID'] = cadd[['chr_pos_ref_alt', 'GeneName']].astype(str).agg('_'.join, axis=1)
-    vep['ID'] = vep[['chr', 'pos', 'ref', 'alt', 'gene_name']].astype(str).agg('_'.join, axis=1)
+    old_scores['merge_column'] = old_scores[
+        ['chr_pos_ref_alt', 'GeneName']
+    ].astype(str).agg(ID_SEPARATOR.join, axis=1)
+    old_labels['merge_column'] = old_labels['ID']
 
-    # Getting the true original labels
-    original_labels['binarized_label'] = original_labels['%ID'].str.split('_', expand=True)[
-        5].astype(float)
-    original_labels['ID'] = original_labels['%ID'].str.split('_', expand=True).loc[:, :4].astype(
-        str).agg('_'.join, axis=1)
-    print('Merge columns made, starting cleaning.')
-
-    # Preparing all datasets
-    vep = vep[['ID', 'score']]
-    vep._is_copy = None
-    vep.rename(columns={'score': 'score_new'}, inplace=True)
-    cadd.rename(columns={'probabilities': 'score_old'}, inplace=True)
-    original_labels = original_labels[['ID', 'binarized_label']]
-    original_labels._is_copy = None
-    print('Cleaning done.\n')
-
-    print('Starting merge.')
     # Merging
-    merge = cadd.merge(original_labels, on='ID', how='left')
-    merge.drop(index=merge[merge['binarized_label'].isnull()].index, inplace=True)
-    merge = merge.merge(vep, on='ID', how='left')
-    merge.drop(index=merge[merge['score_new'].isnull()].index, inplace=True)
-    print(f'Merge done. Merge has {merge.shape[0]} variants.\n')
+    old_merged = old_scores.merge(old_labels, on='merge_column', how='left')
+
+    new_merged = pd.concat(
+        [
+            new_scores,
+            new_labels['binarized_label']
+        ], axis=1
+    )
+
+    # Attempting to obtain the binarized_label for the old model datasets.
+    try:
+        old_merged['binarized_label'] = old_merged['ID'].str.split(ID_SEPARATOR, expand=True)[
+            5].astype(float)
+    except (ValueError, KeyError):
+        raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
+                                 f'this column up to date? (current string split: {ID_SEPARATOR})')
+    print('Merging done.')
 
     print('Preparing plots.')
     # Preparing plots
-    consequences = merge['Consequence'].unique()
-    ncols = 4
-    nrows = math.ceil((consequences.size / ncols) + 1)
-    index = 1
     fig_auc = plt.figure(figsize=(20, 40))
-    fig_auc.suptitle(
-        f'Old model vs new model AUC comparison.\n'
-        f'Old: {cadd_location}\n'
-        f'New: {vep_location}')
+    fig_auc.suptitle('Old model vs new model AUC comparison.')
     fig_vio = plt.figure(figsize=(20, 40))
     fig_vio.suptitle(
         f'Old model vs new model score distributions.\n'
