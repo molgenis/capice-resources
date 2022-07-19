@@ -194,8 +194,8 @@ def correct_column_names(columns: typing.Iterable):
 
 def split_consequences(consequences: pd.Series):
     splitted_consequences = consequences.str.split('&', expand=True)
-    return pd.Series(splitted_consequences.values.ravel()).dropna().unique().sort_values(
-        ignore_index=True)
+    return pd.Series(splitted_consequences.values.ravel()).dropna().sort_values(
+        ignore_index=True).unique()
 
 
 def main():
