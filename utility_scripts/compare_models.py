@@ -194,7 +194,8 @@ def correct_column_names(columns: typing.Iterable):
 
 def split_consequences(consequences: pd.Series):
     splitted_consequences = consequences.str.split('&', expand=True)
-    return pd.Series(splitted_consequences.values.ravel()).dropna().unique()
+    return pd.Series(splitted_consequences.values.ravel()).dropna().unique().sort_values(
+        ignore_index=True)
 
 
 def main():
@@ -255,8 +256,6 @@ def main():
     else:
         m2 = pd.concat([scores_model_2, labels_model_2], axis=1)
     m2.drop(columns=m2.columns.difference(USE_COLUMNS))
-    print(m1_cons)
-    print(m2_cons)
     process_consequences = True
     if not m1_cons or not m2_cons:
         warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
@@ -358,6 +357,7 @@ def main():
             m2[m2[BINARIZED_LABEL] == 1][SCORE],
         ], labels=['M1B', 'M1P', 'M2B', 'M2P']
     )
+    ax_scores_dist.set_ylim(0.0, 1.0)
     ax_scores_dist.set_title('Global')
 
     # Plotting score differences
@@ -370,6 +370,8 @@ def main():
             m2[m2[BINARIZED_LABEL] == 1]['score_diff'],
         ], labels=['M1B', 'M1P', 'M2B', 'M2P']
     )
+    ax_scores_diff.set_ylim(0.0, 1.0)
+    ax_scores_diff.set_title('Global')
 
     index += 1
 
@@ -425,6 +427,7 @@ def main():
                     subset_m2[subset_m2[BINARIZED_LABEL] == 1][SCORE]
                 ], labels=['M1B', 'M1P', 'M2B', 'M2P']
             )
+            ax_scores_dist.set_ylim(0.0, 1.0)
             ax_scores_dist.set_title(f'{consequence}')
 
             # Plotting the score differences to the true label
@@ -437,6 +440,7 @@ def main():
                     subset_m2[subset_m2[BINARIZED_LABEL] == 1]['score_diff']
                 ], labels=['M1B', 'M1P', 'M2B', 'M2P']
             )
+            ax_scores_diff.set_ylim(0.0, 1.0)
             ax_scores_diff.set_title(f'{consequence}')
             index += 1
 
