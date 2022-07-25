@@ -4,10 +4,11 @@ import os
 import argparse
 import warnings
 
-import math
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve, auc
+
+from utility_scripts.compare_models import correct_column_names
 
 ID_SEPARATOR = '!'
 
@@ -132,7 +133,7 @@ class Validator:
         self._validate_dataframe(data, required_columns, 'New CAPICE scores dataset for merging')
 
     def validate_can_merge_new_labels(self, data):
-        required_columns = ['%CHROM', '%POS', '%REF', '%ALT', '%SYMBOL']
+        required_columns = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
         self._validate_dataframe(data, required_columns, 'New CAPICE labels dataset for merging')
 
     @staticmethod
@@ -167,21 +168,12 @@ def main():
     old_labels = pd.read_csv(old_labels, sep='\t')
     new_scores = pd.read_csv(new_scores, sep='\t')
     new_labels = pd.read_csv(new_labels, sep='\t')
+    new_labels.columns = correct_column_names(new_labels.columns)
     print('Validating data')
     validator.validate_old_scores_dataset(old_scores)
     validator.validate_old_labels_dataset(old_labels)
     validator.validate_new_scores_dataset(new_scores)
     validator.validate_new_labels_dataset(new_labels)
-    if new_scores.shape[0] != new_labels.shape[0]:
-        warnings.warn('Score and label file of the new CAPICE model mismatch in size, attempting '
-                      'to merge back together.')
-        validator.validate_can_merge_new_scores(new_scores)
-        validator.validate_can_merge_new_labels(new_labels)
-        new_scores['merge_column']
-        raise IncorrectFileError('Score and label file of the new CAPICE model should match in '
-                                 'size!')
-    print('Data passed, processing model data')
-
     print('All data loaded:')
     print(f'Amount of variants within the old CAPICE scores dataset: {old_scores.shape[0]}. '
           f'Columns: {old_scores.shape[1]}')
@@ -191,8 +183,30 @@ def main():
           f'Columns: {new_scores.shape[1]}')
     print(f'Amount of variants within the new CAPICE labels dataset" {new_labels.shape[0]}. '
           f'Columns: {new_labels.shape[1]}')
+    print('Data passed.')
 
     print('Merging datasets.')
+    if new_scores.shape[0] != new_labels.shape[0]:
+        warnings.warn('Score and label file of the new CAPICE model mismatch in size, attempting '
+                      'to merge back together.')
+        validator.validate_can_merge_new_scores(new_scores)
+        validator.validate_can_merge_new_labels(new_labels)
+        new_scores['merge_column'] = new_scores[
+            ['chr', 'pos', 'ref', 'alt', 'gene_name']
+        ].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        new_labels['merge_column'] = new_labels[
+            ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+        ].astype(str).agg(ID_SEPARATOR.join, axis=1)
+        new_merged = new_scores.merge(new_labels, on='merge_column', how='left')
+    else:
+        new_merged = pd.concat(
+            [
+                new_scores,
+                new_labels['binarized_label']
+            ], axis=1
+        )
+    new_merged = new_merged[new_merged.columns.difference(['score', 'binarized_label'])]
+
     # Making merge column
     old_scores['merge_column'] = old_scores[
         ['chr_pos_ref_alt', 'GeneName']
@@ -202,13 +216,6 @@ def main():
     # Merging
     old_merged = old_scores.merge(old_labels, on='merge_column', how='left')
 
-    new_merged = pd.concat(
-        [
-            new_scores,
-            new_labels['binarized_label']
-        ], axis=1
-    )
-
     # Attempting to obtain the binarized_label for the old model datasets.
     try:
         old_merged['binarized_label'] = old_merged['ID'].str.split(ID_SEPARATOR, expand=True)[
@@ -216,134 +223,68 @@ def main():
     except (ValueError, KeyError):
         raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
                                  f'this column up to date? (current string split: {ID_SEPARATOR})')
+    old_merged = old_merged[old_merged.columns.difference(['probabilities', 'binarized_label'])]
+    old_merged.rename(columns={'probabilities': 'score'}, inplace=True)
     print('Merging done.')
 
-    print('Preparing plots.')
+    print('Plotting.')
+    # Preparing the difference column
+    new_merged['diff'] = abs(new_merged['score'] - new_merged['binarized_label'])
+    old_merged['diff'] = abs(old_merged['score'] - old_merged['binarizde_label'])
+
     # Preparing plots
-    fig_auc = plt.figure(figsize=(20, 40))
-    fig_auc.suptitle('Old model vs new model AUC comparison.')
-    fig_vio = plt.figure(figsize=(20, 40))
-    fig_vio.suptitle(
-        f'Old model vs new model score distributions.\n'
-        f'Old: {cadd_location}\n'
-        f'New: {vep_location}')
-    fig_box = plt.figure(figsize=(20, 40))
-    fig_box.suptitle(
-        f'Old model vs new model score closeness (difference to true label)\n'
-        f'Old: {cadd_location}\n'
-        f'New: {vep_location}')
-    print('Preparation done.\n')
+    fig_roc = plt.figure()
+    fig_roc.suptitle('ROC curves legacy model versus new model.')
 
-    print('Calculating global AUC.')
+    fig_score_dist = plt.figure()
+    fig_score_dist.suptitle('Raw score distributions of legacy model versus new model.')
+
+    fig_score_diff = plt.figure()
+    fig_score_diff.suptitle('Absolute difference between the score and labels ')
+
     # Calculating global AUC
-    auc_old = round(roc_auc_score(merge['binarized_label'], merge['score_old']), 4)
-    auc_new = round(roc_auc_score(merge['binarized_label'], merge['score_new']), 4)
-    print(f'Global AUC calculated, old: {auc_old} and new: {auc_new}')
+    fpr_old, tpr_old, _ = roc_curve(old_merged['binarized_label'], old_merged['score'])
+    auc_old = auc(fpr_old, tpr_old)
+    fpr_new, tpr_new, _ = roc_curve(new_merged['binarized_label'], new_merged['score'])
+    auc_new = auc(fpr_new, tpr_new)
 
-    print('Plotting global AUC.')
-    # Plotting global AUC
-    ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-    ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
-    ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-    ax_auc.set_title(f'Global (n={merge.shape[0]})')
-    ax_auc.set_xticks([1, 2], ['Old', 'New'])
-    ax_auc.set_xlim(0.0, 3.0)
-    ax_auc.set_ylim(0.0, 1.0)
-    ax_auc.legend(loc='lower right')
+    # Plotting ROC curves
+    ax_roc = fig_roc.add_subplot(1, 1, 1)
+    ax_roc.plot(fpr_old, tpr_old, color='red', label=f'Legacy: {auc_old}')
+    ax_roc.plot(fpr_new, tpr_new, color='blue', label=f'New: {auc_new}')
+    ax_roc.set_xlim(0.0, 1.0)
+    ax_roc.set_ylim(0.0, 1.0)
+    ax_roc.legend(loc='lower right')
 
-    # Plotting Violinplot for global
-    ax_vio = fig_vio.add_subplot(nrows, ncols, index)
-    ax_vio.violinplot(merge[['score_old', 'binarized_label', 'score_new']])
-    ax_vio.set_title(f'Global (n={merge.shape[0]})')
-    ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
-    ax_vio.set_xlim(0.0, 4.0)
-    ax_vio.set_ylim(0.0, 1.0)
+    # Plotting raw score distributions
+    ax_score_dist = fig_score_dist.add_subplot(1, 1, 1)
+    ax_score_dist.boxplot(
+        [
+            old_merged[old_merged['binarized_label'] == 0]['score'],
+            old_merged[old_merged['binarized_label'] == 1]['score'],
+            new_merged[new_merged['binarized_label'] == 0]['score'],
+            new_merged[new_merged['binarized_label'] == 1]['score']
+        ], labels=['L_B', 'L_P', 'N_B', 'N_P']
+    )
+    ax_score_dist.set_ylim(0.0, 1.0)
 
     # Plotting the score differences to the true label
-    merge['score_diff_old'] = abs(merge['binarized_label'] - merge['score_old'])
-    merge['score_diff_new'] = abs(merge['binarized_label'] - merge['score_new'])
-    ax_box = fig_box.add_subplot(nrows, ncols, index)
-    ax_box.boxplot(
+    ax_score_diff = fig_score_diff.add_subplot(1, 1, 1)
+    ax_score_diff.boxplot(
         [
-            merge[merge['binarized_label'] == 0]['score_diff_old'],
-            merge[merge['binarized_label'] == 0]['score_diff_new'],
-            merge[merge['binarized_label'] == 1]['score_diff_old'],
-            merge[merge['binarized_label'] == 1]['score_diff_new']
+            old_merged[old_merged['binarized_label'] == 0]['diff'],
+            old_merged[old_merged['binarized_label'] == 1]['diff'],
+            new_merged[new_merged['binarized_label'] == 0]['diff'],
+            new_merged[new_merged['binarized_label'] == 1]['diff']
         ], labels=['B_old', 'B_new', 'P_old', 'P_new']
     )
-    ax_box.set_title(f'Global (n={merge.shape[0]})')
+    ax_score_diff.set_ylim(0.0, 1.0)
     print('Plotting global AUC done.')
 
-    print('Plotting for each consequence:')
-    # Global plots have been made, now for each consequence
-    index = 2
-    for consequence in consequences:
-        print(f'Currently processing: {consequence}')
-        # Subsetting
-        subset = merge[merge['Consequence'] == consequence]
-
-        # Calculating
-        # Try except because when an consequence is encountered with only 1 label,
-        # roc_auc_score will throw an error
-        try:
-            auc_old = round(roc_auc_score(subset['binarized_label'], subset['score_old']), 4)
-        except ValueError:
-            print(f'For consequence {consequence}, AUC old could not be calculated.')
-            continue
-        try:
-            auc_new = round(roc_auc_score(subset['binarized_label'], subset['score_new']), 4)
-        except ValueError:
-            print(f'For consequence {consequence}, AUC new could not be calculated.')
-            continue
-
-        # Plotting auc
-        ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-        ax_auc.bar(1, auc_old, color='red', label=f'Old: {auc_old}')
-        ax_auc.bar(2, auc_new, color='blue', label=f'New: {auc_new}')
-        ax_auc.set_title(f'{consequence} (n={subset.shape[0]})')
-        ax_auc.set_xticks([1, 2], ['Old', 'New'])
-        ax_auc.set_xlim(0.0, 3.0)
-        ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc='lower right')
-
-        # Plotting Violinplot for global
-        ax_vio = fig_vio.add_subplot(nrows, ncols, index)
-        ax_vio.violinplot(subset[['score_old', 'binarized_label', 'score_new']])
-        ax_vio.set_title(f'{consequence} (n={subset.shape[0]})')
-        ax_vio.set_xticks([1, 2, 3], ['Old', 'True', 'New'])
-        ax_vio.set_xlim(0.0, 4.0)
-        ax_vio.set_ylim(0.0, 1.0)
-
-        # Plotting boxplots
-        ax_box = fig_box.add_subplot(nrows, ncols, index)
-        ax_box.boxplot(
-            [
-                subset[subset['binarized_label'] == 0]['score_diff_old'],
-                subset[subset['binarized_label'] == 0]['score_diff_new'],
-                subset[subset['binarized_label'] == 1]['score_diff_old'],
-                subset[subset['binarized_label'] == 1]['score_diff_new']
-            ], labels=['B_old', 'B_new', 'P_old', 'P_new']
-        )
-        ax_box.set_title(f'{consequence} (n={subset.shape[0]})')
-
-        index += 1
-
-    print('Plotting for consequences done.\n')
-
-    print('Plotting feature importances.')
-    fig_table, ax_table = plt.subplots(figsize=(10, 20))
-    fig_table.suptitle(f'Feature importances model: {model_location}')
-    fig_table.patch.set_visible(False)
-    ax_table.axis('off')
-    ax_table.table(cellText=importances_dataframe.values, colLabels=importances_dataframe.columns,
-                   loc='center')
-    print('Plotting for feature importances done.\n')
-
     print(f'Exporting plots to: {output}')
-    fig_auc.savefig(os.path.join(output, 'aucs.png'))
-    fig_vio.savefig(os.path.join(output, 'violins.png'))
-    fig_box.savefig(os.path.join(output, 'box.png'))
-    fig_table.savefig(os.path.join(output, 'feature_importances.png'))
+    fig_roc.savefig(os.path.join(output, 'roc.png'))
+    fig_score_dist.savefig(os.path.join(output, 'distribution.png'))
+    fig_score_diff.savefig(os.path.join(output, 'difference.png'))
     print('Done.')
 
 
