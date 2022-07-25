@@ -118,7 +118,7 @@ class Validator:
         self._validate_dataframe(data, required_columns, 'Old CAPICE scores dataset')
 
     def validate_old_labels_dataset(self, data):
-        required_columns = ['%ID']
+        required_columns = ['ID']
         self._validate_dataframe(data, required_columns, 'Old CAPICE CADD input')
 
     def validate_new_scores_dataset(self, data):
@@ -168,9 +168,9 @@ def main():
     old_scores = pd.read_csv(old_scores, sep='\t')
     n_skip = 0
     if old_labels.endswith('.gz'):
-        fh = gzip.open(old_labels)
+        fh = gzip.open(old_labels, 'rt')
     else:
-        fh = open(old_labels)
+        fh = open(old_labels, 'rt')
     for line in fh:
         if line.startswith('##'):
             n_skip += 1
@@ -217,32 +217,37 @@ def main():
                 new_labels['binarized_label']
             ], axis=1
         )
-    new_merged = new_merged[new_merged.columns.difference(['score', 'binarized_label'])]
+    new_merged = new_merged[['score', 'binarized_label']]
 
     # Making merge column
+    old_scores['chr_pos_ref_alt'] = old_scores['chr_pos_ref_alt'].str.split(
+        '_', expand=True).astype(str).agg(ID_SEPARATOR.join, axis=1)
     old_scores['merge_column'] = old_scores[
         ['chr_pos_ref_alt', 'GeneName']
     ].astype(str).agg(ID_SEPARATOR.join, axis=1)
-    old_labels['merge_column'] = old_labels['ID']
+    try:
+        old_labels['merge_column'] = old_labels['ID'].str.split(
+            ID_SEPARATOR, expand=True).loc[:, :4].astype(
+            str).agg(ID_SEPARATOR.join, axis=1)
+    except (ValueError, KeyError):
+        raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
+                                 f'this column up to date? (current string split: {ID_SEPARATOR})')
 
     # Merging
     old_merged = old_scores.merge(old_labels, on='merge_column', how='left')
 
     # Attempting to obtain the binarized_label for the old model datasets.
-    try:
-        old_merged['binarized_label'] = old_merged['ID'].str.split(ID_SEPARATOR, expand=True)[
-            5].astype(float)
-    except (ValueError, KeyError):
-        raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
-                                 f'this column up to date? (current string split: {ID_SEPARATOR})')
-    old_merged = old_merged[old_merged.columns.difference(['probabilities', 'binarized_label'])]
+    old_merged['binarized_label'] = old_merged['ID'].str.split(
+        ID_SEPARATOR, expand=True)[5].astype(float)
+
+    old_merged = old_merged[['probabilities', 'binarized_label']]
     old_merged.rename(columns={'probabilities': 'score'}, inplace=True)
     print('Merging done.')
 
     print('Plotting.')
     # Preparing the difference column
     new_merged['diff'] = abs(new_merged['score'] - new_merged['binarized_label'])
-    old_merged['diff'] = abs(old_merged['score'] - old_merged['binarizde_label'])
+    old_merged['diff'] = abs(old_merged['score'] - old_merged['binarized_label'])
 
     # Preparing plots
     fig_roc = plt.figure()
@@ -255,8 +260,10 @@ def main():
     fig_score_diff.suptitle('Absolute difference between the score and labels ')
 
     # Calculating global AUC
+    old_merged.dropna(inplace=True)
     fpr_old, tpr_old, _ = roc_curve(old_merged['binarized_label'], old_merged['score'])
     auc_old = auc(fpr_old, tpr_old)
+    new_merged.dropna(inplace=True)
     fpr_new, tpr_new, _ = roc_curve(new_merged['binarized_label'], new_merged['score'])
     auc_new = auc(fpr_new, tpr_new)
 
