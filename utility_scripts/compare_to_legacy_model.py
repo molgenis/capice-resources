@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import gzip
 import argparse
 import warnings
 
@@ -165,7 +166,18 @@ def main():
     # Reading in data
     print('Reading data')
     old_scores = pd.read_csv(old_scores, sep='\t')
-    old_labels = pd.read_csv(old_labels, sep='\t')
+    n_skip = 0
+    if old_labels.endswith('.gz'):
+        fh = gzip.open(old_labels)
+    else:
+        fh = open(old_labels)
+    for line in fh:
+        if line.startswith('##'):
+            n_skip += 1
+        else:
+            break
+    fh.close()
+    old_labels = pd.read_csv(old_labels, sep='\t', skiprows=n_skip)
     new_scores = pd.read_csv(new_scores, sep='\t')
     new_labels = pd.read_csv(new_labels, sep='\t')
     new_labels.columns = correct_column_names(new_labels.columns)
