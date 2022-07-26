@@ -20,7 +20,6 @@ class ConsensusChecker:
             vkgl_subset
         )
 
-
         output_dataframe = self.perform_check(
             output_dataframe,
             clinvar_subset
@@ -43,7 +42,8 @@ class ConsensusChecker:
             index=checking_dataframe[
                 (checking_dataframe['source_og'] != checking_dataframe['source_del'])
                 &
-                (checking_dataframe['binarized_label_og'] != checking_dataframe['binarized_label_del'])
+                (checking_dataframe['binarized_label_og'] != checking_dataframe[
+                    'binarized_label_del'])
                 &
                 (checking_dataframe['source_del'].notnull())
                 ].index,
