@@ -9,15 +9,15 @@ class TestConsensusCheck(unittest.TestCase):
         self.consensus_checker = ConsensusChecker()
         self.variants_passed = pd.DataFrame(
             {
-                '#CHROM': [1, 1, 1, 1],
-                'POS': [300, 400, 500, 600],
-                'REF': ['A', 'A', 'A', 'A'],
-                'ALT': ['T', 'T', 'T', 'T'],
-                'gene': ['foo', 'foo', 'foo', 'foo'],
-                'class': ['LP', 'LP', 'LP', 'LP'],
-                'review': [2, 3, 2, 3],
-                'source': ['ClinVar', 'VKGL', 'ClinVar', 'VKGL'],
-                'binarized_label': [1.0, 1.0, 0.0, 1.0],
+                '#CHROM': [1, 1, 1, 1, 1, 1],
+                'POS': [300, 400, 500, 600, 700, 700],
+                'REF': ['A', 'A', 'A', 'A', 'G', 'G'],
+                'ALT': ['T', 'T', 'T', 'T', 'C', 'C'],
+                'gene': ['foo', 'foo', 'foo', 'foo', 'bar', 'bar'],
+                'class': ['LP', 'LP', 'LP', 'LP', 'LB', 'LB'],
+                'review': [2, 3, 2, 3, 2, 2],
+                'source': ['ClinVar', 'VKGL', 'ClinVar', 'VKGL', 'ClinVar', 'VKGL'],
+                'binarized_label': [1.0, 1.0, 0.0, 1.0, 0.0, 0.0],
             }
         )
 
@@ -46,7 +46,7 @@ class TestConsensusCheck(unittest.TestCase):
                     2, 3, 2, 3, 2, 3
                 ],
                 'source': [
-                    'ClinVar', 'VKGL', 'ClinVar', 'VKGL', 'Clinvar', 'VKGL'
+                    'ClinVar', 'VKGL', 'ClinVar', 'VKGL', 'ClinVar', 'VKGL'
                 ],
                 'binarized_label': [
                     1.0, 0.0, 0.0, 1.0, 1.0, 0.0
@@ -57,20 +57,21 @@ class TestConsensusCheck(unittest.TestCase):
             [
                 dataset,
                 self.variants_passed
-            ], axis=0, copy=False
+            ], axis=0, copy=False, ignore_index=True
         )
         with self.assertWarns(UserWarning) as cm:
-            self.consensus_checker.check_consensus_clinvar_vgkl_match(input_dataset)
+            observed_dataset = self.consensus_checker.check_consensus_clinvar_vgkl_match(
+                input_dataset)
         self.assertEqual(
             'There are 3 variants with mismatching consensus between ClinVar and VKGL',
             str(cm.warning)
         )
-        pd.testing.assert_frame_equal(input_dataset.reset_index(drop=True), self.variants_passed)
+        pd.testing.assert_frame_equal(observed_dataset.reset_index(drop=True), self.variants_passed)
 
     def test_no_mismatch(self):
         copy_variants_passed = self.variants_passed.copy(deep=True)
-        self.consensus_checker.check_consensus_clinvar_vgkl_match(copy_variants_passed)
-        pd.testing.assert_frame_equal(copy_variants_passed, self.variants_passed)
+        observed = self.consensus_checker.check_consensus_clinvar_vgkl_match(copy_variants_passed)
+        pd.testing.assert_frame_equal(observed, self.variants_passed)
 
 
 if __name__ == '__main__':

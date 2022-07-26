@@ -46,7 +46,7 @@ def main():
     gc.collect()
 
     # Checking for mismatching concensi
-    ConsensusChecker().check_consensus_clinvar_vgkl_match(data)
+    data = ConsensusChecker().check_consensus_clinvar_vgkl_match(data)
 
     # Dropping duplicates
     DuplicateProcessor().process(data)
