@@ -12,6 +12,8 @@ import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
 
+# Must be equal to `train_data_creator/src/main/exporter.py` & files in `utility_scripts`
+ID_SEPARATOR = '!'
 
 # Defining errors
 class IncorrectFileError(Exception):
@@ -188,9 +190,11 @@ def main():
     print('Data read.\n')
 
     print('Calculating stats')
-    b_37_merged['binarized_label'] = b_37_merged['%ID'].str.split('_', expand=True)[5].astype(float)
+    b_37_merged['binarized_label'] = b_37_merged['%ID'].str.split(ID_SEPARATOR, expand=True)[
+        5].astype(float)
     b_37_merged['score_diff'] = abs(b_37_merged['score'] - b_37_merged['binarized_label'])
-    b_38_merged['binarized_label'] = b_38_merged['%ID'].str.split('_', expand=True)[5].astype(float)
+    b_38_merged['binarized_label'] = b_38_merged['%ID'].str.split(ID_SEPARATOR, expand=True)[
+        5].astype(float)
     b_38_merged['score_diff'] = abs(b_38_merged['score'] - b_38_merged['binarized_label'])
     print('Stats calculated.\n')
 
