@@ -60,18 +60,18 @@ class TestConsensusCheck(unittest.TestCase):
             ], axis=0, copy=False, ignore_index=True
         )
         with self.assertWarns(UserWarning) as cm:
-            observed_dataset = self.consensus_checker.check_consensus_clinvar_vgkl_match(
+            self.consensus_checker.check_consensus_clinvar_vgkl_match(
                 input_dataset)
         self.assertEqual(
             'There are 3 variants with mismatching consensus between ClinVar and VKGL',
             str(cm.warning)
         )
-        pd.testing.assert_frame_equal(observed_dataset.reset_index(drop=True), self.variants_passed)
+        pd.testing.assert_frame_equal(input_dataset.reset_index(drop=True), self.variants_passed)
 
     def test_no_mismatch(self):
         copy_variants_passed = self.variants_passed.copy(deep=True)
-        observed = self.consensus_checker.check_consensus_clinvar_vgkl_match(copy_variants_passed)
-        pd.testing.assert_frame_equal(observed, self.variants_passed)
+        self.consensus_checker.check_consensus_clinvar_vgkl_match(copy_variants_passed)
+        pd.testing.assert_frame_equal(copy_variants_passed, self.variants_passed)
 
 
 if __name__ == '__main__':
