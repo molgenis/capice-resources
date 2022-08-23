@@ -48,7 +48,7 @@ _(For a more detailed explanation on creating the train-test and validation data
    2. Newly added features have been added to the [impute json](https://github.com/molgenis/capice/blob/master/resources/train_impute_values.json) and/or deprecated features have been removed.
    3. Apply changes in features to PRE_HEADER in the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh).
    4. Annotate new training VCF using VEP and convert the VCF using the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (raw file: [train_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/train_input_raw.vcf.gz)) (note: use `-t` when using the conversion tool)
-   5. Make training TSV train ready using `utility_scripts/vep_to_train.py`.
+   5. Make training TSV train ready using `utility_scripts/process_vep_tsv.py`.
    6. Use newly generated training TSV to create new [PoC](https://github.com/molgenis/capice/blob/master/tests/resources/xgb_booster_poc.pickle.dat) model.
    7. Update [predict_input.tsv.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input.tsv.gz) (raw file: [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input_raw.vcf.gz)) with altered features.
    8. Update [breakends_vep.tsv.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends_vep.tsv.gz) (raw file: [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)) with altered features.
@@ -71,9 +71,9 @@ _(For a more detailed explanation on creating the train-test and validation data
 11. Convert VEP annotated VCFs back to TSV using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`)
     1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
 12. Process GRCH37 TSV 
-    1. `python3 ./utility_scripts/vep_to_train.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
+    1. `python3 ./utility_scripts/process_vep_tsv.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
 13. Repeat for GRCh37 validation (see step 12)
-14. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `vep_to_train.py`).
+14. Repeat steps 11 and 12 for train-test and validation for GRCh38 (add the `-a` flag to the `process_vep_tsv.py`).
 15. Update imputing JSON accordingly to the newly features added and/or removed.
 16. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)
@@ -83,10 +83,10 @@ _(For a more detailed explanation on creating the train-test and validation data
     3. `source ./capice/venv/bin/activate`
     4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>` 
 18. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
-19. Use new model generated in step 20 to generate CAPICE results file of the validation TSV.
+19. Use new model generated in step 17 to generate CAPICE results file of the validation TSV.
 20. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-21. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model.
-    1. `compare_old_model.py --old_model_results </path/to/old_capice_results.tsv> --vep_processed_capice_input </path/to/validation_vep.tsv.gz> --new_model_results </path/to/validation_vep_capice.tsv.gz> --output </path/to/rcX>`
+21. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+    `python3 compare_models.py -s1 </path/to/capice_predict_output_model1.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>`
 
 ## Making train-test and validation VCF files
 
@@ -112,7 +112,7 @@ _Command can vary based on the training features._
 First convert the VEP output VCF back to TSV using the `vep_to_tsv.sh` _(Note: pre_header must be altered according to the new features or removed features)_.
 **WARNING: Drop all columns that are not wanted within training, such as the ID column.** This step can be performed for all train-test and validation VCFs for both GRCh37 and 38.
 
-Making the converted VEP TSV train-ready requires use of the `vep_to_train.py` in `utility_scripts`. This works for both GRCh37 and GRCh38 (GRCh38 only when the `-a` flag is supplied.)
+Making the converted VEP TSV train-ready requires use of the `process_vep_tsv.py` in `utility_scripts`. This works for both GRCh37 and GRCh38 (GRCh38 only when the `-a` flag is supplied.)
 
 This script makes sure that variants with the correct labels are preserved, so that the labels remains accurate for the variant.
 

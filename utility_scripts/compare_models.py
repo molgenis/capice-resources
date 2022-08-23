@@ -60,7 +60,7 @@ class CommandLineParser:
             help='Input location of the file containing the scores for model 1. '
                  'Column `Consequence` is required to be present in either the score file or '
                  'the label file (or both). '
-                 'Has to contain the `score` and column and '
+                 'Has to contain the `score` column and '
                  'must be supplied in either TSV or gzipped TSV format! '
                  'Leading for per-consequence performance metrics.'
         )
