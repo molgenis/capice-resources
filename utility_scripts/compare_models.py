@@ -127,11 +127,6 @@ class Validator:
             raise IncorrectFileError(f'Input path {path} does not meet the required extension: '
                                      f'{", ".join(extensions)}')
 
-    @staticmethod
-    def validate_is_xgbclassifier(model):
-        if not isinstance(model, xgb.XGBClassifier):
-            raise DataError('Supplied model is not of an XGBClassifier class!')
-
     def validate_score_column_present(self, score_dataset: pd.DataFrame, model_number: int):
         self._validate_column_present(SCORE, score_dataset, SCORE, model_number)
 
@@ -198,6 +193,32 @@ def split_consequences(consequences: pd.Series):
         ignore_index=True).unique()
 
 
+def prepare_data_file(validator, scores, labels, model_number):
+    scores_model = pd.read_csv(scores, sep='\t', na_values='.')
+    scores_model.columns = correct_column_names(scores_model.columns)
+    validator.validate_score_column_present(scores_model, model_number)
+    labels_model = pd.read_csv(labels, sep='\t', na_values='.')
+    labels_model.columns = correct_column_names(labels_model.columns)
+    validator.validate_bl_column_present(labels_model, model_number)
+    m_cons = validator.validate_consequence_column_present(labels_model)
+    if scores_model.shape[0] != labels_model.shape[0]:
+        warnings.warn(f'Shapes for the different files for model {model_number} mismatch, '
+                      f'attempting to merge.')
+        validator.validate_merge_columns_present_scores(scores_model, model_number)
+        validator.validate_merge_columns_present_labels(labels_model, model_number)
+        scores_model['merge_column'] = scores_model[MERGE_COLUMNS_SCORES].astype(str).agg(
+            ID_SEPARATOR.join, axis=1)
+        labels_model['merge_column'] = labels_model[MERGE_COLUMNS_LABELS].astype(str).agg(
+            ID_SEPARATOR.join, axis=1)
+        model = scores_model.merge(labels_model, on='merge_column', how='left')
+        print('Merge successful.')
+    else:
+        model = pd.concat([scores_model, labels_model], axis=1)
+    model.drop(columns=model.columns.difference(USE_COLUMNS), inplace=True)
+
+    return model, m_cons
+
+
 def main():
     print('Obtaining CLA')
     cla = CommandLineParser()
@@ -216,46 +237,8 @@ def main():
     print('Input arguments passed.\n')
 
     print('Reading in data.')
-    scores_model_1 = pd.read_csv(m1_scores, sep='\t', na_values='.')
-    scores_model_1.columns = correct_column_names(scores_model_1.columns)
-    validator.validate_score_column_present(scores_model_1, 1)
-    labels_model_1 = pd.read_csv(m1_labels, sep='\t', na_values='.')
-    labels_model_1.columns = correct_column_names(labels_model_1.columns)
-    validator.validate_bl_column_present(labels_model_1, 1)
-    m1_cons = validator.validate_consequence_column_present(labels_model_1)
-    if scores_model_1.shape[0] != labels_model_1.shape[0]:
-        warnings.warn('Shapes for the different files for model 1 mismatch, attempting to merge.')
-        validator.validate_merge_columns_present_scores(scores_model_1, 1)
-        validator.validate_merge_columns_present_labels(labels_model_1, 1)
-        scores_model_1['merge_column'] = scores_model_1[MERGE_COLUMNS_SCORES].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        labels_model_1['merge_column'] = labels_model_1[MERGE_COLUMNS_LABELS].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        m1 = scores_model_1.merge(labels_model_1, on='merge_column', how='left')
-        print('Merge successful.')
-    else:
-        m1 = pd.concat([scores_model_1, labels_model_1], axis=1)
-    m1.drop(columns=m1.columns.difference(USE_COLUMNS), inplace=True)
-    scores_model_2 = pd.read_csv(m2_scores, sep='\t', na_values='.')
-    scores_model_2.columns = correct_column_names(scores_model_2.columns)
-    validator.validate_score_column_present(scores_model_2, 2)
-    labels_model_2 = pd.read_csv(m2_labels, sep='\t', na_values='.')
-    labels_model_2.columns = correct_column_names(labels_model_2)
-    validator.validate_bl_column_present(labels_model_2, 2)
-    m2_cons = validator.validate_consequence_column_present(labels_model_2)
-    if scores_model_2.shape[0] != labels_model_2.shape[0]:
-        warnings.warn('Shapes for the different files for model 2 mismatch, attempting to merge.')
-        validator.validate_merge_columns_present_scores(scores_model_2, 2)
-        validator.validate_merge_columns_present_labels(labels_model_2, 2)
-        scores_model_2['merge_column'] = scores_model_2[MERGE_COLUMNS_SCORES].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        labels_model_2['merge_column'] = labels_model_2[MERGE_COLUMNS_LABELS].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        m2 = scores_model_2.merge(labels_model_2, on='merge_column', how='left')
-        print('Merge successful.')
-    else:
-        m2 = pd.concat([scores_model_2, labels_model_2], axis=1)
-    m2.drop(columns=m2.columns.difference(USE_COLUMNS))
+    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1)
+    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2)
     process_consequences = True
     if not m1_cons or not m2_cons:
         warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
