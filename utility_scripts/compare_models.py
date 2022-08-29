@@ -236,8 +236,8 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
     return model, m_cons
 
 
-def main():
-    print('Obtaining CLA')
+def process_cla(validator):
+    print('Obtaining CLA.')
     cla = CommandLineParser()
     m1_scores = cla.get_argument('score_file_model_1')
     m1_labels = cla.get_argument('label_file_model_1')
@@ -245,145 +245,121 @@ def main():
     m2_labels = cla.get_argument('label_file_model_2')
     force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
-    print('Validating CLA')
-    validator = Validator()
+
+    print('Validating CLA.')
     validator.validate_is_gzipped_tsv(m1_scores)
     validator.validate_is_gzipped_tsv(m1_labels)
     validator.validate_is_gzipped_tsv(m2_scores)
     validator.validate_is_gzipped_tsv(m2_labels)
     validator.validate_output_argument(output)
     print('Input arguments passed.\n')
+    return m1_scores, m1_labels, m2_scores, m2_labels, force_merge, output
 
-    print('Reading in data.')
-    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1, force_merge)
-    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2, force_merge)
-    process_consequences = True
-    if not m1_cons or not m2_cons:
-        warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
-                      'performance metrics.')
-        process_consequences = False
-    print('Data read.\n')
 
-    print('Calculating stats')
-    m1['score_diff'] = abs(m1[SCORE] - m1[BINARIZED_LABEL])
-    m2['score_diff'] = abs(m2[SCORE] - m2[BINARIZED_LABEL])
-    print('Stats calculated.\n')
+def calculate_score_difference(merged_dataset):
+    merged_dataset['score_diff'] = abs(merged_dataset[SCORE] - merged_dataset[BINARIZED_LABEL])
 
-    print('Preparing plots.')
-    if process_consequences:
-        processed_consequences = split_consequences(m1['Consequence'])
-        ncols = 4
-        nrows = math.ceil((len(processed_consequences) / ncols) + 1)
-        figsize = (20, 40)
-    else:
-        processed_consequences = None
-        ncols = 1
-        nrows = 1
-        figsize = (10, 15)  # Default values
-    index = 1
-    fig_auc = plt.figure(figsize=figsize)
-    fig_auc.suptitle(
-        f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n'
-        f'Model 1 scores: {m1_scores}\n'
-        f'Model 1 labels: {m1_labels}\n'
-        f'Model 2 scores: {m2_scores}\n'
-        f'Model 2 labels: {m2_labels}\n'
-    )
-    fig_roc = plt.figure(figsize=(10, 15))
-    fig_roc.suptitle(
-        f'Model 1 vs Model 2 Receiver Operator Curves\n'
-        f'Model 1 scores: {m1_scores}\n'
-        f'Model 1 labels: {m1_labels}\n'
-        f'Model 2 scores: {m2_scores}\n'
-        f'Model 2 labels: {m2_labels}\n'
-    )
-    fig_score_dist = plt.figure(figsize=figsize)
-    fig_score_dist.suptitle(
-        f'Model 1 vs Model 2 raw CAPICE score distributions\n'
-        f'Model 1 scores: {m1_scores}\n'
-        f'Model 1 labels: {m1_labels}\n'
-        f'Model 2 scores: {m2_scores}\n'
-        f'Model 2 labels: {m2_labels}\n'
-        f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-        f'Pathogenic)\n'
-    )
-    fig_score_diff = plt.figure(figsize=figsize)
-    fig_score_diff.suptitle(
-        f'Model 1 vs Model 2 absolute score difference to the true label\n'
-        f'Model 1 scores: {m1_scores}\n'
-        f'Model 1 labels: {m1_labels}\n'
-        f'Model 2 scores: {m2_scores}\n'
-        f'Model 2 labels: {m2_labels}\n'
-        f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-        f'Pathogenic)\n'
-    )
-    print('Plots prepared.\n')
 
-    print('Generating global plots.')
-    fpr_m1, tpr_m1, _ = roc_curve(m1[BINARIZED_LABEL], m1[SCORE])
-    auc_m1 = round(auc(fpr_m1, tpr_m1), 4)
-    fpr_m2, tpr_m2, _ = roc_curve(m2[BINARIZED_LABEL], m2[SCORE])
-    auc_m2 = round(auc(fpr_m2, tpr_m2), 4)
+class Plotter:
+    def __init__(self, process_consequences):
+        self.process_consequences = process_consequences
+        self.index = 1
+        self.fig_auc = plt.figure()
+        self.fig_roc = plt.figure()
+        self.fig_score_dist = plt.figure()
+        self.fig_score_diff = plt.figure()
+        self.consequences = []
+        self.n_rows = 1
+        self.n_cols = 1
 
-    # Plotting ROCs
-    ax_roc = fig_roc.add_subplot(1, 1, 1)
-    ax_roc.plot(fpr_m1, tpr_m1, color='red', label=f'Model 1 (AUC={auc_m1})')
-    ax_roc.plot(fpr_m2, tpr_m2, color='blue', label=f'Model 2 (AUC={auc_m2})')
-    ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
-    ax_roc.set_xlim([0.0, 1.0])
-    ax_roc.set_ylim([0.0, 1.0])
-    ax_roc.set_xlabel('False Positive Rate')
-    ax_roc.set_ylabel('True Positive Rate')
-    ax_roc.legend(loc='lower right')
+    def prepare_plots(self, model_1_score_path, model_1_label_path, model_2_score_path,
+                      model_2_label_path):
+        print('Preparing plot figures.')
+        if self.process_consequences:
+            figsize = (20, 40)
+        else:
+            figsize = (10, 15)  # Default values
+        print('Preparing plots.')
+        self.fig_auc = plt.figure(figsize=figsize)
+        self.fig_auc.suptitle(
+            f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n'
+            f'Model 1 scores: {model_1_score_path}\n'
+            f'Model 1 labels: {model_1_label_path}\n'
+            f'Model 2 scores: {model_2_score_path}\n'
+            f'Model 2 labels: {model_2_label_path}\n'
+        )
+        self.fig_roc = plt.figure(figsize=(10, 15))
+        self.fig_roc.suptitle(
+            f'Model 1 vs Model 2 Receiver Operator Curves\n'
+            f'Model 1 scores: {model_1_score_path}\n'
+            f'Model 1 labels: {model_1_label_path}\n'
+            f'Model 2 scores: {model_2_score_path}\n'
+            f'Model 2 labels: {model_2_label_path}\n'
+        )
+        self.fig_score_dist = plt.figure(figsize=figsize)
+        self.fig_score_dist.suptitle(
+            f'Model 1 vs Model 2 raw CAPICE score distributions\n'
+            f'Model 1 scores: {model_1_score_path}\n'
+            f'Model 1 labels: {model_1_label_path}\n'
+            f'Model 2 scores: {model_2_score_path}\n'
+            f'Model 2 labels: {model_2_label_path}\n'
+            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+            f'Pathogenic)\n'
+        )
+        self.fig_score_diff = plt.figure(figsize=figsize)
+        self.fig_score_diff.suptitle(
+            f'Model 1 vs Model 2 absolute score difference to the true label\n'
+            f'Model 1 scores: {model_1_score_path}\n'
+            f'Model 1 labels: {model_1_label_path}\n'
+            f'Model 2 scores: {model_2_score_path}\n'
+            f'Model 2 labels: {model_2_label_path}\n'
+            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+            f'Pathogenic)\n'
+        )
+        print('Plot figures prepared.\n')
 
-    # Plotting AUCs
-    ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-    ax_auc.bar(1, auc_m1, color='red', label=f'Model 1: {auc_m1}\n'
-                                             f'n: {m1.shape[0]}')
-    ax_auc.bar(2, auc_m2, color='blue', label=f'Model 2: {auc_m2}\n'
-                                              f'n: {m2.shape[0]}')
-    ax_auc.set_title('Global')
-    ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
-    ax_auc.set_xlim(0.0, 3.0)
-    ax_auc.set_ylim(0.0, 1.0)
-    ax_auc.legend(loc='lower right')
+    def prepare_subplots(self, merged_model_1_data):
+        if self.process_consequences:
+            print(
+                'Creating required amount of rows and columns according to present Consequences.\n'
+            )
+            self.consequences = split_consequences(merged_model_1_data['Consequence'])
+            self.n_cols = 4
+            self.n_rows = math.ceil((len(self.consequences) / self.n_cols) + 1)
+        else:
+            print('Creating single plot per figure.\n')
 
-    # Plotting raw scores
-    ax_scores_dist = fig_score_dist.add_subplot(nrows, ncols, index)
-    ax_scores_dist.boxplot(
-        [
-            m1[m1[BINARIZED_LABEL] == 0][SCORE],
-            m1[m1[BINARIZED_LABEL] == 1][SCORE],
-            m2[m2[BINARIZED_LABEL] == 0][SCORE],
-            m2[m2[BINARIZED_LABEL] == 1][SCORE],
-        ], labels=['M1B', 'M1P', 'M2B', 'M2P']
-    )
-    ax_scores_dist.set_ylim(0.0, 1.0)
-    ax_scores_dist.set_title('Global')
+    def plot(self, merged_model_1_data, merged_model_2_data):
+        print('Calculating global TPR, FPR and AUC.')
+        fpr_m1, tpr_m1, _ = roc_curve(
+            merged_model_1_data[BINARIZED_LABEL], merged_model_1_data[SCORE]
+        )
+        auc_m1 = round(auc(fpr_m1, tpr_m1), 4)
+        fpr_m2, tpr_m2, _ = roc_curve(
+            merged_model_2_data[BINARIZED_LABEL], merged_model_2_data[SCORE]
+        )
+        auc_m2 = round(auc(fpr_m2, tpr_m2), 4)
+        print('TPR, FPR and AUC calculated globally.\n')
 
-    # Plotting score differences
-    ax_scores_diff = fig_score_diff.add_subplot(nrows, ncols, index)
-    ax_scores_diff.boxplot(
-        [
-            m1[m1[BINARIZED_LABEL] == 0]['score_diff'],
-            m1[m1[BINARIZED_LABEL] == 1]['score_diff'],
-            m2[m2[BINARIZED_LABEL] == 0]['score_diff'],
-            m2[m2[BINARIZED_LABEL] == 1]['score_diff'],
-        ], labels=['M1B', 'M1P', 'M2B', 'M2P']
-    )
-    ax_scores_diff.set_ylim(0.0, 1.0)
-    ax_scores_diff.set_title('Global')
+        print('Plotting global ROC, AUC, Score distributions and Score differences.')
+        self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
+        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[
+            0], 'Global')
+        self._plot_score_dist(merged_model_1_data, merged_model_2_data, 'Global')
+        self._plot_score_diff(merged_model_1_data, merged_model_2_data, 'Global')
+        print('Plotting globally done.\n')
+        if self.process_consequences:
+            print('Plotting per consequence.')
+            self.index += 1
+            self._plot_consequences(merged_model_1_data, merged_model_2_data)
+            print('Plotting per consequence done.\n')
 
-    index += 1
-
-    print('Global plots generated.')
-
-    if processed_consequences is not None:
-        print('Generating per consequence plots.')
-        for consequence in processed_consequences:
-            subset_m1 = m1[m1['Consequence'].str.contains(consequence)]
-            subset_m2 = m2[m2['Consequence'].str.contains(consequence)]
-
+    def _plot_consequences(self, merged_model_1_data, merged_model_2_data):
+        for consequence in self.consequences:
+            subset_m1 = merged_model_1_data[
+                merged_model_1_data['Consequence'].str.contains(consequence)]
+            subset_m2 = merged_model_2_data[
+                merged_model_2_data['Consequence'].str.contains(consequence)]
             try:
                 auc_m1 = round(
                     roc_auc_score(
@@ -408,49 +384,103 @@ def main():
                 print(f'Could not calculate AUC for Model 2 for consequence: {consequence}')
                 continue
 
-            # Plotting AUCs
-            ax_auc = fig_auc.add_subplot(nrows, ncols, index)
-            ax_auc.bar(1, auc_m1, color='red', label=f'Model 1: {auc_m1} (n={subset_m1.shape[0]})')
-            ax_auc.bar(2, auc_m2, color='blue', label=f'Model 2: {auc_m2} (n={subset_m2.shape[0]})')
-            ax_auc.set_title(f'{consequence}')
-            ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
-            ax_auc.set_xlim(0.0, 3.0)
-            ax_auc.set_ylim(0.0, 1.0)
-            ax_auc.legend(loc='lower right')
-
-            # Plotting raw score distributions
-            ax_scores_dist = fig_score_dist.add_subplot(nrows, ncols, index)
-            ax_scores_dist.boxplot(
-                [
-                    subset_m1[subset_m1[BINARIZED_LABEL] == 0][SCORE],
-                    subset_m1[subset_m1[BINARIZED_LABEL] == 1][SCORE],
-                    subset_m2[subset_m2[BINARIZED_LABEL] == 0][SCORE],
-                    subset_m2[subset_m2[BINARIZED_LABEL] == 1][SCORE]
-                ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+            self._plot_auc(
+                auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
+                consequence
             )
-            ax_scores_dist.set_ylim(0.0, 1.0)
-            ax_scores_dist.set_title(f'{consequence}')
+            self._plot_score_dist(merged_model_1_data, merged_model_2_data, consequence)
+            self._plot_score_diff(merged_model_1_data, merged_model_2_data, consequence)
+            self.index += 1
 
-            # Plotting the score differences to the true label
-            ax_scores_diff = fig_score_diff.add_subplot(nrows, ncols, index)
-            ax_scores_diff.boxplot(
-                [
-                    subset_m1[subset_m1[BINARIZED_LABEL] == 0]['score_diff'],
-                    subset_m1[subset_m1[BINARIZED_LABEL] == 1]['score_diff'],
-                    subset_m2[subset_m2[BINARIZED_LABEL] == 0]['score_diff'],
-                    subset_m2[subset_m2[BINARIZED_LABEL] == 1]['score_diff']
-                ], labels=['M1B', 'M1P', 'M2B', 'M2P']
-            )
-            ax_scores_diff.set_ylim(0.0, 1.0)
-            ax_scores_diff.set_title(f'{consequence}')
-            index += 1
+    def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
+                  auc_model_2):
+        # Plotting ROCs
+        ax_roc = self.fig_roc.add_subplot(1, 1, 1)
+        ax_roc.plot(fpr_model_1, tpr_model_1, color='red', label=f'Model 1 (AUC={auc_model_1})')
+        ax_roc.plot(fpr_model_2, tpr_model_2, color='blue', label=f'Model 2 (AUC={auc_model_2})')
+        ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
+        ax_roc.set_xlim([0.0, 1.0])
+        ax_roc.set_ylim([0.0, 1.0])
+        ax_roc.set_xlabel('False Positive Rate')
+        ax_roc.set_ylabel('True Positive Rate')
+        ax_roc.legend(loc='lower right')
 
-    print(f'Plotting done! Exporting to: {output}')
+    def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
+        # Plotting AUCs
+        ax_auc = self.fig_auc.add_subplot(self.n_rows, self.n_cols, self.index)
+        ax_auc.bar(1, auc_model_1, color='red', label=f'Model 1: {auc_model_1}\n'
+                                                      f'n: {model_1_n_samples}')
+        ax_auc.bar(2, auc_model_2, color='blue', label=f'Model 2: {auc_model_2}\n'
+                                                       f'n: {model_2_n_samples}')
+        ax_auc.set_title(title)
+        ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
+        ax_auc.set_xlim(0.0, 3.0)
+        ax_auc.set_ylim(0.0, 1.0)
+        ax_auc.legend(loc='lower right')
 
-    fig_roc.savefig(os.path.join(output, 'roc.png'))
-    fig_auc.savefig(os.path.join(output, 'auc.png'))
-    fig_score_dist.savefig(os.path.join(output, 'score_distributions.png'))
-    fig_score_diff.savefig(os.path.join(output, 'score_differences.png'))
+    def _plot_score_dist(self, model_1_data, model_2_data, title):
+        # Plotting raw scores
+        ax_scores_dist = self.fig_score_dist.add_subplot(self.n_rows, self.n_cols, self.index)
+        ax_scores_dist.boxplot(
+            [
+                model_1_data[model_1_data[BINARIZED_LABEL] == 0][SCORE],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1][SCORE],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 0][SCORE],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 1][SCORE],
+            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        )
+        ax_scores_dist.set_ylim(0.0, 1.0)
+        ax_scores_dist.set_title(title)
+
+    def _plot_score_diff(self, model_1_data, model_2_data, title):
+        # Plotting score differences
+        ax_scores_diff = self.fig_score_diff.add_subplot(self.n_rows, self.n_cols, self.index)
+        ax_scores_diff.boxplot(
+            [
+                model_1_data[model_1_data[BINARIZED_LABEL] == 0]['score_diff'],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1]['score_diff'],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 0]['score_diff'],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 1]['score_diff'],
+            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        )
+        ax_scores_diff.set_ylim(0.0, 1.0)
+        ax_scores_diff.set_title(title)
+
+    def export(self, output):
+        print(f'Exporting figures to: {output}')
+        self.fig_roc.savefig(os.path.join(output, 'roc.png'))
+        self.fig_auc.savefig(os.path.join(output, 'auc.png'))
+        self.fig_score_dist.savefig(os.path.join(output, 'score_distributions.png'))
+        self.fig_score_diff.savefig(os.path.join(output, 'score_differences.png'))
+        print('Export done.')
+
+
+def main():
+    # Processing and validating CLA
+    validator = Validator()
+    m1_scores, m1_labels, m2_scores, m2_labels, force_merge, output = process_cla(validator)
+
+    # Reading in data and validating data
+    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1, force_merge)
+    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2, force_merge)
+
+    # Turning processing of consequences on or off based on presence of Consequence column
+    process_consequences = True
+    if not m1_cons or not m2_cons:
+        warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
+                      'performance metrics.')
+        process_consequences = False
+
+    # Calculating score differences
+    calculate_score_difference(m1)
+    calculate_score_difference(m2)
+
+    # Plotting
+    plotter = Plotter(process_consequences)
+    plotter.prepare_plots(m1_scores, m1_labels, m2_scores, m2_labels)
+    plotter.prepare_subplots(m1)
+    plotter.plot(m1, m2)
+    plotter.export(output)
 
 
 if __name__ == '__main__':
