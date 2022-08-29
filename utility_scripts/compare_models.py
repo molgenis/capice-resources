@@ -31,6 +31,9 @@ class DataError(Exception):
 class FileMismatchError(Exception):
     pass
 
+class SampleSizeMismatchError(Exception):
+    pass
+
 
 class CommandLineParser:
     def __init__(self):
@@ -51,6 +54,7 @@ class CommandLineParser:
                         'the score file or the label file, assuming sizes differ.'
         )
         required = parser.add_argument_group('Required arguments')
+        optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
             '-s1',
@@ -108,6 +112,14 @@ class CommandLineParser:
             type=str,
             required=True,
             help='Output directory.'
+        )
+
+        optional.add_argument(
+            '-f',
+            '--force_merge',
+            action='store_true',
+            help='Add flag if there is a possibility of a mismatch in sample size between the '
+                 'score and label file for any model.'
         )
 
         return parser
@@ -193,7 +205,7 @@ def split_consequences(consequences: pd.Series):
         ignore_index=True).unique()
 
 
-def prepare_data_file(validator, scores, labels, model_number):
+def prepare_data_file(validator, scores, labels, model_number, force_merge):
     scores_model = pd.read_csv(scores, sep='\t', na_values='.')
     scores_model.columns = correct_column_names(scores_model.columns)
     validator.validate_score_column_present(scores_model, model_number)
@@ -201,19 +213,23 @@ def prepare_data_file(validator, scores, labels, model_number):
     labels_model.columns = correct_column_names(labels_model.columns)
     validator.validate_bl_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
-    if scores_model.shape[0] != labels_model.shape[0]:
-        warnings.warn(f'Shapes for the different files for model {model_number} mismatch, '
-                      f'attempting to merge.')
-        validator.validate_merge_columns_present_scores(scores_model, model_number)
-        validator.validate_merge_columns_present_labels(labels_model, model_number)
-        scores_model['merge_column'] = scores_model[MERGE_COLUMNS_SCORES].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        labels_model['merge_column'] = labels_model[MERGE_COLUMNS_LABELS].astype(str).agg(
-            ID_SEPARATOR.join, axis=1)
-        model = scores_model.merge(labels_model, on='merge_column', how='left')
-        print('Merge successful.')
-    else:
+    if scores_model.shape[0] == labels_model.shape[0]:
         model = pd.concat([scores_model, labels_model], axis=1)
+    else:
+        if force_merge:
+            warnings.warn(f'Sample sizes for the different files for model {model_number} '
+                          f'mismatch, however -f flag is supplied, attempting to merge.')
+            validator.validate_merge_columns_present_scores(scores_model, model_number)
+            validator.validate_merge_columns_present_labels(labels_model, model_number)
+            scores_model['merge_column'] = scores_model[MERGE_COLUMNS_SCORES].astype(str).agg(
+                ID_SEPARATOR.join, axis=1)
+            labels_model['merge_column'] = labels_model[MERGE_COLUMNS_LABELS].astype(str).agg(
+                ID_SEPARATOR.join, axis=1)
+            model = scores_model.merge(labels_model, on='merge_column', how='left')
+            print('Merge successful.')
+        else:
+            raise SampleSizeMismatchError(f'Sample sizes for the different files for model '
+                                          f'{model_number} mismatch and flag -f is not supplied!')
     model.drop(columns=model.columns.difference(USE_COLUMNS), inplace=True)
 
     return model, m_cons
@@ -226,6 +242,7 @@ def main():
     m1_labels = cla.get_argument('label_file_model_1')
     m2_scores = cla.get_argument('score_file_model_2')
     m2_labels = cla.get_argument('label_file_model_2')
+    force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
     print('Validating CLA')
     validator = Validator()
@@ -237,8 +254,8 @@ def main():
     print('Input arguments passed.\n')
 
     print('Reading in data.')
-    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1)
-    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2)
+    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1, force_merge)
+    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2, force_merge)
     process_consequences = True
     if not m1_cons or not m2_cons:
         warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
