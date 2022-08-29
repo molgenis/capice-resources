@@ -23,6 +23,10 @@ class DataError(Exception):
     pass
 
 
+class SampleSizeMismatchError(Exception):
+    pass
+
+
 class CommandLineDigest:
     def __init__(self):
         parser = self._create_argument_parser()
@@ -34,6 +38,7 @@ class CommandLineDigest:
             description='Compares a new model to the legacy model created by Li et al.'
         )
         required = parser.add_argument_group('Required arguments')
+        optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
             '--old_model_results',
@@ -73,6 +78,14 @@ class CommandLineDigest:
             type=str,
             required=True,
             help='Output directory.'
+        )
+
+        optional.add_argument(
+            '-f',
+            '--force_merge',
+            action='store_true',
+            help='Add flag if there is a possibility of a mismatch in sample size between the '
+                 'score and label file for the new model.'
         )
 
         return parser
@@ -153,6 +166,7 @@ def main():
     old_labels = cla.get_argument('old_model_cadd_input')
     new_scores = cla.get_argument('new_model_results')
     new_labels = cla.get_argument('new_model_capice_input')
+    force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
     print('Validating command line arguments')
     validator = Validator()
@@ -198,25 +212,30 @@ def main():
     print('Data passed.')
 
     print('Merging datasets.')
-    if new_scores.shape[0] != new_labels.shape[0]:
-        warnings.warn('Score and label file of the new CAPICE model mismatch in size, attempting '
-                      'to merge back together.')
-        validator.validate_can_merge_new_scores(new_scores)
-        validator.validate_can_merge_new_labels(new_labels)
-        new_scores['merge_column'] = new_scores[
-            ['chr', 'pos', 'ref', 'alt', 'gene_name']
-        ].astype(str).agg(ID_SEPARATOR.join, axis=1)
-        new_labels['merge_column'] = new_labels[
-            ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
-        ].astype(str).agg(ID_SEPARATOR.join, axis=1)
-        new_merged = new_scores.merge(new_labels, on='merge_column', how='left')
-    else:
+    if new_scores.shape[0] == new_labels.shape[0]:
         new_merged = pd.concat(
             [
                 new_scores,
                 new_labels['binarized_label']
             ], axis=1
         )
+    else:
+        if force_merge:
+            warnings.warn('Score and label file of the new CAPICE model mismatch in sample size, '
+                          'but flag -f is supplied, '
+                          'attempting to merge back together.')
+            validator.validate_can_merge_new_scores(new_scores)
+            validator.validate_can_merge_new_labels(new_labels)
+            new_scores['merge_column'] = new_scores[
+                ['chr', 'pos', 'ref', 'alt', 'gene_name']
+            ].astype(str).agg(ID_SEPARATOR.join, axis=1)
+            new_labels['merge_column'] = new_labels[
+                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            ].astype(str).agg(ID_SEPARATOR.join, axis=1)
+            new_merged = new_scores.merge(new_labels, on='merge_column', how='left')
+        else:
+            raise SampleSizeMismatchError('Score and label file of the new CAPICE model mismatch '
+                                          'in sample size and flag -f is not supplied!')
     new_merged = new_merged[['score', 'binarized_label']]
 
     # Making merge column

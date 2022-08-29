@@ -31,6 +31,7 @@ class DataError(Exception):
 class FileMismatchError(Exception):
     pass
 
+
 class SampleSizeMismatchError(Exception):
     pass
 
