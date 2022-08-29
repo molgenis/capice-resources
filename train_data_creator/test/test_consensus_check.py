@@ -63,10 +63,10 @@ class TestConsensusCheck(unittest.TestCase):
             self.consensus_checker.check_consensus_clinvar_vgkl_match(
                 input_dataset)
         self.assertEqual(
-            'There are 3 variants with mismatching consensus between ClinVar and VKGL',
+            'Removed 3 variant(s) with mismatching consensus between ClinVar and VKGL',
             str(cm.warning)
         )
-        pd.testing.assert_frame_equal(input_dataset.reset_index(drop=True), self.variants_passed)
+        pd.testing.assert_frame_equal(input_dataset, self.variants_passed)
 
     def test_no_mismatch(self):
         copy_variants_passed = self.variants_passed.copy(deep=True)

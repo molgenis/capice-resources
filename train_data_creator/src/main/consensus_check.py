@@ -26,8 +26,7 @@ class ConsensusChecker:
         div = int((before_drop - after_drop) / 2)
         if div > 0:
             warnings.warn(
-                f'There are {div} variants with mismatching consensus between ClinVar and '
-                f'VKGL'
+                f'Removed {div} variant(s) with mismatching consensus between ClinVar and VKGL'
             )
 
     def perform_check(self, merged_dataframe, subset):
