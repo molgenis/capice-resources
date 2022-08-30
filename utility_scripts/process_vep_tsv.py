@@ -29,8 +29,10 @@ class CommandLineDigest:
 
     def _create_argument_parser(self):
         parser = argparse.ArgumentParser(
-            prog='Make VEP TSV train ready',
-            description='Converts an VEP output TSV (after conversion) to make it train ready.'
+            prog='Process VEP TSV',
+            description='Processes an VEP output TSV (after running it through BCFTools). '
+                        'Removes duplicates, variants that end up on mismatching genes and '
+                        'variants that got corrupted on the binarized label or sample weight.'
         )
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
