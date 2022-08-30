@@ -43,7 +43,7 @@ The script liftover_variants.sh converts a VCF containing GRCh37 variants to GRC
 Template sbatch script to run VEP on a Slurm cluster. Ensure it is up-to-date and values are adjusted accordingly before
 using!
 
-- vep_to_train.py:
+- process_vep_tsv.py:
 
 ...
 
@@ -93,9 +93,9 @@ _(For a more detailed explanation on creating the train-test and validation data
     ```
    (Note: if you want to clone the repository on a cluster, the password asked by github is a generated personal access
    token that can be set under developer settings on github. Grant all permissions on repository)
-    7. Load python (`ml Python/3.9.1-GCCcore-7.3.0-bare`) and run capice-resources/utility_scripts/vep_to_train.py
+    7. Load python (`ml Python/3.9.1-GCCcore-7.3.0-bare`) and run capice-resources/utility_scripts/process_vep_tsv.py
     ```shell
-    python3 ./utility_scripts/vep_to_train.py -i </path/to/new_train_input.tsv.gz> -o </full/path/to/new_train_output.tsv.gz> -p
+    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/new_train_input.tsv.gz> -o </full/path/to/new_train_output.tsv.gz> -p
     ```
     8. Create a script to run capice to generate a new model, like the following:
     ```shell
@@ -171,8 +171,8 @@ _(For a more detailed explanation on creating the train-test and validation data
     using `-t`)
     1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
 12. Process GRCH37 train-test & validation TSVs (separately!)
-    1. `python3 ./utility_scripts/vep_to_train.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
-13. Repeat steps 10 and 11 for train-test and validation of GRCh38 (add the `-a` flag to the `vep_to_train.py`).
+    1. `python3 ./utility_scripts/process_vep_tsv.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
+13. Repeat steps 10 and 11 for train-test and validation of GRCh38 (add the `-a` flag to the `process_vep_tsv.py`).
 14. Update imputing JSON accordingly to the newly features added and/or removed.
 15. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)
