@@ -6,7 +6,8 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='capice-resources',
-    version='1.0.0-dev',
+    version='1.0.0.dev0',
+    packages=[],
     url='https://capice.molgeniscloud.org/',
     license='LGPL-3.0',
     author='Molgenis',
