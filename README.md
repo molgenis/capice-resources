@@ -187,13 +187,16 @@ _(For a more detailed explanation on creating the train-test and validation data
 20. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
 21. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
     `python3 compare_models.py -s1 </path/to/capice_predict_output_model1.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>`
-22. If not done so already, make a new and separate clone of the CAPICE repository and install requirements based on the requirements of the clone (within a `venv` virtual environment).
+22. If not done so already, download the source code from https://github.com/molgenis/capice/releases/tag/v1.1 and unpack it.
     1. Please note that if any of the following steps gives an error, outside of `compare_to_legacy_model.py`, code changes have to be made to compare the performance of a new model to the originally published Li et al. model. It may be possible that comparing performance to the legacy model in itself is no longer possible.
-23. Check out the new CAPICE clone to tag `v1.1`. The warnings for package requirements can be ignored.
-24. Reinstall XGBoost by forcing version 0.90 (`pip install xgboost==0.90`).
-25. Use CAPICE v1.1 to score the CADD file generated in step 6.
-    1. `./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
-26. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
+23. Within this folder, create a new venv environment: `python3.6 -m venv venv`
+24. Load venv: `source venv/bin/activate`
+25. Fix `requirements.txt`: `sed -i '1d' requirements.txt` (use `gsed` on MacOS)
+26. Ensure pip is up-to-date: `pip install --upgrade pip`
+27. Install requirements: `pip install -r requirements.txt`
+28. Use CAPICE v1.1 to score the CADD file generated in step 6.
+    1. `python3.6 ./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
+29. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
     1. `python3 compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/>` 
     2. `prediction_savepath.tsv`: output score file of CAPICE v1.1
     3. `validation.vcf.gz`: the output of the `train_data_creator` in step 3
