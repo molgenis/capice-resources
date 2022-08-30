@@ -6,6 +6,7 @@ from train_data_creator.src.main.exporter import Exporter
 from train_data_creator.src.main.split_datasets import SplitDatasets
 from train_data_creator.src.main.sample_weighter import SampleWeighter
 from train_data_creator.src.main.data_preprocessor import VKGL, ClinVar
+from train_data_creator.src.main.consensus_check import ConsensusChecker
 from train_data_creator.src.main.utilities import correct_order_vcf_notation
 from train_data_creator.src.main.command_line_parser import CommandLineParser
 from train_data_creator.src.main.duplicate_processor import DuplicateProcessor
@@ -43,6 +44,9 @@ def main():
     # Freeing up memory
     del vkgl, clinvar
     gc.collect()
+
+    # Checking for mismatching concensi
+    ConsensusChecker().check_consensus_clinvar_vgkl_match(data)
 
     # Dropping duplicates
     DuplicateProcessor().process(data)

@@ -181,13 +181,25 @@ _(For a more detailed explanation on creating the train-test and validation data
        activates the and then activates the train protocol. It can take 5 hours for a new model to train.
     2. `module load <python>`
     3. `source ./capice/venv/bin/activate`
-    4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>`
-17. Attach new models to [CAPICE](https://github.com/molgenis/capice)
-    and [capice-resources](https://github.com/molgenis/capice-resources) releases.
-18. Use the new model to generate CAPICE results file of the validation TSV.
-19. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-20. Use `compare_old_model.py` in `utility_scripts` to compare performance of an old model to a new model (currently
-    bugged, see [this issue](https://github.com/molgenis/capice-resources/issues/14)).
+    4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>` 
+18. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
+19. Use new model generated in step 17 to generate CAPICE results file of the validation TSV.
+20. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
+21. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+    `python3 compare_models.py -s1 </path/to/capice_predict_output_model1.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>`
+22. If not done so already, make a new and separate clone of the CAPICE repository and install requirements based on the requirements of the clone (within a `venv` virtual environment).
+    1. Please note that if any of the following steps gives an error, outside of `compare_to_legacy_model.py`, code changes have to be made to compare the performance of a new model to the originally published Li et al. model. It may be possible that comparing performance to the legacy model in itself is no longer possible.
+23. Check out the new CAPICE clone to tag `v1.1`. The warnings for package requirements can be ignored.
+24. Reinstall XGBoost by forcing version 0.90 (`pip install xgboost==0.90`).
+25. Use CAPICE v1.1 to score the CADD file generated in step 6.
+    1. `./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
+26. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
+    1. `python3 compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/>` 
+    2. `prediction_savepath.tsv`: output score file of CAPICE v1.1
+    3. `validation.vcf.gz`: the output of the `train_data_creator` in step 3
+    4. `new_capice_output.tsv.gz`: output score file of the GRCh37 build of the updated CAPICE in step 19
+    5. `validation_vep_processed.tsv.gz`: the final processed validation file, which should be the input for CAPICE to score on, generated in step 12)
+    6. `--output`: the directory to write output to
 
 ## Making train-test and validation VCF files
 
@@ -219,8 +231,7 @@ the new features or removed features)_.
 **WARNING: Drop all columns that are not wanted within training, such as the ID column.** This step can be performed for
 all train-test and validation VCFs for both GRCh37 and 38.
 
-Making the converted VEP TSV train-ready requires use of the `vep_to_train.py` in `utility_scripts`. This works for both
-GRCh37 and GRCh38 (GRCh38 only when the `-a` flag is supplied.)
+Making the converted VEP TSV train-ready requires use of the `process_vep_tsv.py` in `utility_scripts`. This works for both GRCh37 and GRCh38 (GRCh38 only when the `-a` flag is supplied.)
 
 This script makes sure that variants with the correct labels are preserved, so that the labels remains accurate for the
 variant.

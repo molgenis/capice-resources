@@ -330,6 +330,25 @@ class TestDataProcessor(unittest.TestCase):
         observed = ClinVar()._obtain_review(self.dataset)
         pd.testing.assert_frame_equal(observed, expected)
 
+    def test_clinvar_review_unknown(self):
+        pseudo_clinvar_data = pd.DataFrame(
+            {
+                'INFO': ['CLNREVSTAT=some_unknown_status;', 'CLNREVSTAT=practice_guideline;',
+                         'CLNREVSTAT=reviewed_by_expert_panel;']
+            }
+        )
+        expected_out = pd.DataFrame(
+            {
+                'INFO': ['CLNREVSTAT=practice_guideline;',
+                         'CLNREVSTAT=reviewed_by_expert_panel;'],
+                'review': [4, 3]
+            }
+        )
+        with self.assertWarns(UserWarning) as cm:
+            ClinVar()._obtain_review(pseudo_clinvar_data)
+        self.assertEqual('Found unknown review status: some_unknown_status', str(cm.warning))
+        pd.testing.assert_frame_equal(pseudo_clinvar_data.reset_index(drop=True), expected_out)
+
 
 if __name__ == '__main__':
     unittest.main()

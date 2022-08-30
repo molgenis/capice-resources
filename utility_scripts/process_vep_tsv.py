@@ -18,6 +18,8 @@ class DataError(Exception):
 
 
 SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
+# Must be equal to `train_data_creator/src/main/exporter.py` & files in `utility_scripts`
+ID_SEPARATOR = '!'
 
 
 class CommandLineDigest:
@@ -27,8 +29,10 @@ class CommandLineDigest:
 
     def _create_argument_parser(self):
         parser = argparse.ArgumentParser(
-            prog='Make VEP TSV train ready',
-            description='Converts an VEP output TSV (after conversion) to make it train ready.'
+            prog='Process VEP TSV',
+            description='Processes an VEP output TSV (after running it through BCFTools). '
+                        'Removes duplicates, variants that end up on mismatching genes and '
+                        'variants that got corrupted on the binarized label or sample weight.'
         )
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
@@ -133,15 +137,15 @@ def main():
     print('Dropping mismatching gene entries.')
     before_drop = data.shape[0]
     data.drop(
-        index=data[data['%ID'].str.split('_', expand=True)[4] != data['%SYMBOL']].index,
+        index=data[data['%ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['%SYMBOL']].index,
         inplace=True
     )
     after_drop = data.shape[0]
     print(f'Dropped {before_drop-after_drop} variants.\n')
     
     print('Extracting sample weight and binarized_label')
-    data['binarized_label'] = data['%ID'].str.split('_', expand=True)[5].astype(float)
-    data['sample_weight'] = data['%ID'].str.split('_', expand=True)[6].astype(float)
+    data['binarized_label'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[5].astype(float)
+    data['sample_weight'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[6].astype(float)
     print('')
     
     print('Correcting possible errors within binarized_label or sample_weight')
