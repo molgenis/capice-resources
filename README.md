@@ -86,37 +86,46 @@ _(For a more detailed explanation on creating the train-test and validation data
    ```shell
     sbatch slurm_run_step1.sh
     ```
-    5. Load BCF tools (`ml BCFtools/1.11-GCCcore-7.3.0`) and run
+    5. Load BCF tools and run
        [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
        on the train input. (note: use `-t` when using the conversion tool)
    ```shell
-    ./convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <new_train_input.tsv.gz>
+    ml load BCFtools/1.11-GCCcore-7.3.0
+    bash convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <new_train_input.tsv.gz>
+    ml purge
     ```
-    6. Install capice resources in virtual environment. Run following commands in capice-resources folder:
+    6. Load Python and install capice resources in virtual environment. Run following commands in capice-resources folder:
     ```shell
-    python3 -m venv env
-    source env/bin/activate
+    ml load Python/3.9.1-GCCcore-7.3.0-bare
+    python3 -m venv venv
+    source venv/bin/activate
     pip install -e .
     ```
    (Note: if you want to clone the repository on a cluster, the password asked by github is a generated personal access
-   token that can be set under developer settings on github. Grant all permissions on repository)
-    7. Load python (`ml Python/3.9.1-GCCcore-7.3.0-bare`) and run capice-resources/utility_scripts/process_vep_tsv.py
+   token that can be set under developer settings on github. Grant all permissions on repository. This might not be necessary
+   anymore once the repository is public.)
+
+    7. Run capice-resources/utility_scripts/process_vep_tsv.py
     ```shell
-    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/new_train_input.tsv.gz> -o </full/path/to/new_train_output.tsv.gz> -p
+    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/new_train_input.tsv.gz> -o </path/to/new_train_output.tsv.gz>
+    ml purge
     ```
+   
     8. Create a script to run capice to generate a new model, like the following:
     ```shell
     #!/bin/bash
     #SBATCH --job-name=CAPICE_POC_train
+    #SBATCH --output=/path/to/output/dir/capice_poc_train.log
+    #SBATCH --error=/path/to/output/dir/capice_poc_train.err
     #SBATCH --time=1-00:59:00
     #SBATCH --cpus-per-task=8
     #SBATCH --mem=16gb
     #SBATCH --nodes=1
     module load Python/3.9.1-GCCcore-7.3.0-bare
-    source </path/to/your/capice/env/bin/activate>
-    capice -v train -i </path/to/output_bcf_tools.tsv.gz> -m </path/to/capice/resources/train_impute_values.json> -o </path/to/store/output/poc_model.pickle.dat>
+    source </path/to/your/capice/venv/bin/activate>
+    capice -v train -i </path/to/new_train_output.tsv.gz> -m </path/to/capice/resources/train_impute_values.json> -o </path/to/store/output/poc_model.pickle.dat>
     ```
-   And run it.
+    And run it (`sbatch <scriptname>`).
     9. Run BCF tools for the other files:
     ```shell
     ./capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i predict_input.vcf.gz -o predict_input.tsv.gz
