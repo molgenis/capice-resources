@@ -91,7 +91,7 @@ _(For a more detailed explanation on creating the train-test and validation data
        on the train input. (note: use `-t` when using the conversion tool)
    ```shell
     ml load BCFtools/1.11-GCCcore-7.3.0
-    bash convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <new_train_input.tsv.gz>
+    bash convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
     ml purge
     ```
     6. Load Python and install capice resources in virtual environment. Run following commands in capice-resources folder:
@@ -107,7 +107,7 @@ _(For a more detailed explanation on creating the train-test and validation data
 
     7. Run capice-resources/utility_scripts/process_vep_tsv.py
     ```shell
-    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/new_train_input.tsv.gz> -o </path/to/new_train_output.tsv.gz>
+    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/train_input_annotated.tsv.gz> -o </path/to/train_input.tsv.gz>
     ml purge
     ```
    
@@ -121,25 +121,31 @@ _(For a more detailed explanation on creating the train-test and validation data
     #SBATCH --cpus-per-task=8
     #SBATCH --mem=16gb
     #SBATCH --nodes=1
+    #SBATCH --export=NONE
+    #SBATCH --get-user-env=L60
     module load Python/3.9.1-GCCcore-7.3.0-bare
     source </path/to/your/capice/venv/bin/activate>
-    capice -v train -i </path/to/new_train_output.tsv.gz> -m </path/to/capice/resources/train_impute_values.json> -o </path/to/store/output/poc_model.pickle.dat>
+    capice -v train -i </path/to/train_input.tsv.gz> -m </path/to/capice/resources/train_impute_values.json> -o </path/to/store/output/xgb_booster_poc.pickle.dat>
     ```
     And run it (`sbatch <scriptname>`).
+
     9. Run BCF tools for the other files:
     ```shell
-    ./capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i predict_input.vcf.gz -o predict_input.tsv.gz
-    ./capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i breakends_vep.vcf.gz -o breakends_vep.tsv.gz
-    ./capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i edge_cases_vep.vcf.gz -o edge_cases_vep.tsv.gz
-    ./capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
+    ml load BCFtools/1.11-GCCcore-7.3.0
+    /path/to/capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i predict_input.vcf.gz -o predict_input.tsv.gz
+    /path/to/capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i breakends_vep.vcf.gz -o breakends_vep.tsv.gz
+    /path/to/capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i edge_cases_vep.vcf.gz -o edge_cases_vep.tsv.gz
+    /path/to/capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
+    ml purge
     ```
     10. Move the files to capice
     ```shell
-    cp poc_model.pickle.dat <path/to/capice/tests/resources/xgb_booster_poc.pickle.dat>
-    cp predict_input.tsv.gz <path/to/capice/resources/>
-    cp breakends_vep.tsv.gz <path/to/capice/resources/>
-    cp edge_cases_vep.tsv.gz <path/to/capice/tests/resources/>
-    cp symbolic_alleles_vep.tsv.gz <path/to/capice/tests/resources/>
+    cp train_input.tsv.gz </path/to/capice/resources/>
+    cp predict_input.tsv.gz </path/to/capice/resources/>
+    cp xgb_booster_poc.pickle.dat </path/to/capice/tests/resources/>
+    cp breakends_vep.tsv.gz </path/to/capice/tests/resources/>
+    cp edge_cases_vep.tsv.gz </path/to/capice/tests/resources/>
+    cp symbolic_alleles_vep.tsv.gz </path/to/capice/tests/resources/>
     ```
     11. Install your current branch of capice in a virtual environment and run the tests.
     ```shell
@@ -148,7 +154,14 @@ _(For a more detailed explanation on creating the train-test and validation data
     pip install -e '.[test]'
     pytest
     ```
-    12. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
+    12. ~~Fix the following tests that cause errors due to the new model~~
+        1. ~~`/tests/capice/test_edge_cases_predict.py`~~
+           1. ~~`test_edge_cases()`~~
+           2. ~~`test_symbolic_alleles()`~~
+           3. ~~`test_breakpoints()`~~
+        2. ~~`/tests/capice/utilities/test_predictor.py`~~
+           1. ~~`test_predict()`~~
+    13. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
 3. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
