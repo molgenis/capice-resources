@@ -9,6 +9,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=2gb
 #SBATCH --nodes=1
+#SBATCH --export=NONE
+#SBATCH --get-user-env=L60
 
 # Ensure these paths are set correctly!!!
 vip_dir='/path/to/vip/'
