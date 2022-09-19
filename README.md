@@ -163,69 +163,60 @@ _(For a more detailed explanation on creating the train-test and validation data
            1. ~~`test_predict()`~~
     13. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
-3. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
+2. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
    ```shell
-    wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz
+   wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz
    ```
-4. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs:  
+3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs:  
    ```shell
     python3 ./train_data_creator/main.py --input_vkgl </path/to/vkgl_consensus.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output_train_data>
     ```
-5. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release, matching the CAPICE release in
-   step 1.
-6. Attach both train-test and validation VCFs to [capice-resources](https://github.com/molgenis/capice-resources)
-   release.
-7. Prepare for running VEP:
-    1. Download the latest VEP release from
-       the [Molgenis Cloud](https://download.molgeniscloud.org/downloads/vip/images/)
-    2. Download the [VEP cache](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html) belonging to the VEP
-       version:  
-       `wget ftp://ftp.ensembl.org/pub/release-<version>/variation/vep/homo_sapiens_refseq_vep_<version>_GRCh<number>.tar.gz`
-    3. Download the [required VEP plugins for CAPICE](https://github.com/molgenis/capice#requirements)
-       from [here](https://github.com/Ensembl/VEP_plugins).
-8. Run the VEP singularity image in combination with [this VEP command](https://github.com/molgenis/capice#VEP) on
-   train-test & validation VCF files (separately!):  
-   `singularity exec --bind /apps,/groups,/tmp vep <command>` (add `--per_gene` for the train-test dataset)  
-   __IMPORTANT:__ If running on a cluster, be sure to add `--buffer_size 500` (or something similar) to reduce memory
-   usage (at the cost of speed).  
-   An example sbatch script for running this on the cluster can be found
-   in [utility_scripts/slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh)
-9. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`.
+4. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
+   the `train_test.vcf.gz` and `validation.vcf.gz` files created in the previous step.
+5. Update `./utility_scripts/slurm_run_vep.sh` with the new VEP command.
+6. Run the VEP singularity image on both the train-test & validation VCF files (separately!):
+   ```shell
+   sbatch --output=/path/to/train_test_vep.log --error=/path/to/train_test_vep.err ./utility_scripts/slurm_run_vep.sh -g -i /path/to/train_test.vcf.gz -o /path/to/train_test_vep.vcf.gz
+   sbatch --output=/path/to/validation_vep.log --error=/path/to/validation_vep.err ./utility_scripts/slurm_run_vep.sh -g -i /path/to/validation.vcf.gz -o /path/to/validation_vep.vcf.gz
+   ```
+   __IMPORTANT:__ If memory causes issues, `--buffer_size 500` (or something similar) can be used 
+   to reduce memory usage (at the cost of speed).
+8. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`.
     1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not
        supply an extension as it doesn't produce a single file)
-10. Use the VEP singularity image to annotate the GRCh38 VCF files.
-11. Convert GRCh37 VEP annotated train-test & validation VCFs (separately!) back to TSV
+9. Use the VEP singularity image to annotate the GRCh38 VCF files.
+10. Convert GRCh37 VEP annotated train-test & validation VCFs (separately!) back to TSV
     using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (
     using `-t`)
     1. `capice/scripts/convert_vep_vcf_to_tsv_capice.sh -i </path/to/vep.vcf.gz> -o </path/to/vep.tsv.gz> -t`
-12. Process GRCH37 train-test & validation TSVs (separately!)
+11. Process GRCH37 train-test & validation TSVs (separately!)
     1. `python3 ./utility_scripts/process_vep_tsv.py -i /path/to/vep.tsv.gz -o /path/to/vep_processed.tsv.gz`
-13. Repeat steps 10 and 11 for train-test and validation of GRCh38 (add the `-a` flag to the `process_vep_tsv.py`).
-14. Update imputing JSON accordingly to the newly features added and/or removed.
-15. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
+12. Repeat steps 10 and 11 for train-test and validation of GRCh38 (add the `-a` flag to the `process_vep_tsv.py`).
+13. Update imputing JSON accordingly to the newly features added and/or removed.
+14. Make sure the latest release of CAPICE made in step 1 is available on the GCC cluster
     1. `pip install capice` (be sure to install within a virtual environment or use the singularity image)
-16. Use the JSON made in step 14 and the processed train-test TSV made in step 11 to start the train protocol of CAPICE
+15. Use the JSON made in step 14 and the processed train-test TSV made in step 11 to start the train protocol of CAPICE
     1. You may want to use a custom script that loads the latest Python module, activates the virtual environment and
        activates the and then activates the train protocol. It can take 5 hours for a new model to train.
     2. `module load <python>`
     3. `source ./capice/venv/bin/activate`
     4. `capice train -i </path/to/train-test.tsv.gz> -m </path/to/impute.json> -o </path/to/output>` 
-17. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
-18. Use new model generated in step 17 to generate CAPICE results file of the validation TSV.
-19. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-20. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+16. Attach new models to [CAPICE](https://github.com/molgenis/capice) and [capice-resources](https://github.com/molgenis/capice-resources) releases.
+17. Use new model generated in step 17 to generate CAPICE results file of the validation TSV.
+18. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
+19. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
     `python3 compare_models.py -s1 </path/to/capice_predict_output_model1.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>`
-21. If not done so already, download the source code from https://github.com/molgenis/capice/releases/tag/v1.1 and unpack it.
+20. If not done so already, download the source code from https://github.com/molgenis/capice/releases/tag/v1.1 and unpack it.
     1. Please note that if any of the following steps gives an error, outside of `compare_to_legacy_model.py`, code changes have to be made to compare the performance of a new model to the originally published Li et al. model. It may be possible that comparing performance to the legacy model in itself is no longer possible.
-22. Within this folder, create a new venv environment: `python3.6 -m venv venv`
-23. Load venv: `source venv/bin/activate`
-24. Fix `requirements.txt`: `sed -i '1d' requirements.txt` (use `gsed` on MacOS)
-25. Ensure pip is up-to-date: `pip install --upgrade pip`
-26. Install requirements: `pip install -r requirements.txt`
-27. Use CAPICE v1.1 to score the CADD file generated in step 6.
+21. Within this folder, create a new venv environment: `python3.6 -m venv venv`
+22. Load venv: `source venv/bin/activate`
+23. Fix `requirements.txt`: `sed -i '1d' requirements.txt` (use `gsed` on MacOS)
+24. Ensure pip is up-to-date: `pip install --upgrade pip`
+25. Install requirements: `pip install -r requirements.txt`
+26. Use CAPICE v1.1 to score the CADD file generated in step 6.
     1. `python3.6 ./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
-28. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
+27. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
     1. `python3 compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/>` 
     2. `prediction_savepath.tsv`: output score file of CAPICE v1.1
     3. `validation.vcf.gz`: the output of the `train_data_creator` in step 3
