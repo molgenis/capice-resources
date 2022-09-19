@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import typing
 import warnings
 
 import numpy as np
@@ -103,11 +104,16 @@ class Validator:
                 raise DataError(f'Missing required column: {column}')
 
 
-def load_and_correct_cgd(path):
+def load_and_correct_cgd(path, present_genes: typing.Iterable):
     cgd = pd.read_csv(path, sep='\t')
     # Correct TENM1 since it can absolutely not be AR
     cgd.drop(index=cgd[cgd['#GENE'] == 'TENM1'].index, inplace=True)
-    return cgd[cgd['INHERITANCE'].str.contains('AR')]['#GENE'].values
+    return_genes = []
+    genes_in_cgd = cgd[cgd['INHERITANCE'].str.contains('AR')]['#GENE'].values
+    for gene in genes_in_cgd:
+        if gene in present_genes:
+            return_genes.append(gene)
+    return return_genes
 
 
 def main():
@@ -182,7 +188,7 @@ def main():
 
     print('Removing Heterozygous variants from AR genes.')
     before_drop = data.shape[0]
-    ar_genes = load_and_correct_cgd(cgd)
+    ar_genes = load_and_correct_cgd(cgd, data['%SYMBOL'].unique())
     for gene in ar_genes:
         data.drop(
             data[
