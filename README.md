@@ -177,15 +177,22 @@ _(For a more detailed explanation on creating the train-test and validation data
 5. Update `./utility_scripts/slurm_run_vep.sh` with the new VEP command.
 6. Run the VEP singularity image on both the train-test & validation VCF files (separately!):
    ```shell
-   sbatch --output=/path/to/train_test_vep.log --error=/path/to/train_test_vep.err ./utility_scripts/slurm_run_vep.sh -g -i /path/to/train_test.vcf.gz -o /path/to/train_test_vep.vcf.gz
-   sbatch --output=/path/to/validation_vep.log --error=/path/to/validation_vep.err ./utility_scripts/slurm_run_vep.sh -g -i /path/to/validation.vcf.gz -o /path/to/validation_vep.vcf.gz
+   sbatch --output=</path/to/train_test_vep.log> --error=</path/to/train_test_vep.err> ./utility_scripts/slurm_run_vep.sh -g -i </path/to/train_test.vcf.gz> -o </path/to/train_test_vep.vcf.gz>
+   sbatch --output=</path/to/validation_vep.log> --error=</path/to/validation_vep.err> ./utility_scripts/slurm_run_vep.sh -g -i </path/to/validation.vcf.gz> -o </path/to/validation_vep.vcf.gz>
    ```
    __IMPORTANT:__ If memory causes issues, `--buffer_size 500` (or something similar) can be used 
    to reduce memory usage (at the cost of speed).
-8. Lift over not-annotated VCFs to GRCh38 using `lifover_variants.sh`.
-    1. `sbatch lifover_variants.sh -i </path/to/step3.vcf.gz> -o </path/to/output/directory/file>` (please note: do not
-       supply an extension as it doesn't produce a single file)
-9. Use the VEP singularity image to annotate the GRCh38 VCF files.
+7. Lift over not-annotated VCFs (output from `train_data_creator`) to GRCh38 using `lifover_variants.sh`:
+   ```shell
+   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/lifover_variants.sh -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38>
+   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/lifover_variants.sh -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38>
+   ```
+   __IMPORTANT:__ Do not supply an extension as it doesn't produce a single file!
+8. Use the VEP singularity image to annotate the GRCh38 VCF files:
+   ```shell
+   sbatch --output=</path/to/train_test_grch38_vep.log> --error=</path/to/train_test_grch38_vep.err> ./utility_scripts/slurm_run_vep.sh -g -a -i </path/to/train_test_grch38.vcf.gz> -o </path/to/train_test_grch38_vep.vcf.gz>
+   sbatch --output=</path/to/validation_grch38_vep.log> --error=</path/to/validation_grch38_vep.err> ./utility_scripts/slurm_run_vep.sh -g -a -i </path/to/validation_grch38.vcf.gz> -o </path/to/validation_grch38_vep.vcf.gz>
+   ```
 10. Convert GRCh37 VEP annotated train-test & validation VCFs (separately!) back to TSV
     using [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (
     using `-t`)
