@@ -51,6 +51,14 @@ class CommandLineDigest:
             required=True,
             help='Output path + filename'
         )
+        required.add_argument(
+            '-g',
+            '--genes',
+            type=str,
+            required=True,
+            help='File containing all Autosomal Recessive genes, each gene on a newline. '
+                 'Available at: https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz'
+        )
         optional.add_argument(
             '-a',
             '--assembly',
@@ -83,11 +91,23 @@ class Validator:
                                      'exists!')
 
     @staticmethod
+    def validate_cgd(path):
+        if not path.endswith('CGD.txt.gz'):
+            raise IncorrectFileError('Input CGD is not the raw downloaded CGD file!')
+
+    @staticmethod
     def validate_input_dataset(input_data):
-        columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID']
+        columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID', '%gnomAD_HN']
         for column in columns_must_be_present:
             if column not in input_data.columns:
                 raise DataError(f'Missing required column: {column}')
+
+
+def load_and_correct_cgd(path):
+    cgd = pd.read_csv(path, sep='\t')
+    # Correct TENM1 since it can absolutely not be AR
+    cgd.drop(index=cgd[cgd['#GENE'] == 'TENM1'].index, inplace=True)
+    return cgd[cgd['INHERITANCE'].str.contains('AR')]['#GENE'].values
 
 
 def main():
@@ -96,11 +116,13 @@ def main():
     data_path = cli.get_argument('input')
     output = cli.get_argument('output')
     grch38 = cli.get_argument('assembly')
+    cgd = cli.get_argument('genes')
     print('')
 
     print('Validating input arguments.')
     validator = Validator()
     validator.validate_input_cla(data_path)
+    validator.validate_cgd(cgd)
     validator.validate_output_cla(output)
 
     print('Reading in dataset')
@@ -157,6 +179,21 @@ def main():
     after_drop = data.shape[0]
     print(f'Dropped {before_drop-after_drop} variants due to incorrect binarized_label or '
           f'sample_weight.\n')
+
+    print('Removing Heterozygous variants from AR genes.')
+    before_drop = data.shape[0]
+    ar_genes = load_and_correct_cgd(cgd)
+    for gene in ar_genes:
+        data.drop(
+            data[
+                (data['%gnomAD_HN'].notnull()) &
+                (data['%gnomAD_HN'] == 0) &
+                (data['%SYMBOL'] == gene)
+                ].index, inplace=True
+        )
+    after_drop = data.shape[0]
+    print(f'Dropped {before_drop - after_drop} variants that were found only heterozygous in AR '
+          f'genes.')
 
     print('Please check the sample weights:')
     print(data[['binarized_label', 'sample_weight']].value_counts())
