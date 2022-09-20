@@ -36,7 +36,7 @@ class ProgressPrinter:
         self.before_drop = sample_size
 
     def print_final_shape(self):
-        print(f'Final shape: {self.before_drop}')
+        print(f'Final number of samples: {self.before_drop}')
 
 
 progress_printer = ProgressPrinter()
