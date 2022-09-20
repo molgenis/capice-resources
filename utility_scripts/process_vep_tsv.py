@@ -189,14 +189,13 @@ def main():
     print('Removing Heterozygous variants from AR genes.')
     before_drop = data.shape[0]
     ar_genes = load_and_correct_cgd(cgd, data['%SYMBOL'].unique())
-    for gene in ar_genes:
-        data.drop(
-            data[
-                (data['%gnomAD_HN'].notnull()) &
-                (data['%gnomAD_HN'] == 0) &
-                (data['%SYMBOL'] == gene)
-                ].index, inplace=True
-        )
+    data.drop(
+        data[
+            (data['%gnomAD_HN'].notnull()) &
+            (data['%gnomAD_HN'] == 0) &
+            (data['%SYMBOL'].isin(ar_genes))
+        ].index, inplace=True
+    )
     after_drop = data.shape[0]
     print(f'Dropped {before_drop - after_drop} variants that were found only heterozygous in AR '
           f'genes.')
