@@ -12,7 +12,7 @@ module contains their own README (if applicable) describing how to use them.
 ## Installation
 
 1. Download/git clone the source code.
-2. Run `pip install -e '.[test]'`
+2. Run `pip --no-cache-dir install -e '.[test]'`
 
 To test the individual modules, change directory to the specific module and run `pytest`.
 
@@ -89,7 +89,7 @@ _(For a more detailed explanation on creating the train-test and validation data
     5. Load BCF tools and run
        [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
        on the train input. (note: use `-t` when using the conversion tool)
-   ```shell
+    ```shell
     module load BCFtools/1.11-GCCcore-7.3.0
     bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
     module purge
@@ -99,7 +99,7 @@ _(For a more detailed explanation on creating the train-test and validation data
     module load Python/3.9.1-GCCcore-7.3.0-bare
     python3 -m venv venv
     source venv/bin/activate
-    pip install -e .
+    pip --no-cache-dir install -e .
     ```
    (Note: if you want to clone the repository on a cluster, the password asked by github is a generated personal access
    token that can be set under developer settings on github. Grant all permissions on repository. This might not be necessary
@@ -109,6 +109,7 @@ _(For a more detailed explanation on creating the train-test and validation data
     ```shell
     module load Python/3.9.1-GCCcore-7.3.0-bare
     python3 ./utility_scripts/process_vep_tsv.py -i </path/to/train_input_annotated.tsv.gz> -o </path/to/train_input.tsv.gz>
+    deactivate
     module purge
     ```
    
@@ -152,9 +153,10 @@ _(For a more detailed explanation on creating the train-test and validation data
     ```shell
     module load Python/3.9.1-GCCcore-7.3.0-bare
     python3 -m venv env
-    source env/bin/activate
-    pip install -e '.[test]'
+    source venv/bin/activate
+    pip --no-cache-dir install -e '.[test]'
     pytest
+    deactivate
     ```
     12. ~~Fix the following tests that cause errors due to the new model~~
         1. ~~`/tests/capice/test_edge_cases_predict.py`~~
@@ -173,9 +175,11 @@ _(For a more detailed explanation on creating the train-test and validation data
    ```
 3. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs:  
    ```shell
-    module load Python/3.9.1-GCCcore-7.3.0-bare
-    python3 ./train_data_creator/main.py --input_vkgl </path/to/vkgl_consensus.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output_train_data>
-    ```
+   module load Python/3.9.1-GCCcore-7.3.0-bare
+   source ./venv/bin/activate
+   python3 ./train_data_creator/main.py --input_vkgl </path/to/vkgl_consensus.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output_train_data>
+   deactivate
+   ```
 4. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
    the `train_test.vcf.gz` and `validation.vcf.gz` files created in the previous step.
 5. Update `./utility_scripts/slurm_run_vep.sh` with the new VEP command.
@@ -210,10 +214,13 @@ _(For a more detailed explanation on creating the train-test and validation data
 10. Process train-test & validation TSVs (ensure `-a` is added for GRCh38):
     ```shell
     module load Python/3.9.1-GCCcore-7.3.0-bare
+    source ./venv/bin/activate
     python3 ./utility_scripts/process_vep_tsv.py -i </path/to/train_test_vep.tsv.gz> -o </path/to/train_test_vep_processed.tsv.gz> 1> </path/to/train_test_vep_processed.log>
     python3 ./utility_scripts/process_vep_tsv.py -i </path/to/validation_vep.tsv.gz> -o </path/to/validation_vep_processed.tsv.gz> 1> </path/to/validation_vep_processed.log>
     python3 ./utility_scripts/process_vep_tsv.py -a -i </path/to/train_test_grch38_vep.tsv.gz> -o </path/to/train_test_grch38_vep_processed.tsv.gz> 1> </path/to/train_test_grch38_vep_processed.log>
     python3 ./utility_scripts/process_vep_tsv.py -a -i </path/to/validation_grch38_vep.tsv.gz> -o </path/to/validation_grch38_vep_processed.tsv.gz> 1> </path/to/validation_grch38_vep_processed.log>
+    deactivate
+    ml purge
     ```
 11. Train the new model using the train-test TSV and impute json (for both GRCh37 & GRCh38):
     ```shell
@@ -251,25 +258,55 @@ _(For a more detailed explanation on creating the train-test and validation data
     -m </path/to/capice/resources/train_impute_values.json> \
     -o </path/to/store/output/capice_model_grch38.pickle.dat>
     ```
-12. Run the [CADD web service](https://cadd.gs.washington.edu/score) on `validation.vcf.gz` using the following settings:
-    - GRCh37-v1.4
-    - toggle on "include annotations"
-13. Unpack `validation.vcf.gz` and upload this to the [legacy CAPICE webservice](https://capice.molgeniscloud.org/).
 14. Attach the new models to the draft release created in [capice-resources](https://github.com/molgenis/capice-resources) releases.
-16. Use new model generated in step 17 to generate CAPICE results file of the validation TSV.
-17. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV.
-18. Use `compare_models.py` in `utility_scripts` to compare performance of two models (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+15. Run CAPICE on the newly created models:
+    ```shell
+    module load Python/3.9.1-GCCcore-7.3.0-bare
+    source capice/venv/bin/activate
+    python3 capice predict -i </path/to/validation_vep_processed.tsv.gz> -m </path/to/capice_model_grch37.pickle.dat> -o </path/to/validation_pedicted.tsv.gz>
+    python3 capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/capice_model_grch38.pickle.dat> -o </path/to/validation_grch38_pedicted.tsv.gz>
+    deactivate
+    ```
+16. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV:
+    ```shell
+    module load Python/3.9.1-GCCcore-7.3.0-bare
+    python3 -m venv capice-v<version>/venv
+    source capice-v<version>/venv/bin/activate
+    pip --no-cache-dir install capice==<version>
+    wget https://github.com/molgenis/capice/releases/download/v<version>/v<version>-v<model_version>_grch37.pickle.dat
+    wget https://github.com/molgenis/capice/releases/download/v<version>/v<version>-v<model_version>_grch38.pickle.dat
+    capice predict -i </path/to/validation_vep_processed.tsv.gz> -m </path/to/v<version>>-v<model_version>_grch37.pickle.dat> -o </path/to/validation_pedicted_old_model.tsv.gz>
+    capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/v<version>>-v<model_version>_grch38.pickle.dat> -o </path/to/validation_grch38_pedicted_old_model.tsv.gz>
+    deactivate
+    ```
+17. Use `compare_models.py` in `utility_scripts` to compare performance of two models: (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+    ```shell
+    module load Python/3.9.1-GCCcore-7.3.0-bare
+    python3 -m venv ./venv/bin/activate
+    python3 ./utility_scripts/compare_models.py -s1 </path/to/validation_vep_processed.tsv.gz> -l1 </path/to/validation_vep_processed.tsv.gz> -s2 </path/to/validation_pedicted_old_model.tsv.gz> -l2 </path/to/validation_vep_processed.vcf.gz> -o </output/path/>
+    python3 ./utility_scripts/compare_models.py -s1 </path/to/validation_pedicted.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>
+    ```
     `python3 compare_models.py -s1 </path/to/capice_predict_output_model1.tsv.gz> -l1 </path/to/capice_predict_input.tsv> -s2 </path/to/capice_predict_output_model2.tsv.gz> -l2 </path/to/capice_predict_input.tsv> -o </output/path/>`
 19. If not done so already, download the source code from https://github.com/molgenis/capice/releases/tag/v1.1 and unpack it.
     1. Please note that if any of the following steps gives an error, outside of `compare_to_legacy_model.py`, code changes have to be made to compare the performance of a new model to the originally published Li et al. model. It may be possible that comparing performance to the legacy model in itself is no longer possible.
 20. Within this folder, create a new venv environment: `python3.6 -m venv venv`
 21. Load venv: `source venv/bin/activate`
 22. Fix `requirements.txt`: `sed -i '1d' requirements.txt` (use `gsed` on MacOS)
-23. Ensure pip is up-to-date: `pip install --upgrade pip`
-24. Install requirements: `pip install -r requirements.txt`
+23. Ensure pip is up-to-date: `pip --no-cache-dir install --upgrade pip`
+24. Install requirements: `pip --no-cache-dir install -r requirements.txt`
 25. Use CAPICE v1.1 to score the CADD file generated in step 6.
     1. `python3.6 ./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
-26. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
+26. If new models perform better:
+    1. Merge feature branch for capice.
+    2. Publish a new release.
+    3. Add new models to release.
+
+
+1. Run the [CADD web service](https://cadd.gs.washington.edu/score) on `validation.vcf.gz` using the following settings:
+    - GRCh37-v1.4
+    - toggle on "include annotations"
+2. Unpack `validation.vcf.gz` and upload this to the [legacy CAPICE webservice](https://capice.molgeniscloud.org/).
+3. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model.
     1. `python3 compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/>` 
     2. `prediction_savepath.tsv`: output score file of CAPICE v1.1
     3. `validation.vcf.gz`: the output of the `train_data_creator` in step 3
