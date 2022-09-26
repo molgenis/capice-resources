@@ -6,15 +6,15 @@ import typing
 import argparse
 import warnings
 
+import numpy as np
 import pandas as pd
-import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 
 ID_SEPARATOR = '!'
 MERGE_COLUMNS_LABELS = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
 MERGE_COLUMNS_SCORES = ['chr', 'pos', 'ref', 'alt', 'gene_name']
-USE_COLUMNS = ['Consequence', 'score', 'binarized_label']
+USE_COLUMNS = ['Consequence', 'score', 'binarized_label', 'gnomAD_AF']
 BINARIZED_LABEL = 'binarized_label'
 SCORE = 'score'
 
@@ -146,6 +146,9 @@ class Validator:
     def validate_bl_column_present(self, label_dataset: pd.DataFrame, model_number: int):
         self._validate_column_present(BINARIZED_LABEL, label_dataset, 'label', model_number)
 
+    def validate_af_column_present(self, label_dataset: pd.DataFrame, model_number: int):
+        self._validate_column_present('gnomAD_AF', label_dataset, 'label', model_number)
+
     @staticmethod
     def validate_consequence_column_present(labels_dataset):
         has_consequence = True
@@ -213,7 +216,9 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
     labels_model = pd.read_csv(labels, sep='\t', na_values='.')
     labels_model.columns = correct_column_names(labels_model.columns)
     validator.validate_bl_column_present(labels_model, model_number)
+    validator.validate_af_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
+    fill_na_af(labels_model, model_number)
     if scores_model.shape[0] == labels_model.shape[0]:
         model = pd.concat([scores_model, labels_model], axis=1)
     else:
@@ -234,6 +239,16 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
     model.drop(columns=model.columns.difference(USE_COLUMNS), inplace=True)
 
     return model, m_cons
+
+
+def fill_na_af(label_dataset, model_number):
+    n_nan = label_dataset[label_dataset['gnomAD_AF'].isnull()].shape[0]
+    n_total = label_dataset.shape[0]
+    print(
+        f"Filling {n_nan}/{n_total} ({round(n_nan/n_total*100, 2)}%) AF with 0 for model number"
+        f" {model_number}."
+    )
+    label_dataset['gnomAD_AF'].fillna(0, inplace=True)
 
 
 def process_cla(validator):
@@ -266,6 +281,7 @@ class Plotter:
         self.index = 1
         self.fig_auc = plt.figure()
         self.fig_roc = plt.figure()
+        self.fig_afb = plt.figure()
         self.fig_score_dist = plt.figure()
         self.fig_score_diff = plt.figure()
         self.consequences = []
@@ -291,6 +307,14 @@ class Plotter:
         self.fig_roc = plt.figure(figsize=(10, 15))
         self.fig_roc.suptitle(
             f'Model 1 vs Model 2 Receiver Operator Curves\n'
+            f'Model 1 scores: {model_1_score_path}\n'
+            f'Model 1 labels: {model_1_label_path}\n'
+            f'Model 2 scores: {model_2_score_path}\n'
+            f'Model 2 labels: {model_2_label_path}\n'
+        )
+        self.fig_afb = plt.figure(figsize=(10, 11))
+        self.fig_afb.suptitle(
+            f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n'
             f'Model 1 scores: {model_1_score_path}\n'
             f'Model 1 labels: {model_1_label_path}\n'
             f'Model 2 scores: {model_2_score_path}\n'
@@ -345,6 +369,7 @@ class Plotter:
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
         self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[
             0], 'Global')
+        self._plot_af_bins(merged_model_1_data, merged_model_2_data)
         self._plot_score_dist(merged_model_1_data, merged_model_2_data, 'Global')
         self._plot_score_diff(merged_model_1_data, merged_model_2_data, 'Global')
         print('Plotting globally done.\n')
@@ -405,6 +430,64 @@ class Plotter:
         ax_roc.set_ylabel('True Positive Rate')
         ax_roc.legend(loc='lower right')
 
+    def _plot_af_bins(self, model_1_data, model_2_data):
+        ax_afb = self.fig_afb.add_subplot(1, 1, 1)
+        width = 0.3
+        bins = [0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]  # Starting at < 0.00001%, up to bin 1-100%
+        bin_labels = []
+        for i in range(1, len(bins)):
+            upper_bound = bins[i]
+            lower_bound = bins[i-1]
+            subset_m1 = model_1_data[
+                (model_1_data['gnomAD_AF'] >= lower_bound) &
+                (model_1_data['gnomAD_AF'] <= upper_bound)
+            ]
+            subset_m2 = model_2_data[
+                (model_2_data['gnomAD_AF'] >= lower_bound) &
+                (model_2_data['gnomAD_AF'] <= upper_bound)
+            ]
+            try:
+                auc_m1 = round(
+                    roc_auc_score(
+                        y_true=subset_m1[BINARIZED_LABEL],
+                        y_score=subset_m1[SCORE]
+                    ), 4
+                )
+                auc_m2 = round(
+                    roc_auc_score(
+                        y_true=subset_m2[BINARIZED_LABEL],
+                        y_score=subset_m2[SCORE]
+                    ), 4
+                )
+            except ValueError:
+                print(
+                    f'Could not calculate AUC for allele frequency bin: '
+                    f'{lower_bound}-{upper_bound}'
+                )
+                auc_m1 = np.NaN
+                auc_m2 = np.NaN
+            bin_label = f'{lower_bound} - {upper_bound}'
+            bin_labels.append(bin_label)
+            ax_afb.bar(
+                i-width,
+                auc_m1,
+                width,
+                align='edge',
+                color='red'
+            )
+            ax_afb.bar(
+                i,
+                auc_m2,
+                width,
+                align='edge',
+                color='blue'
+            )
+            ax_afb.plot(np.NaN, np.NaN, label=f'{bin_label}\nModel 1: {auc_m1}\nModel 2: {auc_m2}',
+                        color='none')
+        ax_afb.set_xticks(list(range(1, len(bins))), bin_labels)
+        ax_afb.set_ylim(0.0, 1.0)
+        ax_afb.legend(loc='lower right')
+
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
         # Plotting AUCs
         ax_auc = self.fig_auc.add_subplot(self.n_rows, self.n_cols, self.index)
@@ -450,6 +533,7 @@ class Plotter:
         print(f'Exporting figures to: {output}')
         self.fig_roc.savefig(os.path.join(output, 'roc.png'))
         self.fig_auc.savefig(os.path.join(output, 'auc.png'))
+        self.fig_afb.savefig(os.path.join(output, 'allele_frequency.png'))
         self.fig_score_dist.savefig(os.path.join(output, 'score_distributions.png'))
         self.fig_score_diff.savefig(os.path.join(output, 'score_differences.png'))
         print('Export done.')
