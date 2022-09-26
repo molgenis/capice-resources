@@ -468,7 +468,7 @@ class Plotter:
                 )
                 auc_m1 = np.NaN
                 auc_m2 = np.NaN
-            bin_label = f'{bins_labels[i-1]} - {bins_labels[i]}%'
+            bin_label = f'{bins_labels[i-1]} ~ {bins_labels[i]}%'
             bin_labels.append(bin_label)
             ax_afb.bar(
                 i-width,
