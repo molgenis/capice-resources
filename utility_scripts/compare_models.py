@@ -433,7 +433,9 @@ class Plotter:
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
         width = 0.3
-        bins = [0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]  # Starting at < 0.00001%, up to bin 1-100%
+        bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin
+        # Sadly bins*100 doesn't work for 1e-6, cause of rounding errors
+        bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
         bin_labels = []
         for i in range(1, len(bins)):
             upper_bound = bins[i]
@@ -466,7 +468,7 @@ class Plotter:
                 )
                 auc_m1 = np.NaN
                 auc_m2 = np.NaN
-            bin_label = f'{lower_bound} - {upper_bound}'
+            bin_label = f'{bins_labels[i-1]} - {bins_labels[i]}%'
             bin_labels.append(bin_label)
             ax_afb.bar(
                 i-width,
@@ -482,8 +484,12 @@ class Plotter:
                 align='edge',
                 color='blue'
             )
-            ax_afb.plot(np.NaN, np.NaN, label=f'{bin_label}\nModel 1: {auc_m1}\nModel 2: {auc_m2}',
-                        color='none')
+            ax_afb.plot(
+                np.NaN,
+                np.NaN,
+                label=f'{bin_label}\nModel 1: {auc_m1}\nModel 2: {auc_m2}\nn: {subset_m1.shape[0]}',
+                color='none'
+            )
         ax_afb.set_xticks(list(range(1, len(bins))), bin_labels)
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.legend(loc='lower right')
