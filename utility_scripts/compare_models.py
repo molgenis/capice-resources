@@ -218,7 +218,6 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
     validator.validate_bl_column_present(labels_model, model_number)
     validator.validate_af_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
-    fill_na_af(labels_model, model_number)
     if scores_model.shape[0] == labels_model.shape[0]:
         model = pd.concat([scores_model, labels_model], axis=1)
     else:
@@ -239,16 +238,6 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
     model.drop(columns=model.columns.difference(USE_COLUMNS), inplace=True)
 
     return model, m_cons
-
-
-def fill_na_af(label_dataset, model_number):
-    n_nan = label_dataset[label_dataset['gnomAD_AF'].isnull()].shape[0]
-    n_total = label_dataset.shape[0]
-    print(
-        f"Filling {n_nan}/{n_total} ({round(n_nan/n_total*100, 2)}%) AF with 0 for model number"
-        f" {model_number}."
-    )
-    label_dataset['gnomAD_AF'].fillna(0, inplace=True)
 
 
 def process_cla(validator):
@@ -492,6 +481,7 @@ class Plotter:
             )
         ax_afb.set_xticks(list(range(1, len(bins))), bin_labels)
         ax_afb.set_ylim(0.0, 1.0)
+        ax_afb.set_xlim(0.5, len(bins) - 0.5)
         ax_afb.legend(loc='lower right')
 
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
