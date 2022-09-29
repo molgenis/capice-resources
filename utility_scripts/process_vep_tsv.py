@@ -111,20 +111,29 @@ class Validator:
                                      'exists!')
 
     @staticmethod
-    def validate_cgd(path):
-        if not path.endswith('CGD.txt.gz'):
-            raise IncorrectFileError('Input CGD is not the raw downloaded CGD file!')
+    def validate_cgd_path(path):
+        if not path.endswith(('.txt.gz', '.tsv.gz')):
+            raise IncorrectFileError('Input CGD file is not either a gzipped txt or tsv file!')
+
+    @staticmethod
+    def validate_cgd_content(cgd_data):
+        required_columns = ['#GENE', 'INHERITANCE']
+        for column in required_columns:
+            if column not in cgd_data.columns:
+                raise DataError(f'Missing required column in CGD data: {column}')
 
     @staticmethod
     def validate_input_dataset(input_data):
         columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID', '%gnomAD_HN']
         for column in columns_must_be_present:
             if column not in input_data.columns:
-                raise DataError(f'Missing required column: {column}')
+                raise DataError(f'Missing required column in supplied dataset: {column}')
 
 
 def load_and_correct_cgd(path, present_genes: typing.Iterable):
+    validator = Validator()
     cgd = pd.read_csv(path, sep='\t')
+    validator.validate_cgd_content(cgd)
     # Correct TENM1 since it can absolutely not be AR
     cgd.drop(index=cgd[cgd['#GENE'] == 'TENM1'].index, inplace=True)
     return_genes = []
@@ -145,7 +154,7 @@ def process_cli(validator):
 
     print('Validating CLA.')
     validator.validate_input_cla(data_path)
-    validator.validate_cgd(cgd)
+    validator.validate_cgd_path(cgd)
     validator.validate_output_cla(output)
     print('Input arguments passed.\n')
     return data_path, output, grch38, cgd
