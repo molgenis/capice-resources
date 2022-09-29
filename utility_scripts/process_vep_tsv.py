@@ -84,7 +84,7 @@ class Validator:
 
     @staticmethod
     def validate_input_dataset(input_data):
-        columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID']
+        columns_must_be_present = ['SYMBOL', 'CHROM', 'ID']
         for column in columns_must_be_present:
             if column not in input_data.columns:
                 raise DataError(f'Missing required column: {column}')
@@ -113,16 +113,16 @@ def main():
     
     print('Dropping entries without gene.')
     before_drop = data.shape[0]
-    data.drop(index=data[data['%SYMBOL'].isnull()].index, inplace=True)
+    data.drop(index=data[data['SYMBOL'].isnull()].index, inplace=True)
     after_drop = data.shape[0]
     print(f'Dropped {before_drop-after_drop} variants.\n')
 
     if grch38:
         print('Converting chromosome column')
-        data['%CHROM'] = data['%CHROM'].str.split('chr', expand=True)[1]
+        data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
         y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
         before_drop = data.shape[0]
-        data.drop(data[~data["%CHROM"].isin(y)].index, inplace=True)
+        data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
         after_drop = data.shape[0]
         print(f'Dropped {before_drop-after_drop} rows due to unknown chromosome.')
         print('Conversion done.\n')
@@ -137,21 +137,21 @@ def main():
     print('Dropping mismatching gene entries.')
     before_drop = data.shape[0]
     data.drop(
-        index=data[data['%ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['%SYMBOL']].index,
+        index=data[data['ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['SYMBOL']].index,
         inplace=True
     )
     after_drop = data.shape[0]
     print(f'Dropped {before_drop-after_drop} variants.\n')
     
     print('Extracting sample weight and binarized_label')
-    data['binarized_label'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[5].astype(float)
-    data['sample_weight'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[6].astype(float)
+    data['binarized_label'] = data['ID'].str.split(ID_SEPARATOR, expand=True)[5].astype(float)
+    data['sample_weight'] = data['ID'].str.split(ID_SEPARATOR, expand=True)[6].astype(float)
     print('')
     
     print('Correcting possible errors within binarized_label or sample_weight')
     before_drop = data.shape[0]
     # Drop everything that doesn't have a binarized_label, also drop unused columns
-    data.drop(index=data[data['binarized_label'].isnull()].index, columns=['%ID'], inplace=True)
+    data.drop(index=data[data['binarized_label'].isnull()].index, columns=['ID'], inplace=True)
     data.drop(index=data[~data['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
     data.drop(index=data[~data['sample_weight'].isin(SAMPLE_WEIGHTS)].index, inplace=True)
     after_drop = data.shape[0]
