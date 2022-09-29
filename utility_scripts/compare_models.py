@@ -385,11 +385,11 @@ class Plotter:
                 continue
 
             self._plot_auc(
-                auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
+                auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
                 consequence
             )
-            self._plot_score_dist(merged_model_1_data, merged_model_2_data, consequence)
-            self._plot_score_diff(merged_model_1_data, merged_model_2_data, consequence)
+            self._plot_score_dist(subset_m1, subset_m2, consequence)
+            self._plot_score_diff(subset_m1, subset_m2, consequence)
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
