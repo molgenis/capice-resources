@@ -19,11 +19,12 @@ output_dir='/path/to/write/output/files/to/'
 n_threads=4
 
 # Defines all vip-specific paths. Check if VIP gets updated!
-vep_image_path="${vip_dir}images/vep-105.0.sif"
+vep_image_path="${vip_dir}images/vep-107.0.sif"
 vep_cache_dir="${vip_dir}resources/vep/cache/"
 splice_ai_snv_path="${vip_dir}resources/GRCh37/spliceai_scores.masked.snv.hg19.vcf.gz"
 splice_ai_indel_path="${vip_dir}resources/GRCh37/spliceai_scores.masked.indel.hg19.vcf.gz"
 gnomad_sites_path="${vip_dir}resources/GRCh37/gnomad.total.r2.1.1.sites.stripped.vcf.gz"
+phylop_path="${vip_dir}resources/GRCh37/hg19.100way.phyloP100way.bw"
 vep_plugins_path="${vip_dir}resources/vep/plugins/"
 
 # Ensure command below is up-to-date with https://github.com/molgenis/capice/#vep!!!
@@ -39,6 +40,7 @@ run_vep() {
   --flag_pick_allele --plugin Grantham \
   --plugin SpliceAI,snv="${splice_ai_snv_path}",indel="${splice_ai_indel_path}" \
   --custom "${gnomad_sites_path},gnomAD,vcf,exact,0,AF,HN" \
+  --custom "${phylop_path},phyloP,bigwig,exact,0" \
   --dir_plugins "${vep_plugins_path}" --per_gene --buffer_size 500
 }
 
