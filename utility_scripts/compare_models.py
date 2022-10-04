@@ -190,16 +190,6 @@ class Validator:
                 exit(1)
 
 
-def correct_column_names(columns: typing.Iterable):
-    processed_columns = []
-    for column in columns:
-        if column.startswith('%'):
-            processed_columns.append(column.split('%')[1])
-        else:
-            processed_columns.append(column)
-    return processed_columns
-
-
 def split_consequences(consequences: pd.Series):
     splitted_consequences = consequences.str.split('&', expand=True)
     return pd.Series(splitted_consequences.values.ravel()).dropna().sort_values(
@@ -208,10 +198,8 @@ def split_consequences(consequences: pd.Series):
 
 def prepare_data_file(validator, scores, labels, model_number, force_merge):
     scores_model = pd.read_csv(scores, sep='\t', na_values='.')
-    scores_model.columns = correct_column_names(scores_model.columns)
     validator.validate_score_column_present(scores_model, model_number)
     labels_model = pd.read_csv(labels, sep='\t', na_values='.')
-    labels_model.columns = correct_column_names(labels_model.columns)
     validator.validate_bl_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
     if scores_model.shape[0] == labels_model.shape[0]:
