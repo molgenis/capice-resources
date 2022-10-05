@@ -193,16 +193,6 @@ class Validator:
                 exit(1)
 
 
-def correct_column_names(columns: typing.Iterable):
-    processed_columns = []
-    for column in columns:
-        if column.startswith('%'):
-            processed_columns.append(column.split('%')[1])
-        else:
-            processed_columns.append(column)
-    return processed_columns
-
-
 def split_consequences(consequences: pd.Series):
     splitted_consequences = consequences.str.split('&', expand=True)
     return pd.Series(splitted_consequences.values.ravel()).dropna().sort_values(
@@ -211,10 +201,8 @@ def split_consequences(consequences: pd.Series):
 
 def prepare_data_file(validator, scores, labels, model_number, force_merge):
     scores_model = pd.read_csv(scores, sep='\t', na_values='.')
-    scores_model.columns = correct_column_names(scores_model.columns)
     validator.validate_score_column_present(scores_model, model_number)
     labels_model = pd.read_csv(labels, sep='\t', na_values='.')
-    labels_model.columns = correct_column_names(labels_model.columns)
     validator.validate_bl_column_present(labels_model, model_number)
     validator.validate_af_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
@@ -399,11 +387,11 @@ class Plotter:
                 continue
 
             self._plot_auc(
-                auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
+                auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
                 consequence
             )
-            self._plot_score_dist(merged_model_1_data, merged_model_2_data, consequence)
-            self._plot_score_diff(merged_model_1_data, merged_model_2_data, consequence)
+            self._plot_score_dist(subset_m1, subset_m2, consequence)
+            self._plot_score_diff(subset_m1, subset_m2, consequence)
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
