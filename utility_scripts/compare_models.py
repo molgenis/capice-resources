@@ -252,6 +252,12 @@ def calculate_score_difference(merged_dataset):
     merged_dataset['score_diff'] = abs(merged_dataset[SCORE] - merged_dataset[BINARIZED_LABEL])
 
 
+def add_imputed_af(merged_dataset):
+    merged_dataset['gnomAD_AF_imputed'] = merged_dataset['gnomAD_AF'].fillna(0)
+    merged_dataset['is_imputed'] = False
+    merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
+
+
 class Plotter:
     def __init__(self, process_consequences):
         self.process_consequences = process_consequences
@@ -410,21 +416,68 @@ class Plotter:
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
         width = 0.3
+        bin_labels = []
+
+        # Plotting the NaN AF values as if they were singletons
+        try:
+            f_auc_m1 = round(
+                roc_auc_score(
+                    y_score=model_1_data[model_1_data['gnomAD_AF_imputed'] == 0][
+                        SCORE],
+                    y_true=model_1_data[model_1_data['is_imputed']][
+                        BINARIZED_LABEL],
+                ), 4
+            )
+            f_auc_m2 = round(
+                roc_auc_score(
+                    y_score=model_2_data[model_2_data['gnomAD_AF_imputed'] == 0][
+                        SCORE],
+                    y_true=model_2_data[model_2_data['is_imputed']][
+                        BINARIZED_LABEL],
+                ), 4
+            )
+        except ValueError:
+            print('Could not calculate an AUC for possible singleton variants.')
+            f_auc_m1 = np.NaN
+            f_auc_m2 = np.NaN
+        bin_labels.append('"0"')
+
+        ax_afb.bar(
+            0 - width,
+            f_auc_m1,
+            width,
+            align='edge',
+            color='red'
+        )
+        ax_afb.bar(
+            0,
+            f_auc_m2,
+            width,
+            align='edge',
+            color='blue'
+        )
+        ax_afb.plot(
+            np.NaN,
+            np.NaN,
+            label=f'"0"\nModel 1: {f_auc_m1}\nModel 2: {f_auc_m2}\nn: '
+                  f'{model_1_data[model_1_data["is_imputed"]].shape[0]}',
+            color='none'
+        )
+
         bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin
         # Sadly bins*100 doesn't work for 1e-6, cause of rounding errors
         bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
-        bin_labels = []
         for i in range(1, len(bins)):
             upper_bound = bins[i]
             lower_bound = bins[i-1]
             subset_m1 = model_1_data[
                 (model_1_data['gnomAD_AF'] >= lower_bound) &
                 (model_1_data['gnomAD_AF'] <= upper_bound)
-            ]
+                ]
             subset_m2 = model_2_data[
                 (model_2_data['gnomAD_AF'] >= lower_bound) &
                 (model_2_data['gnomAD_AF'] <= upper_bound)
-            ]
+                ]
             try:
                 auc_m1 = round(
                     roc_auc_score(
@@ -467,9 +520,9 @@ class Plotter:
                 label=f'{bin_label}\nModel 1: {auc_m1}\nModel 2: {auc_m2}\nn: {subset_m1.shape[0]}',
                 color='none'
             )
-        ax_afb.set_xticks(list(range(1, len(bins))), bin_labels)
+        ax_afb.set_xticks(list(range(0, len(bins))), bin_labels)
         ax_afb.set_ylim(0.0, 1.0)
-        ax_afb.set_xlim(0.5, len(bins) - 0.5)
+        ax_afb.set_xlim(-0.5, len(bins) - 0.5)
         ax_afb.legend(loc='lower right')
 
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
@@ -542,6 +595,10 @@ def main():
     # Calculating score differences
     calculate_score_difference(m1)
     calculate_score_difference(m2)
+
+    # Adding column containing the imputed AF
+    add_imputed_af(m1)
+    add_imputed_af(m2)
 
     # Plotting
     plotter = Plotter(process_consequences)
