@@ -137,7 +137,7 @@ class Validator:
         self._validate_dataframe(data, required_columns, 'New CAPICE scores dataset')
 
     def validate_new_labels_dataset(self, data):
-        required_columns = ['binarized_label']
+        required_columns = ['binarized_label', 'gnomAD_AF']
         self._validate_dataframe(data, required_columns, 'New CAPICE labels dataset')
 
     def validate_can_merge_new_scores(self, data):
@@ -209,6 +209,7 @@ def main():
     print('Data passed.')
 
     print('Merging datasets.')
+    # Processing for the new capice files
     if new_scores.shape[0] == new_labels.shape[0]:
         new_merged = pd.concat(
             [
@@ -233,21 +234,30 @@ def main():
         else:
             raise SampleSizeMismatchError('Score and label file of the new CAPICE model mismatch '
                                           'in sample size and flag -f is not supplied!')
-    new_merged = new_merged[['score', 'binarized_label']]
+    new_merged = new_merged[['score', 'binarized_label', 'gnomAD_AF', 'merge_column']]
+    new_merged.rename(columns={'score': 'score_new', 'binarized_label': 'binarized_label_new'}, inplace=True)
 
-    # Making merge column
+    # Processing for the legacy capice files
+    # Resetting the separator
     old_scores['chr_pos_ref_alt'] = old_scores['chr_pos_ref_alt'].str.split(
         '_', expand=True).astype(str).agg(ID_SEPARATOR.join, axis=1)
+    # Making the merge column for the scores dataset
     old_scores['merge_column'] = old_scores[
         ['chr_pos_ref_alt', 'GeneName']
     ].astype(str).agg(ID_SEPARATOR.join, axis=1)
     try:
+        # Making the merge column for the labels dataset
         old_labels['merge_column'] = old_labels['ID'].str.split(
             ID_SEPARATOR, expand=True).loc[:, :4].astype(
             str).agg(ID_SEPARATOR.join, axis=1)
     except (ValueError, KeyError):
         raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
                                  f'this column up to date? (current string split: {ID_SEPARATOR})')
+
+    # so here I have:
+    # old_scores: chr!pos!ref!alt!gene -> merge column
+    # old_labels: chr!pos!ref!alt!gene -> merge column
+    # new_merged: chr!pos!ref!alt!gene -> merge column
 
     # Merging
     old_merged = old_scores.merge(old_labels, on='merge_column', how='left')
@@ -257,13 +267,39 @@ def main():
         ID_SEPARATOR, expand=True)[5].astype(float)
 
     old_merged = old_merged[['probabilities', 'binarized_label']]
-    old_merged.rename(columns={'probabilities': 'score'}, inplace=True)
+    old_merged.rename(columns={'probabilities': 'score_old', 'binarized_label': 'binarized_label_old'}, inplace=True)
     print('Merging done.')
+
+    # Merging the 2 datasets together
+    merged = old_merged.merge(new_merged, on='merge_column')
+
+    # Checking if the labels are correct
+    merged_incorrect = merged[merged['binarized_label_old'] != merged['binarized_label_new']]
+    if merged_incorrect.shape[0] > 0:
+        warnings.warn(
+            f'Found {merged_incorrect.shape[0]} '
+            f'variants in which the binarized label between legacy and new do not match!'
+        )
+    merged.drop(index=merged[merged['binarized_label_old'] != merged['binarized_label_new']].index, inplace=True)
+    merged.drop(columns=['binarized_label_old'], inplace=True)
+    merged.rename(columns={'binarized_label_new': 'binarized_label'}, inplace=True)
+
+    # Dropping entries that will cause problems with roc_auc_score()
+    before_drop = merged.shape[0]
+    merged.drop(
+        index=merged[
+            (merged['binarized_label'].isnull()) |
+            (merged['score_old'].isnull()) |
+            (merged['score_new'].isnull())
+        ].index
+    )
+    print(f'Dropped {before_drop - merged.shape[0]} entries due to NaN in either the label, old score or new core.')
+    merged.reset_index(drop=True, inplace=True)
 
     print('Plotting.')
     # Preparing the difference column
-    new_merged['diff'] = abs(new_merged['score'] - new_merged['binarized_label'])
-    old_merged['diff'] = abs(old_merged['score'] - old_merged['binarized_label'])
+    merged['diff_old'] = abs(merged['score_old'] - merged['binarized_label'])
+    merged['diff_new'] = abs(merged['score_new'] - merged['binarized_label'])
 
     # Preparing plots
     fig_roc = plt.figure()
