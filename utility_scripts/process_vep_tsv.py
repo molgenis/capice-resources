@@ -124,7 +124,7 @@ class Validator:
 
     @staticmethod
     def validate_input_dataset(input_data):
-        columns_must_be_present = ['%SYMBOL', '%CHROM', '%ID', '%gnomAD_HN']
+        columns_must_be_present = ['SYMBOL', 'CHROM', 'ID', 'gnomAD_HN']
         for column in columns_must_be_present:
             if column not in input_data.columns:
                 raise DataError(f'Missing required column in supplied dataset: {column}')
@@ -176,15 +176,15 @@ def print_stats_dataset(data: pd.DataFrame, validator):
 
 def drop_genes_empty(data: pd.DataFrame):
     print('Dropping variants without a gene.')
-    data.drop(index=data[data['%SYMBOL'].isnull()].index, inplace=True)
+    data.drop(index=data[data['SYMBOL'].isnull()].index, inplace=True)
     progress_printer.new_shape(data.shape[0])
 
 
 def process_grch38(data: pd.DataFrame):
     print('Processing GRCh38.')
-    data['%CHROM'] = data['%CHROM'].str.split('chr', expand=True)[1]
+    data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
     y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
-    data.drop(data[~data["%CHROM"].isin(y)].index, inplace=True)
+    data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
     progress_printer.new_shape(data.shape[0])
 
 
@@ -197,7 +197,7 @@ def drop_duplicate_entries(data: pd.DataFrame):
 def drop_mismatching_genes(data: pd.DataFrame):
     print('Dropping variants with mismatching genes.')
     data.drop(
-        index=data[data['%ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['%SYMBOL']].index,
+        index=data[data['ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['SYMBOL']].index,
         inplace=True
     )
     progress_printer.new_shape(data.shape[0])
@@ -205,12 +205,12 @@ def drop_mismatching_genes(data: pd.DataFrame):
 
 def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
     print('Dropping heterozygous variants in AR genes.')
-    ar_genes = load_and_correct_cgd(cgd, data['%SYMBOL'].unique())
+    ar_genes = load_and_correct_cgd(cgd, data['SYMBOL'].unique())
     data.drop(
         data[
-            (data['%gnomAD_HN'].notnull()) &
-            (data['%gnomAD_HN'] == 0) &
-            (data['%SYMBOL'].isin(ar_genes))
+            (data['gnomAD_HN'].notnull()) &
+            (data['gnomAD_HN'] == 0) &
+            (data['SYMBOL'].isin(ar_genes))
         ].index, inplace=True
     )
     progress_printer.new_shape(data.shape[0])
@@ -218,13 +218,13 @@ def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
 
 def extract_label_and_weight(data: pd.DataFrame):
     print('Extracting binarized_label and sample_weight')
-    data['binarized_label'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[5].astype(float)
-    data['sample_weight'] = data['%ID'].str.split(ID_SEPARATOR, expand=True)[6].astype(float)
+    data['binarized_label'] = data['ID'].str.split(ID_SEPARATOR, expand=True)[5].astype(float)
+    data['sample_weight'] = data['ID'].str.split(ID_SEPARATOR, expand=True)[6].astype(float)
 
 
 def drop_variants_incorrect_label_or_weight(data: pd.DataFrame):
     print('Dropping variants with an incorrect label or weight')
-    data.drop(index=data[data['binarized_label'].isnull()].index, columns=['%ID'], inplace=True)
+    data.drop(index=data[data['binarized_label'].isnull()].index, columns=['ID'], inplace=True)
     data.drop(index=data[~data['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
     data.drop(index=data[~data['sample_weight'].isin(SAMPLE_WEIGHTS)].index, inplace=True)
     progress_printer.new_shape(data.shape[0])
@@ -253,14 +253,14 @@ def main():
     print('Reading in dataset')
     data = pd.read_csv(data_path, sep='\t', na_values='.')
     print_stats_dataset(data, validator)
-    
+
     drop_genes_empty(data)
 
     if grch38:
         process_grch38(data)
 
     drop_duplicate_entries(data)
-    
+
     drop_mismatching_genes(data)
 
     drop_heterozygous_variants_in_ar_genes(data, cgd)

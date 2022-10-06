@@ -9,8 +9,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
-from utility_scripts.compare_models import correct_column_names
-
 ID_SEPARATOR = '!'
 
 
@@ -194,7 +192,6 @@ def main():
     old_labels = pd.read_csv(old_labels, sep='\t', skiprows=n_skip)
     new_scores = pd.read_csv(new_scores, sep='\t')
     new_labels = pd.read_csv(new_labels, sep='\t')
-    new_labels.columns = correct_column_names(new_labels.columns)
     print('Validating data')
     validator.validate_old_scores_dataset(old_scores)
     validator.validate_old_labels_dataset(old_labels)
