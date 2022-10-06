@@ -301,9 +301,14 @@ def main():
     merged['diff_old'] = abs(merged['score_old'] - merged['binarized_label'])
     merged['diff_new'] = abs(merged['score_new'] - merged['binarized_label'])
 
+    merged['imputed_af'] = merged['gnomAD_AF'].fillna(0)
+
     # Preparing plots
     fig_roc = plt.figure()
     fig_roc.suptitle('ROC curves legacy model versus new model.')
+
+    fig_auc = plt.figure()
+    fig_auc.suptitle('AUC performance per AF bin')
 
     fig_score_dist = plt.figure()
     fig_score_dist.suptitle('Raw score distributions of legacy model versus new model.')
