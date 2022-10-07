@@ -7,7 +7,7 @@ import warnings
 
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 
 ID_SEPARATOR = '!'
 
@@ -235,7 +235,8 @@ def main():
             raise SampleSizeMismatchError('Score and label file of the new CAPICE model mismatch '
                                           'in sample size and flag -f is not supplied!')
     new_merged = new_merged[['score', 'binarized_label', 'gnomAD_AF', 'merge_column']]
-    new_merged.rename(columns={'score': 'score_new', 'binarized_label': 'binarized_label_new'}, inplace=True)
+    new_merged.rename(columns={'score': 'score_new', 'binarized_label': 'binarized_label_new'},
+                      inplace=True)
 
     # Processing for the legacy capice files
     # Resetting the separator
@@ -254,11 +255,6 @@ def main():
         raise IncorrectFileError(f'Could not separate the old labels file on the ID column! Is '
                                  f'this column up to date? (current string split: {ID_SEPARATOR})')
 
-    # so here I have:
-    # old_scores: chr!pos!ref!alt!gene -> merge column
-    # old_labels: chr!pos!ref!alt!gene -> merge column
-    # new_merged: chr!pos!ref!alt!gene -> merge column
-
     # Merging
     old_merged = old_scores.merge(old_labels, on='merge_column', how='left')
 
@@ -267,7 +263,12 @@ def main():
         ID_SEPARATOR, expand=True)[5].astype(float)
 
     old_merged = old_merged[['probabilities', 'binarized_label']]
-    old_merged.rename(columns={'probabilities': 'score_old', 'binarized_label': 'binarized_label_old'}, inplace=True)
+    old_merged.rename(
+        columns={
+            'probabilities': 'score_old',
+            'binarized_label': 'binarized_label_old'
+        }, inplace=True
+    )
     print('Merging done.')
 
     # Merging the 2 datasets together
@@ -280,7 +281,10 @@ def main():
             f'Found {merged_incorrect.shape[0]} '
             f'variants in which the binarized label between legacy and new do not match!'
         )
-    merged.drop(index=merged[merged['binarized_label_old'] != merged['binarized_label_new']].index, inplace=True)
+    merged.drop(
+        index=merged[merged['binarized_label_old'] != merged['binarized_label_new']].index,
+        inplace=True
+    )
     merged.drop(columns=['binarized_label_old'], inplace=True)
     merged.rename(columns={'binarized_label_new': 'binarized_label'}, inplace=True)
 
@@ -293,7 +297,10 @@ def main():
             (merged['score_new'].isnull())
         ].index
     )
-    print(f'Dropped {before_drop - merged.shape[0]} entries due to NaN in either the label, old score or new core.')
+    print(
+        f'Dropped {before_drop - merged.shape[0]} '
+        f'entries due to NaN in either the label, old score or new core.'
+    )
     merged.reset_index(drop=True, inplace=True)
 
     print('Plotting.')
