@@ -465,7 +465,10 @@ def main():
 
     # Plotting
     plotter = Plotter(process_consequences)
-    plotter.prepare_plots(m1_scores, m1_labels, m2_scores, m2_labels)
+    plotter.prepare_plots(os.path.basename(m1_scores),
+                          os.path.basename(m1_labels),
+                          os.path.basename(m2_scores),
+                          os.path.basename(m2_labels))
     plotter.prepare_subplots(m1)
     plotter.plot(m1, m2)
     plotter.export(output)
