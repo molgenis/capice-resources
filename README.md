@@ -263,7 +263,7 @@ _(For a more detailed explanation on creating the train-test and validation data
 14. Run CAPICE on the newly created models:
     ```shell
     module load Python/3.9.1-GCCcore-7.3.0-bare
-    source capice/venv/bin/activate
+    source </path/to/your/capice/venv/bin/activate>
     python3 capice predict -i </path/to/validation_vep_processed.tsv.gz> -m </path/to/capice_model_grch37.pickle.dat> -o </path/to/validation_pedicted.tsv.gz>
     python3 capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/capice_model_grch38.pickle.dat> -o </path/to/validation_grch38_pedicted.tsv.gz>
     deactivate
@@ -303,13 +303,28 @@ _(For a more detailed explanation on creating the train-test and validation data
     ```
 
 Optional for validation with CAPICE from paper:
-19. Run the [CADD web service](https://cadd.gs.washington.edu/score) on `validation.vcf.gz` using the following settings:
+19. If not done so already, download/prepare CAPICE v1.1: 
+    ```shell
+    wget https://github.com/molgenis/capice/archive/refs/tags/v1.1.tar.gz
+    tar -xvzf v1.1.tar.gz
+    cd capice-1.1
+    printf "numpy==1.22.2\npandas==1.4.1\nscikit-learn==1.0.2\nxgboost==0.90\n" > requirements.txt
+    module load Python/3.9.1-GCCcore-7.3.0-bare
+    python3.9 -m venv venv
+    source venv/bin/activate
+    pip --no-cache-dir install -r requirements.txt
+    ```
+    **IMPORTANT:** Please note that if any of the following steps gives an error, outside of `compare_to_legacy_model.py`, code changes have to be made to compare the performance of a new model to the originally published Li et al. model. It may be possible that comparing performance to the legacy model in itself is no longer possible. 
+20. Run the [CADD web service](https://cadd.gs.washington.edu/score) on `validation.vcf.gz` using the following settings:
     - GRCh37-v1.4
     - toggle on "include annotations"
-20. Unpack `validation.vcf.gz` and upload this to the [legacy CAPICE webservice](https://capice.molgeniscloud.org/).
-21. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model:
+22. Use CAPICE v1.1 to score the CADD file generated in step 6.
+    ```shell
+    python3.9 ./CAPICE_scripts/model_inference.py --input_path </path/to/CADD_file.tsv.gz> --model_path ./CAPICE_model/xgb_booster.pickle.dat --prediction_savepath </path/to/output.tsv>` (note: output will **NOT** be gzipped)
+    ```
+23. Use `compare_to_legacy_model.py` in `utility_scripts` to compare the performance of the new GRCh37 model to the original Li et al. published model:
    ```shell
-   python3 compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/>
+   python3 ./utility_scripts/compare_to_legacy_model.py --old_model_results </path/to/prediction_savepath.tsv> --old_model_cadd_input </path/to/validation.vcf.gz> --new_model_results </path/to/new_capice_output.tsv.gz> --new_model_capice_input </path/to/validation_vep_processed.tsv.gz> --output </output/path/legacy_predict_output.tsv>
    ```
    - `prediction_savepath.tsv`: output score file of CAPICE v1.1 (from the previous step) 
    - `validation.vcf.gz`: the output of the `train_data_creator` in step 4 
