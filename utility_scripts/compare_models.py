@@ -2,12 +2,10 @@
 
 import os
 import math
-import typing
 import argparse
 import warnings
 
 import pandas as pd
-import xgboost as xgb
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 
