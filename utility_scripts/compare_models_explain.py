@@ -83,9 +83,9 @@ def add_column_ranking(table: pd.DataFrame, column_name):
     return table
 
 
-def process_table(file_path):
+def process_table(table: pd.DataFrame):
     return add_column_ranking(
-        normalize_column(load_pandas_file(file_path),
+        normalize_column(table,
                          column_name='gain'),
         column_name='gain_normalized')
 
@@ -102,7 +102,7 @@ def reorder_columns(merged_table):
             front_columns.append(name)
         else:
             other_columns.append(name)
-
+    front_columns.sort()
     return merged_table.loc[:, [col_names[0], *front_columns, *other_columns]]
 
 
@@ -110,11 +110,12 @@ def main():
     parsed_args = CommandLineParser()
 
     merged_tables = reorder_columns(join_tables(
-        process_table(parsed_args.get_argument('explain_1')),
-        process_table(parsed_args.get_argument('explain_2'))
+        process_table(load_pandas_file(parsed_args.get_argument('explain_1'))),
+        process_table(load_pandas_file(parsed_args.get_argument('explain_2')))
     ))
 
-    merged_tables.to_csv(parsed_args.get_argument('output'), sep='\t', compression='gzip')
+    merged_tables.to_csv(parsed_args.get_argument('output'), sep='\t', compression='gzip',
+                         index=False)
 
 
 if __name__ == '__main__':
