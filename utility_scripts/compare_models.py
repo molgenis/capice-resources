@@ -189,6 +189,21 @@ class Validator:
                 print(f'Error encoutered creating output path: {e}')
                 exit(1)
 
+    @staticmethod
+    def validate_score_files_length(m1, m2, per_consequence):
+        if m1.shape[0] != m2.shape[0]:
+            raise IOError('The score files contain a different number of variants.')
+        if per_consequence:
+            unequal_variants_consequence = []
+            for consequence in split_consequences(m1['Consequence']):
+                m1_consequence = m1[m1['Consequence'].str.contains(consequence)]
+                m2_consequence = m2[m2['Consequence'].str.contains(consequence)]
+                if m1_consequence.shape[0] != m2_consequence.shape[0]:
+                    unequal_variants_consequence.append(consequence)
+            if len(unequal_variants_consequence) > 0:
+                raise IOError(f'The score files contain a different number of variants for the '
+                              f'consequences: {unequal_variants_consequence}')
+
 
 def split_consequences(consequences: pd.Series):
     splitted_consequences = consequences.str.split('&', expand=True)
@@ -331,10 +346,12 @@ class Plotter:
 
         print('Plotting global ROC, AUC, Score distributions and Score differences.')
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
-        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[
-            0], 'Global')
-        self._plot_score_dist(merged_model_1_data, merged_model_2_data, 'Global')
-        self._plot_score_diff(merged_model_1_data, merged_model_2_data, 'Global')
+        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
+                       'Global')
+        self._plot_score_dist(merged_model_1_data, merged_model_2_data, 'Global',
+                              merged_model_1_data.shape[0])
+        self._plot_score_diff(merged_model_1_data, merged_model_2_data, 'Global',
+                              merged_model_1_data.shape[0])
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
@@ -376,8 +393,8 @@ class Plotter:
                 auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
                 consequence
             )
-            self._plot_score_dist(subset_m1, subset_m2, consequence)
-            self._plot_score_diff(subset_m1, subset_m2, consequence)
+            self._plot_score_dist(subset_m1, subset_m2, consequence, subset_m1.shape[0])
+            self._plot_score_diff(subset_m1, subset_m2, consequence, subset_m1.shape[0])
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
@@ -406,7 +423,7 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='lower right')
 
-    def _plot_score_dist(self, model_1_data, model_2_data, title):
+    def _plot_score_dist(self, model_1_data, model_2_data, title, n_samples):
         # Plotting raw scores
         ax_scores_dist = self.fig_score_dist.add_subplot(self.n_rows, self.n_cols, self.index)
         ax_scores_dist.boxplot(
@@ -418,9 +435,9 @@ class Plotter:
             ], labels=['M1B', 'M1P', 'M2B', 'M2P']
         )
         ax_scores_dist.set_ylim(0.0, 1.0)
-        ax_scores_dist.set_title(title)
+        ax_scores_dist.set_title(f'{title} (n={n_samples})')
 
-    def _plot_score_diff(self, model_1_data, model_2_data, title):
+    def _plot_score_diff(self, model_1_data, model_2_data, title, n_samples):
         # Plotting score differences
         ax_scores_diff = self.fig_score_diff.add_subplot(self.n_rows, self.n_cols, self.index)
         ax_scores_diff.boxplot(
@@ -432,7 +449,7 @@ class Plotter:
             ], labels=['M1B', 'M1P', 'M2B', 'M2P']
         )
         ax_scores_diff.set_ylim(0.0, 1.0)
-        ax_scores_diff.set_title(title)
+        ax_scores_diff.set_title(f'{title} (n={n_samples})')
 
     def export(self, output):
         print(f'Exporting figures to: {output}')
@@ -446,11 +463,12 @@ class Plotter:
 def main():
     # Processing and validating CLA
     validator = Validator()
-    m1_scores, m1_labels, m2_scores, m2_labels, force_merge, output = process_cla(validator)
+    m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge, \
+        output_path = process_cla(validator)
 
     # Reading in data and validating data
-    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1, force_merge)
-    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2, force_merge)
+    m1, m1_cons = prepare_data_file(validator, m1_scores_path, m1_labels_path, 1, force_merge)
+    m2, m2_cons = prepare_data_file(validator, m2_scores_path, m2_labels_path, 2, force_merge)
 
     # Turning processing of consequences on or off based on presence of Consequence column
     process_consequences = True
@@ -459,19 +477,22 @@ def main():
                       'performance metrics.')
         process_consequences = False
 
+    # Validate if score files have the same number of variants (per consequence)
+    validator.validate_score_files_length(m1, m2, process_consequences)
+
     # Calculating score differences
     calculate_score_difference(m1)
     calculate_score_difference(m2)
 
     # Plotting
     plotter = Plotter(process_consequences)
-    plotter.prepare_plots(os.path.basename(m1_scores),
-                          os.path.basename(m1_labels),
-                          os.path.basename(m2_scores),
-                          os.path.basename(m2_labels))
+    plotter.prepare_plots(os.path.basename(m1_scores_path),
+                          os.path.basename(m1_labels_path),
+                          os.path.basename(m2_scores_path),
+                          os.path.basename(m2_labels_path))
     plotter.prepare_subplots(m1)
     plotter.plot(m1, m2)
-    plotter.export(output)
+    plotter.export(output_path)
 
 
 if __name__ == '__main__':
