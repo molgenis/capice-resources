@@ -27,7 +27,16 @@ class CommandLineParser:
             type=str,
             action='store',
             required=True,
-            help=''
+            help='Input location of the scores dataset.'
+        )
+
+        required.add_argument(
+            '--output',
+            type=str,
+            action='store',
+            required=True,
+            help='Output path and filename to store the output recall score threshold tsv. '
+                 'Has to have the .tsv.gz extension! Plot figure will also be placed in this directory.'
         )
         return parser
 

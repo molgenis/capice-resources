@@ -12,19 +12,17 @@ class ThresholdCalculator:
         return pd.concat([dataset1, dataset2], axis=1)
 
     def calculate_threshold(self):
-        self.reset_threshold()
-        threshold_calculated = False
+        threshold_store = []
+        recall_store = []
+
         for i in np.arange(0, 1, 0.01):
             self.data.loc[self.data['score'] >= i, 'calculated_threshold'] = 1
             recall = recall_score(y_true=self.data['binarized_label'], y_pred=self.data['calculated_threshold'])
-            if 0.94 <= recall <= 0.96:
-                threshold_calculated = True
-                print(f'Threshold calculated, final threshold: {i}')
-                print(f'At recall score: {recall}')
-                break
-            self.reset_threshold()
-        if not threshold_calculated:
-            raise ValueError("Unable to calculate threshold!")
+            threshold_store.append(i)
+            recall_store.append(recall)
+        return pd.DataFrame({'Threshold': threshold_store, 'Recall_score': recall_store}).sort_values(
+            by='Recall_score', ascending=False
+        ).reset_index(drop=True)
 
     def reset_threshold(self):
         self.data['calculated_threshold'] = 0
