@@ -17,7 +17,10 @@ class CommandLineParser:
     def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog='Compare models explain',
-            description=''
+            description='Generates an output file that can be used to compare 2 CAPICE models with '
+                        'each other. Requires the CAPICE explain tool to be used on the models to '
+                        'compare. The output from CAPICE explain can then be used as input for '
+                        'this script to generate a comparison tsv file.'
         )
         required = parser.add_argument_group('Required arguments')
 
@@ -76,7 +79,7 @@ def load_pandas_file(filepath):
 
 
 def join_tables(table1: pd.DataFrame, table2: pd.DataFrame):
-    return pd.merge(table1, table2, on='feature', how='outer', suffixes=['_e1', '_e2'])
+    return pd.merge(table1, table2, on='feature', how='outer', suffixes=['_m1', '_m2'])
 
 
 def normalize_column(table: pd.DataFrame, column_name):

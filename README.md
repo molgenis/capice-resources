@@ -7,7 +7,6 @@ module contains their own README (if applicable) describing how to use them.
 - CAPICE (personal git branch for development)
 - [VIP](https://github.com/molgenis/vip) v4.8.0 (include both GRCh37 & GRCh38 during installation)
 - Python 3.9 or higher
-- pip
 
 ## Installation
 
@@ -62,6 +61,9 @@ using!
 _(For a more detailed explanation on creating the train-test and validation datasets, please see the README in
 [train_data_creator](./train_data_creator/README.md))_
 
+**IMPORTANT:** Unless mentioned otherwise, filenames refer to the same file. So if an output filename
+is described in 1 step and a step later mentions the same filename, they both refer to the same file.
+
 1. Update the CAPICE tool: 
    1. Make new branch for [CAPICE](https://github.com/molgenis/capice) and checkout this branch locally.
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
@@ -83,6 +85,12 @@ _(For a more detailed explanation on creating the train-test and validation data
       ```shell
       sbatch slurm_run_step1.sh
       ```
+      This will generate the following files:
+      - train_input_annotated.vcf.gz
+      - predict_input.vcf.gz
+      - breakends_vep.vcf.gz
+      - edge_cases_vep.vcf.gz
+      - symbolic_alleles_vep.vcf.gz
    8. Load BCF tools and run
       [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
       on the train input. (note: use `-t` when using the conversion tool)
@@ -91,24 +99,32 @@ _(For a more detailed explanation on creating the train-test and validation data
       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
       module purge
       ```
-   9. Load Python and install capice-resources in virtual environment. Run following commands in capice-resources folder:
+   9. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
       ```shell
       module load Python/3.9.1-GCCcore-7.3.0-bare
       python3 -m venv venv
       source venv/bin/activate
       pip --no-cache-dir install -e .
       ```
+      (Note: To run capice-resources on the cluster, manually download the source code from [here](https://github.com/molgenis/capice-resources/archive/refs/heads/main.zip),
+      upload it to the cluster and unzip it there before running the code above.)  
       ~~(Note: if you want to clone the repository on a cluster, the password asked by github is a generated personal access
       token that can be set under developer settings on github. Grant all permissions on repository. This might not be necessary
       anymore once the repository is public.)~~
-   10. Run capice-resources/utility_scripts/process_vep_tsv.py
+   10. Download/prepare CGD data if not yet locally available:
+       ```shell
+       wget https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
+       # update_date can be found at the bottom of https://research.nhgri.nih.gov/CGD/download/
+       mv CGD.txt.gz CGD_<update_date>.txt.gz
+       ```
+   11. Run capice-resources/utility_scripts/process_vep_tsv.py
        ```shell
        module load Python/3.9.1-GCCcore-7.3.0-bare
-       python3 ./utility_scripts/process_vep_tsv.py -i </path/to/train_input_annotated.tsv.gz> -o </path/to/train_input.tsv.gz>
+       python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -i </path/to/train_input_annotated.tsv.gz> -o </path/to/train_input.tsv.gz>
        deactivate
        module purge
        ```
-   11. Load & install capice:
+   12. Load & install capice:
        ```shell
        git clone https://github.com/molgenis/capice.git
        cd capice
@@ -118,7 +134,7 @@ _(For a more detailed explanation on creating the train-test and validation data
        source venv/bin/activate
        pip --no-cache-dir install -e '.[test]'
        ```
-   12. Create a script to run capice to generate a new model, like the following:
+   13. Create a script to run capice to generate a new model, like the following:
        ```shell
        #!/bin/bash
        #SBATCH --job-name=CAPICE_POC_train
@@ -135,7 +151,7 @@ _(For a more detailed explanation on creating the train-test and validation data
        capice -v train -t 8 -i </path/to/train_input.tsv.gz> -m </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.pickle.dat>
        ```
        And run it (`sbatch <scriptname>`).
-   13. Run BCF tools for the other files:
+   14. Run BCF tools for the other files:
        ```shell
        module load BCFtools/1.11-GCCcore-7.3.0
        bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i predict_input.vcf.gz -o predict_input.tsv.gz
@@ -144,7 +160,7 @@ _(For a more detailed explanation on creating the train-test and validation data
        bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
        module purge
        ```
-   14. Move the files to capice
+   15. Move the files to capice
        ```shell
        cp train_input.tsv.gz </path/to/capice/resources/>
        cp predict_input.tsv.gz </path/to/capice/resources/>
@@ -153,7 +169,7 @@ _(For a more detailed explanation on creating the train-test and validation data
        cp edge_cases_vep.tsv.gz </path/to/capice/tests/resources/>
        cp symbolic_alleles_vep.tsv.gz </path/to/capice/tests/resources/>
        ```
-   15. Install your current branch of capice in a virtual environment and run the tests.
+   16. Install your current branch of capice in a virtual environment and run the tests.
        ```shell
        module load Python/3.9.1-GCCcore-7.3.0-bare
        python3 -m venv venv
@@ -162,10 +178,10 @@ _(For a more detailed explanation on creating the train-test and validation data
        pytest
        deactivate
        ```
-   16. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
+   17. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
-   17. Create pull-request for review.
-   18. Once the pull-request is reviewed/merged by someone else, create a new release-candidate:
+   18. Create pull-request for review.
+   19. Once the pull-request is reviewed/merged by someone else, create a new release-candidate:
        1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
        2. Generate a pre-release draft on GitHub.
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull`).
@@ -216,10 +232,10 @@ _(For a more detailed explanation on creating the train-test and validation data
     ```shell
     module load Python/3.9.1-GCCcore-7.3.0-bare
     source ./venv/bin/activate
-    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/train_test_vep.tsv.gz> -o </path/to/train_test_vep_processed.tsv.gz> 1> </path/to/train_test_vep_processed.log>
-    python3 ./utility_scripts/process_vep_tsv.py -i </path/to/validation_vep.tsv.gz> -o </path/to/validation_vep_processed.tsv.gz> 1> </path/to/validation_vep_processed.log>
-    python3 ./utility_scripts/process_vep_tsv.py -a -i </path/to/train_test_grch38_vep.tsv.gz> -o </path/to/train_test_grch38_vep_processed.tsv.gz> 1> </path/to/train_test_grch38_vep_processed.log>
-    python3 ./utility_scripts/process_vep_tsv.py -a -i </path/to/validation_grch38_vep.tsv.gz> -o </path/to/validation_grch38_vep_processed.tsv.gz> 1> </path/to/validation_grch38_vep_processed.log>
+    python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -i </path/to/train_test_vep.tsv.gz> -o </path/to/train_test_vep_processed.tsv.gz> 1> </path/to/train_test_vep_processed.log>
+    python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -i </path/to/validation_vep.tsv.gz> -o </path/to/validation_vep_processed.tsv.gz> 1> </path/to/validation_vep_processed.log>
+    python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -a -i </path/to/train_test_grch38_vep.tsv.gz> -o </path/to/train_test_grch38_vep_processed.tsv.gz> 1> </path/to/train_test_grch38_vep_processed.log>
+    python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -a -i </path/to/validation_grch38_vep.tsv.gz> -o </path/to/validation_grch38_vep_processed.tsv.gz> 1> </path/to/validation_grch38_vep_processed.log>
     deactivate
     ml purge
     ```
@@ -293,13 +309,13 @@ _(For a more detailed explanation on creating the train-test and validation data
     python3 -m venv capice/venv/bin/activate
     capice explain -i </path/to/capice_model_grch37.pickle.dat> -o </path/to/capice_model_grch37_explain.tsv.gz>
     capice explain -i </path/to/capice_model_grch38.pickle.dat> -o </path/to/capice_model_grch38_explain.tsv.gz>
-    capice explain -i </path/to/v<version>>-v<model_version>_grch37.pickle.dat> -o </path/to/v<version>>-v<model_version>_grch37_explain.tsv.gz>
-    capice explain -i </path/to/v<version>>-v<model_version>_grch38.pickle.dat> -o </path/to/v<version>>-v<model_version>_grch38_explain.tsv.gz>
+    capice explain -i </path/to/v<version>-v<model_version>_grch37.pickle.dat> -o </path/to/v<version>-v<model_version>_grch37_explain.tsv.gz>
+    capice explain -i </path/to/v<version>-v<model_version>_grch38.pickle.dat> -o </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz>
     ```
 18. Merge/rank explain tool output:
     ```shell
-    python3 ./utility_scripts/compare_models_explain.py -e1 /Users/svdhoek/Downloads/capice_downloads/explain/capice_model_grch37_explain.tsv.gz -e2 /Users/svdhoek/Downloads/capice_downloads/explain/v3.0.0-v1_grch37.tsv.gz -o /Users/svdhoek/Downloads/capice_downloads/explain/merged_grch37.tsv.gz
-    python3 ./utility_scripts/compare_models_explain.py -e1 /Users/svdhoek/Downloads/capice_downloads/explain/capice_model_grch38_explain.tsv.gz -e2 /Users/svdhoek/Downloads/capice_downloads/explain/v3.0.0-v1_grch38.tsv.gz -o /Users/svdhoek/Downloads/capice_downloads/explain/merged_grch38.tsv.gz
+    python3 ./utility_scripts/compare_models_explain.py -e1 </path/to/capice_model_grch37_explain.tsv.gz> -e2 </path/to/v<version>-v<model_version>_grch37_explain.tsv.gz> -o </path/to/merged_grch37.tsv.gz>
+    python3 ./utility_scripts/compare_models_explain.py -e1 </path/to/capice_model_grch38_explain.tsv.gz> -e2 </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz> -o </path/to/merged_grch38.tsv.gz>
     ```
 
 Optional for validation with CAPICE from paper:
