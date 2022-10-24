@@ -4,7 +4,7 @@ import argparse
 import os.path
 
 import pandas as pd
-from compare_models import Validator
+from utility_scripts.compare_models import Validator
 
 
 class CommandLineParser:

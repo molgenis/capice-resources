@@ -37,11 +37,11 @@ class TestCompareModelsExplain(unittest.TestCase):
             'binarized_label': [1.0, 1.0, 0.0, 1.0]
         })
 
-        with self.assertRaises(IOError) as context:
+        with self.assertWarns(UserWarning) as context:
             compare.Validator.validate_score_files_length(self.df, df2, per_consequence=True)
         msg = "The score files contain a different number of variants for the consequences: " \
               "['missense_variant', 'synonymous_variant']"
-        self.assertEqual(str(context.exception), msg)
+        self.assertEqual(str(context.warning), msg)
 
     def test_validator_validate_score_files_length_invalid_ignore_consequence(self):
         """
@@ -68,7 +68,7 @@ class TestCompareModelsExplain(unittest.TestCase):
             'binarized_label': [1.0, 1.0, 0.0]
         })
 
-        with self.assertRaises(IOError) as context:
+        with self.assertWarns(UserWarning) as context:
             compare.Validator.validate_score_files_length(self.df, df2, per_consequence=True)
         msg = "The score files contain a different number of variants."
-        self.assertEqual(str(context.exception), msg)
+        self.assertEqual(str(context.warning), msg)
