@@ -7,6 +7,7 @@ module contains their own README (if applicable) describing how to use them.
 - CAPICE (personal git branch for development)
 - [VIP](https://github.com/molgenis/vip) v4.8.0 (include both GRCh37 & GRCh38 during installation)
 - Python 3.9 or higher
+- [Singularity](https://sylabs.io/singularity/)
 
 ## Installation
 
@@ -184,6 +185,10 @@ is described in 1 step and a step later mentions the same filename, they both re
    19. Once the pull-request is reviewed/merged by someone else, create a new release-candidate:
        1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
        2. Generate a pre-release draft on GitHub.
+   20. Create new Singularity image of the pre-release:
+       1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/singularity/def/capice-4.0.0.def)
+       2. Update the defined capice version & filename.
+       3. Run `sudo singularity build sif/capice-4.0.0.sif def/capice-4.0.0.def` (where `sif/capice-4.0.0.sif` is the output path)
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull`).
 3. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
    and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
