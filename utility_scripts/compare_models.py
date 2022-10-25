@@ -417,10 +417,8 @@ class Plotter:
                 auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
                 consequence
             )
-            self._plot_score_dist(subset_m1, subset_m1.shape[0], subset_m2, subset_m2.shape[0],
-                                  consequence)
-            self._plot_score_diff(subset_m1, subset_m1.shape[0], subset_m2, subset_m2.shape[0],
-                                  consequence)
+            self._plot_score_dist(subset_m1, subset_m2, consequence)
+            self._plot_score_diff(subset_m1, subset_m2, consequence)
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
@@ -561,15 +559,13 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='lower right')
 
-    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
-                         title):
-        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_n_samples,
-                                        model_2_data, model_2_n_samples, title)
+    def _plot_score_dist(self, model_1_data, model_2_data, title):
+        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_data.shape[0],
+                                        model_2_data, model_2_data.shape[0], title)
 
-    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
-                         title):
+    def _plot_score_diff(self, model_1_data, model_2_data, title):
         self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_n_samples, model_2_data, model_2_n_samples, title)
+                                        model_1_data.shape[0], model_2_data, model_2_data.shape[0], title)
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
