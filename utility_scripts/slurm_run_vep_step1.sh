@@ -12,11 +12,21 @@
 #SBATCH --export=NONE
 #SBATCH --get-user-env=L60
 
+# Defines error echo.
+errcho() { echo "$@" 1>&2; }
+
 # Ensure these paths are set correctly!!!
 vip_dir='/path/to/vip/'
 input_dir='/path/to/directory/with/input/scripts/'
 output_dir='/path/to/write/output/files/to/'
 n_threads=4
+
+# Validates paths.
+validationError=false
+if [ ! -d "${vip_dir}" ]; then validationError=true; errcho "${vip_dir} is not an existing directory."; fi
+if [ ! -d "${input_dir}" ]; then validationError=true; errcho "${input_dir} is not an existing directory."; fi
+if [ ! -d "${output_dir}" ]; then validationError=true; errcho "${output_dir} is not an existing directory."; fi
+if [[ ${validationError} == true ]]; then errcho "Exiting."; exit 1; fi
 
 # Defines all vip-specific paths. Check if VIP gets updated!
 vep_image_path="${vip_dir}images/vep-107.0.sif"
