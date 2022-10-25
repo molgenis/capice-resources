@@ -100,9 +100,8 @@ def add_column_ranking(table: pd.DataFrame, column_name):
     New column uses format: <column_name>_rank
     """
     column_index = table.columns.get_loc(column_name)
-    table.sort_values(by=column_name, ascending=False, inplace=True)
-    table.insert(column_index+1, column_name + '_rank', range(1, table.shape[0]+1))
-    table.sort_index(axis=0, inplace=True)
+    ranks = table[column_name].rank(method='min', ascending=False).astype(int)
+    table.insert(column_index+1, column_name + '_rank', ranks)
     return table
 
 

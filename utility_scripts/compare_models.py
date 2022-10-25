@@ -199,8 +199,9 @@ class Validator:
                 if m1_consequence.shape[0] != m2_consequence.shape[0]:
                     unequal_variants_consequence.append(consequence)
             if len(unequal_variants_consequence) > 0:
+                unequal_variants_consequence_string = ', '.join(unequal_variants_consequence)
                 warnings.warn(f'The score files contain a different number of variants for the '
-                              f'consequences: {unequal_variants_consequence}')
+                              f'consequences: {unequal_variants_consequence_string}')
 
 
 def split_consequences(consequences: pd.Series):
