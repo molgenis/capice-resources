@@ -2,7 +2,6 @@
 
 import os
 import math
-import typing
 import argparse
 import warnings
 
@@ -189,8 +188,24 @@ class Validator:
             try:
                 os.makedirs(output)
             except Exception as e:
-                print(f'Error encoutered creating output path: {e}')
+                print(f'Error encountered creating output path: {e}')
                 exit(1)
+
+    @staticmethod
+    def validate_score_files_length(m1, m2, per_consequence):
+        if m1.shape[0] != m2.shape[0]:
+            warnings.warn('The score files contain a different number of variants.')
+        if per_consequence:
+            unequal_variants_consequence = []
+            for consequence in split_consequences(m1['Consequence']):
+                m1_consequence = m1[m1['Consequence'].str.contains(consequence)]
+                m2_consequence = m2[m2['Consequence'].str.contains(consequence)]
+                if m1_consequence.shape[0] != m2_consequence.shape[0]:
+                    unequal_variants_consequence.append(consequence)
+            if len(unequal_variants_consequence) > 0:
+                unequal_variants_consequence_string = ', '.join(unequal_variants_consequence)
+                warnings.warn(f'The score files contain a different number of variants for the '
+                              f'consequences: {unequal_variants_consequence_string}')
 
 
 def split_consequences(consequences: pd.Series):
@@ -259,6 +274,8 @@ def add_imputed_af(merged_dataset):
 
 
 class Plotter:
+    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+
     def __init__(self, process_consequences):
         self.process_consequences = process_consequences
         self.index = 1
@@ -350,6 +367,8 @@ class Plotter:
 
         print('Plotting global ROC, AUC, Score distributions and Score differences.')
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
+        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
+                       'Global')
         self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[
             0], 'Global')
         self._plot_af_bins(merged_model_1_data, merged_model_2_data)
@@ -361,6 +380,8 @@ class Plotter:
             self.index += 1
             self._plot_consequences(merged_model_1_data, merged_model_2_data)
             print('Plotting per consequence done.\n')
+
+        self._adjust_plot_layouts()
 
     def _plot_consequences(self, merged_model_1_data, merged_model_2_data):
         for consequence in self.consequences:
@@ -396,8 +417,10 @@ class Plotter:
                 auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
                 consequence
             )
-            self._plot_score_dist(subset_m1, subset_m2, consequence)
-            self._plot_score_diff(subset_m1, subset_m2, consequence)
+            self._plot_score_dist(subset_m1, subset_m1.shape[0], subset_m2, subset_m2.shape[0],
+                                  consequence)
+            self._plot_score_diff(subset_m1, subset_m1.shape[0], subset_m2, subset_m2.shape[0],
+                                  consequence)
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
@@ -538,33 +561,38 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='lower right')
 
-    def _plot_score_dist(self, model_1_data, model_2_data, title):
-        # Plotting raw scores
-        ax_scores_dist = self.fig_score_dist.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax_scores_dist.boxplot(
-            [
-                model_1_data[model_1_data[BINARIZED_LABEL] == 0][SCORE],
-                model_1_data[model_1_data[BINARIZED_LABEL] == 1][SCORE],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 0][SCORE],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 1][SCORE],
-            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
-        )
-        ax_scores_dist.set_ylim(0.0, 1.0)
-        ax_scores_dist.set_title(title)
+    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
+        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_n_samples,
+                                        model_2_data, model_2_n_samples, title)
 
-    def _plot_score_diff(self, model_1_data, model_2_data, title):
-        # Plotting score differences
-        ax_scores_diff = self.fig_score_diff.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax_scores_diff.boxplot(
+    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
+        self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
+                                        model_1_n_samples, model_2_data, model_2_n_samples, title)
+
+    def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
+                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
+        ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
+        ax.boxplot(
             [
-                model_1_data[model_1_data[BINARIZED_LABEL] == 0]['score_diff'],
-                model_1_data[model_1_data[BINARIZED_LABEL] == 1]['score_diff'],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 0]['score_diff'],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 1]['score_diff'],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
             ], labels=['M1B', 'M1P', 'M2B', 'M2P']
         )
-        ax_scores_diff.set_ylim(0.0, 1.0)
-        ax_scores_diff.set_title(title)
+        ax.set_ylim(0.0, 1.0)
+        if model_1_n_samples == model_2_n_samples:
+            ax.set_title(f'{title}\n(n={model_1_n_samples})')
+        else:
+            ax.set_title(f'{title}\n(n model 1={model_1_n_samples}, n model 2={model_2_n_samples})')
+
+    def _adjust_plot_layouts(self):
+        self.fig_roc.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
+        self.fig_auc.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
+        self.fig_score_dist.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
+        self.fig_score_diff.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
 
     def export(self, output):
         print(f'Exporting figures to: {output}')
@@ -579,11 +607,12 @@ class Plotter:
 def main():
     # Processing and validating CLA
     validator = Validator()
-    m1_scores, m1_labels, m2_scores, m2_labels, force_merge, output = process_cla(validator)
+    m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge, \
+        output_path = process_cla(validator)
 
     # Reading in data and validating data
-    m1, m1_cons = prepare_data_file(validator, m1_scores, m1_labels, 1, force_merge)
-    m2, m2_cons = prepare_data_file(validator, m2_scores, m2_labels, 2, force_merge)
+    m1, m1_cons = prepare_data_file(validator, m1_scores_path, m1_labels_path, 1, force_merge)
+    m2, m2_cons = prepare_data_file(validator, m2_scores_path, m2_labels_path, 2, force_merge)
 
     # Turning processing of consequences on or off based on presence of Consequence column
     process_consequences = True
@@ -591,6 +620,9 @@ def main():
         warnings.warn('Encountered missing Consequence column. Disabling per-consequence '
                       'performance metrics.')
         process_consequences = False
+
+    # Validate if score files have the same number of variants (per consequence)
+    validator.validate_score_files_length(m1, m2, process_consequences)
 
     # Calculating score differences
     calculate_score_difference(m1)
@@ -602,10 +634,13 @@ def main():
 
     # Plotting
     plotter = Plotter(process_consequences)
-    plotter.prepare_plots(m1_scores, m1_labels, m2_scores, m2_labels)
+    plotter.prepare_plots(os.path.basename(m1_scores_path),
+                          os.path.basename(m1_labels_path),
+                          os.path.basename(m2_scores_path),
+                          os.path.basename(m2_labels_path))
     plotter.prepare_subplots(m1)
     plotter.plot(m1, m2)
-    plotter.export(output)
+    plotter.export(output_path)
 
 
 if __name__ == '__main__':

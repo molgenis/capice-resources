@@ -4,6 +4,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=20gb
 #SBATCH --nodes=1
+#SBATCH --export=NONE
+#SBATCH --get-user-env=L60
 
 set -e
 
@@ -78,22 +80,22 @@ validateCommandLine() {
 
 
 runLiftover() {
+  echo "Loading Picard"
+
+  module load picard/2.20.5-Java-11-LTS
+  
   local output="${output}.vcf"
   local rejected="${output}_rejected.vcf"
   local input="${input}"
 
   local args=()
 
-  args+=("/apps/software/picard/2.20.5-Java-11-LTS/picard.jar" "LiftoverVcf")
+  args+=("${EBROOTPICARD}/picard.jar" "LiftoverVcf")
   args+=("I=${input}")
   args+=("O=${output}")
   args+=("CHAIN=/apps/data/GRC/b37ToHg38.over.chain")
   args+=("REJECT=${rejected}")
   args+=("R=/apps/data/GRC/GCA_000001405.15/GCA_000001405.15_GRCh38_full_plus_hs38d1_analysis_set.fna.gz")
-
-  echo "Loading Picard"
-
-  module load picard
 
   echo "Running Picard"
 
