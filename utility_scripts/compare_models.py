@@ -422,18 +422,18 @@ class Plotter:
         try:
             f_auc_m1 = round(
                 roc_auc_score(
-                    y_score=model_1_data[model_1_data['gnomAD_AF_imputed'] == 0][
-                        SCORE],
                     y_true=model_1_data[model_1_data['is_imputed']][
                         BINARIZED_LABEL],
+                    y_score=model_1_data[model_1_data['gnomAD_AF_imputed'] == 0][
+                        SCORE],
                 ), 4
             )
             f_auc_m2 = round(
                 roc_auc_score(
-                    y_score=model_2_data[model_2_data['gnomAD_AF_imputed'] == 0][
-                        SCORE],
                     y_true=model_2_data[model_2_data['is_imputed']][
                         BINARIZED_LABEL],
+                    y_score=model_2_data[model_2_data['gnomAD_AF_imputed'] == 0][
+                        SCORE],
                 ), 4
             )
         except ValueError:
