@@ -3,7 +3,7 @@ import pandas as pd
 
 class DatasetValidator:
     def validate_vkgl(self, vkgl_dataset: pd.DataFrame):
-        columns_specific_to_vkgl = ['consensus_classification', 'chromosome', 'start']
+        columns_specific_to_vkgl = ['classification', 'support', 'chromosome', 'start']
         self._validate_n_variants(vkgl_dataset, 'VKGL')
         self._validate_dataset(vkgl_dataset, columns_specific_to_vkgl, 'VKGL')
 
