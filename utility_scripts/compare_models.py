@@ -446,7 +446,7 @@ class Plotter:
                     y_true=model_1_data[model_1_data['is_imputed']][
                         BINARIZED_LABEL],
                     y_score=model_1_data[model_1_data['gnomAD_AF_imputed'] == 0][
-                        SCORE],
+                        SCORE]
                 ), 4
             )
             f_auc_m2 = round(
@@ -454,7 +454,7 @@ class Plotter:
                     y_true=model_2_data[model_2_data['is_imputed']][
                         BINARIZED_LABEL],
                     y_score=model_2_data[model_2_data['gnomAD_AF_imputed'] == 0][
-                        SCORE],
+                        SCORE]
                 ), 4
             )
         except ValueError:
