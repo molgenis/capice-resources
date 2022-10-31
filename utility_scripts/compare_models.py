@@ -295,6 +295,7 @@ class Plotter:
             figsize = (20, 40)
         else:
             figsize = (10, 15)  # Default values
+        constrained_layout = {'w_pad': 0.2, 'h_pad': 0.2}
         print('Preparing plots.')
         self.fig_auc = plt.figure(figsize=figsize)
         self.fig_auc.suptitle(
@@ -312,6 +313,7 @@ class Plotter:
             f'Model 2 scores: {model_2_score_path}\n'
             f'Model 2 labels: {model_2_label_path}\n'
         )
+        self.fig_roc.set_constrained_layout(constrained_layout)
         self.fig_afb = plt.figure(figsize=(10, 11))
         self.fig_afb.suptitle(
             f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n'
@@ -585,7 +587,6 @@ class Plotter:
             ax.set_title(f'{title}\n(n model 1={model_1_n_samples}, n model 2={model_2_n_samples})')
 
     def _adjust_plot_layouts(self):
-        self.fig_roc.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
         self.fig_auc.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
         self.fig_score_dist.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
         self.fig_score_diff.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
