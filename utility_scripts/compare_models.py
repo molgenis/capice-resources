@@ -268,14 +268,20 @@ def calculate_score_difference(merged_dataset):
 
 
 def add_imputed_af(merged_dataset):
-    merged_dataset['gnomAD_AF_imputed'] = merged_dataset['gnomAD_AF'].fillna(0)
     merged_dataset['is_imputed'] = False
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
 
 
-class Plotter:
-    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+def calculate_auc(dataset: pd.DataFrame):
+    return round(roc_auc_score(y_true=dataset[BINARIZED_LABEL], y_score=dataset[SCORE]), 4)
 
+
+def calculate_roc(dataset: pd.DataFrame):
+    fpr, tpr, _ = roc_curve(y_true=dataset[BINARIZED_LABEL], y_score=dataset[SCORE])
+    return fpr, tpr, calculate_auc(dataset)
+
+
+class Plotter:
     def __init__(self, process_consequences):
         self.process_consequences = process_consequences
         self.index = 1
@@ -288,13 +294,17 @@ class Plotter:
         self.n_rows = 1
         self.n_cols = 1
 
+    @staticmethod
+    def _set_figure_size(process_consequences):
+        if process_consequences:
+            return 20, 40
+        else:
+            return 10, 15
+
     def prepare_plots(self, model_1_score_path, model_1_label_path, model_2_score_path,
                       model_2_label_path):
         print('Preparing plot figures.')
-        if self.process_consequences:
-            figsize = (20, 40)
-        else:
-            figsize = (10, 15)  # Default values
+        figsize = self._set_figure_size(self.process_consequences)
         constrained_layout = {'w_pad': 0.2, 'h_pad': 0.2}
         print('Preparing plots.')
         self.fig_auc = plt.figure(figsize=figsize)
@@ -305,6 +315,7 @@ class Plotter:
             f'Model 2 scores: {model_2_score_path}\n'
             f'Model 2 labels: {model_2_label_path}\n'
         )
+        self.fig_auc.set_constrained_layout(constrained_layout)
         self.fig_roc = plt.figure(figsize=(10, 15))
         self.fig_roc.suptitle(
             f'Model 1 vs Model 2 Receiver Operator Curves\n'
@@ -322,6 +333,7 @@ class Plotter:
             f'Model 2 scores: {model_2_score_path}\n'
             f'Model 2 labels: {model_2_label_path}\n'
         )
+        self.fig_afb.set_constrained_layout(constrained_layout)
         self.fig_score_dist = plt.figure(figsize=figsize)
         self.fig_score_dist.suptitle(
             f'Model 1 vs Model 2 raw CAPICE score distributions\n'
@@ -332,6 +344,7 @@ class Plotter:
             f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
             f'Pathogenic)\n'
         )
+        self.fig_score_dist.set_constrained_layout(constrained_layout)
         self.fig_score_diff = plt.figure(figsize=figsize)
         self.fig_score_diff.suptitle(
             f'Model 1 vs Model 2 absolute score difference to the true label\n'
@@ -342,6 +355,7 @@ class Plotter:
             f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
             f'Pathogenic)\n'
         )
+        self.fig_score_diff.set_constrained_layout(constrained_layout)
         print('Plot figures prepared.\n')
 
     def prepare_subplots(self, merged_model_1_data):
@@ -356,26 +370,13 @@ class Plotter:
             print('Creating single plot per figure.\n')
 
     def plot(self, merged_model_1_data, merged_model_2_data):
-        print('Calculating global TPR, FPR and AUC.')
-        fpr_m1, tpr_m1, _ = roc_curve(
-            merged_model_1_data[BINARIZED_LABEL], merged_model_1_data[SCORE]
-        )
-        auc_m1 = round(auc(fpr_m1, tpr_m1), 4)
-        fpr_m2, tpr_m2, _ = roc_curve(
-            merged_model_2_data[BINARIZED_LABEL], merged_model_2_data[SCORE]
-        )
-        auc_m2 = round(auc(fpr_m2, tpr_m2), 4)
-        print('TPR, FPR and AUC calculated globally.\n')
+        m1_samples = merged_model_1_data.shape[0]
+        m2_samples = merged_model_2_data.shape[0]
 
-        print('Plotting global ROC, AUC, Score distributions and Score differences.')
-        self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
-        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[0],
-                       'Global')
-        self._plot_auc(auc_m1, merged_model_1_data.shape[0], auc_m2, merged_model_2_data.shape[
-            0], 'Global')
-        self._plot_af_bins(merged_model_1_data, merged_model_2_data)
-        self._plot_score_dist(merged_model_1_data, merged_model_2_data, 'Global')
-        self._plot_score_diff(merged_model_1_data, merged_model_2_data, 'Global')
+        print('Plotting global ROC, AUC, AF Bins, Score distributions and Score differences.')
+        self._plot_roc_auc_afbins(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples)
+        self._plot_score_dist(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples, 'Global')
+        self._plot_score_diff(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples, 'Global')
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
@@ -383,44 +384,33 @@ class Plotter:
             self._plot_consequences(merged_model_1_data, merged_model_2_data)
             print('Plotting per consequence done.\n')
 
-        self._adjust_plot_layouts()
+    def _plot_roc_auc_afbins(self, model_1_data, model_1_samples, model_2_data, model_2_samples):
+        fpr_m1, tpr_m1, auc_m1 = calculate_roc(model_1_data)
+        fpr_m2, tpr_m2, auc_m2 = calculate_roc(model_2_data)
+        self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
+        self._plot_auc(auc_m1, model_1_samples, auc_m2, model_2_samples, 'Global')
+        self._plot_af_bins(model_1_data, model_2_data)
+
+    @staticmethod
+    def _subset_consequence(dataset, consequence):
+        return dataset[dataset['Consequence'].str.contains(consequence)]
 
     def _plot_consequences(self, merged_model_1_data, merged_model_2_data):
         for consequence in self.consequences:
-            subset_m1 = merged_model_1_data[
-                merged_model_1_data['Consequence'].str.contains(consequence)]
-            subset_m2 = merged_model_2_data[
-                merged_model_2_data['Consequence'].str.contains(consequence)]
+            subset_m1 = self._subset_consequence(merged_model_1_data, consequence)
+            m1_samples = subset_m1.shape[0]
+            subset_m2 = self._subset_consequence(merged_model_2_data, consequence)
+            m2_samples = subset_m2.shape[0]
             try:
-                auc_m1 = round(
-                    roc_auc_score(
-                        subset_m1[BINARIZED_LABEL],
-                        subset_m1[SCORE]
-                    ),
-                    4
-                )
+                auc_m1 = calculate_auc(subset_m1)
+                auc_m2 = calculate_auc(subset_m2)
             except ValueError:
                 print(f'Could not calculate AUC for Model 1 for consequence: {consequence}')
                 continue
 
-            try:
-                auc_m2 = round(
-                    roc_auc_score(
-                        subset_m2[BINARIZED_LABEL],
-                        subset_m2[SCORE]
-                    ),
-                    4
-                )
-            except ValueError:
-                print(f'Could not calculate AUC for Model 2 for consequence: {consequence}')
-                continue
-
-            self._plot_auc(
-                auc_m1, subset_m1.shape[0], auc_m2, subset_m2.shape[0],
-                consequence
-            )
-            self._plot_score_dist(subset_m1, subset_m2, consequence)
-            self._plot_score_diff(subset_m1, subset_m2, consequence)
+            self._plot_auc(auc_m1, m1_samples, auc_m2, m2_samples, consequence)
+            self._plot_score_dist(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
+            self._plot_score_diff(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
             self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
@@ -436,6 +426,18 @@ class Plotter:
         ax_roc.set_ylabel('True Positive Rate')
         ax_roc.legend(loc='lower right')
 
+    @staticmethod
+    def _create_af_bins_plotlabels(bin_label, model_1_size: int, model_1_auc: float, model_2_size: int,
+                                   model_2_auc: float):
+        if model_1_size == model_2_size:
+            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
+        else:
+            return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\nModel 2: {model_2_auc} (n: {model_2_auc})'
+
+    @staticmethod
+    def _subset_af_bin(dataset, upper_bound, lower_bound):
+        return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
         width = 0.3
@@ -443,22 +445,8 @@ class Plotter:
 
         # Plotting the NaN AF values as if they were singletons
         try:
-            f_auc_m1 = round(
-                roc_auc_score(
-                    y_true=model_1_data[model_1_data['is_imputed']][
-                        BINARIZED_LABEL],
-                    y_score=model_1_data[model_1_data['gnomAD_AF_imputed'] == 0][
-                        SCORE]
-                ), 4
-            )
-            f_auc_m2 = round(
-                roc_auc_score(
-                    y_true=model_2_data[model_2_data['is_imputed']][
-                        BINARIZED_LABEL],
-                    y_score=model_2_data[model_2_data['gnomAD_AF_imputed'] == 0][
-                        SCORE]
-                ), 4
-            )
+            f_auc_m1 = calculate_auc(model_1_data[model_1_data['is_imputed']])
+            f_auc_m2 = calculate_auc(model_2_data[model_2_data['is_imputed']])
         except ValueError:
             print('Could not calculate an AUC for possible singleton variants.')
             f_auc_m1 = np.NaN
@@ -482,8 +470,13 @@ class Plotter:
         ax_afb.plot(
             np.NaN,
             np.NaN,
-            label=f'"0"\nModel 1: {f_auc_m1}\nModel 2: {f_auc_m2}\nn: '
-                  f'{model_1_data[model_1_data["is_imputed"]].shape[0]}',
+            label=self._create_af_bins_plotlabels(
+                "0",
+                model_1_data[model_1_data["is_imputed"]].shape[0],
+                f_auc_m1,
+                model_2_data[model_2_data["is_imputed"]].shape[0],
+                f_auc_m2
+            ),
             color='none'
         )
 
@@ -492,28 +485,12 @@ class Plotter:
         bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
         for i in range(1, len(bins)):
             upper_bound = bins[i]
-            lower_bound = bins[i-1]
-            subset_m1 = model_1_data[
-                (model_1_data['gnomAD_AF'] >= lower_bound) &
-                (model_1_data['gnomAD_AF'] <= upper_bound)
-                ]
-            subset_m2 = model_2_data[
-                (model_2_data['gnomAD_AF'] >= lower_bound) &
-                (model_2_data['gnomAD_AF'] <= upper_bound)
-                ]
+            lower_bound = bins[i - 1]
+            subset_m1 = self._subset_af_bin(model_1_data, upper_bound, lower_bound)
+            subset_m2 = self._subset_af_bin(model_2_data, upper_bound, lower_bound)
             try:
-                auc_m1 = round(
-                    roc_auc_score(
-                        y_true=subset_m1[BINARIZED_LABEL],
-                        y_score=subset_m1[SCORE]
-                    ), 4
-                )
-                auc_m2 = round(
-                    roc_auc_score(
-                        y_true=subset_m2[BINARIZED_LABEL],
-                        y_score=subset_m2[SCORE]
-                    ), 4
-                )
+                auc_m1 = calculate_auc(subset_m1)
+                auc_m2 = calculate_auc(subset_m2)
             except ValueError:
                 print(
                     f'Could not calculate AUC for allele frequency bin: '
@@ -521,10 +498,11 @@ class Plotter:
                 )
                 auc_m1 = np.NaN
                 auc_m2 = np.NaN
-            bin_label = f'{bins_labels[i-1]} ~ {bins_labels[i]}%'
+            bin_label = f'{bins_labels[i - 1]} <= x < {bins_labels[i]}%'
             bin_labels.append(bin_label)
+
             ax_afb.bar(
-                i-width,
+                i - width,
                 auc_m1,
                 width,
                 align='edge',
@@ -540,13 +518,33 @@ class Plotter:
             ax_afb.plot(
                 np.NaN,
                 np.NaN,
-                label=f'{bin_label}\nModel 1: {auc_m1}\nModel 2: {auc_m2}\nn: {subset_m1.shape[0]}',
+                label=self._create_af_bins_plotlabels(
+                    bin_label,
+                    subset_m1.shape[0],
+                    auc_m1,
+                    subset_m2.shape[0],
+                    auc_m2
+                ),
                 color='none'
             )
-        ax_afb.set_xticks(list(range(0, len(bins))), bin_labels)
+        ax_afb.plot(
+            np.NaN,
+            np.NaN,
+            color='red',
+            label='= Model 1'
+        )
+        ax_afb.plot(
+            np.NaN,
+            np.NaN,
+            color='blue',
+            label='= Model 2'
+        )
+        ax_afb.set_xticks(list(range(0, len(bins))), bin_labels, rotation=45)
+        ax_afb.set_xlabel('Allele frequency Bin')
+        ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc='lower right')
+        ax_afb.legend(loc='upper right', bbox_to_anchor=(1.35, 1.01))
 
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
         # Plotting AUCs
@@ -561,13 +559,13 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='lower right')
 
-    def _plot_score_dist(self, model_1_data, model_2_data, title):
-        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_data.shape[0],
-                                        model_2_data, model_2_data.shape[0], title)
+    def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
+        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_samples,
+                                        model_2_data, model_2_samples, title)
 
-    def _plot_score_diff(self, model_1_data, model_2_data, title):
+    def _plot_score_diff(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
         self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_data.shape[0], model_2_data, model_2_data.shape[0], title)
+                                        model_1_samples, model_2_data, model_2_samples, title)
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
@@ -586,11 +584,6 @@ class Plotter:
         else:
             ax.set_title(f'{title}\n(n model 1={model_1_n_samples}, n model 2={model_2_n_samples})')
 
-    def _adjust_plot_layouts(self):
-        self.fig_auc.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
-        self.fig_score_dist.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
-        self.fig_score_diff.set_constrained_layout(Plotter.CONSTRAINED_LAYOUT)
-
     def export(self, output):
         print(f'Exporting figures to: {output}')
         self.fig_roc.savefig(os.path.join(output, 'roc.png'))
@@ -605,7 +598,7 @@ def main():
     # Processing and validating CLA
     validator = Validator()
     m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge, \
-        output_path = process_cla(validator)
+    output_path = process_cla(validator)
 
     # Reading in data and validating data
     m1, m1_cons = prepare_data_file(validator, m1_scores_path, m1_labels_path, 1, force_merge)
