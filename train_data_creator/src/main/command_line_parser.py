@@ -17,7 +17,7 @@ class CommandLineParser:
             '--input_vkgl',
             type=str,
             required=True,
-            help='Input location of the VKGL dataset (consensus, not public)'
+            help='Input location of the public VKGL dataset'
         )
         required.add_argument(
             '--input_clinvar',

@@ -32,7 +32,7 @@ class TestDatasetValidator(unittest.TestCase):
         self.assertRaises(
             KeyError,
             self.validator.validate_vkgl,
-            self.vkgl.rename(columns={'consensus_classification': 'classification'})
+            self.vkgl.rename(columns={'classification': 'consensus_classification'})
         )
 
     def test_validate_clinvar_incorr(self):
