@@ -7,8 +7,9 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import seaborn as sb
 from matplotlib import pyplot as plt
-from sklearn.metrics import roc_auc_score, roc_curve, auc
+from sklearn.metrics import roc_auc_score, roc_curve
 
 ID_SEPARATOR = '!'
 MERGE_COLUMNS_LABELS = ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
@@ -270,6 +271,10 @@ def calculate_score_difference(merged_dataset):
 def add_imputed_af(merged_dataset):
     merged_dataset['is_imputed'] = False
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
+
+
+def add_model_column(unmerged_dataset, column_fill):
+    unmerged_dataset['model'] = column_fill
 
 
 def calculate_auc(dataset: pd.DataFrame):
@@ -560,24 +565,27 @@ class Plotter:
         ax_auc.legend(loc='lower right')
 
     def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
-        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_samples,
-                                        model_2_data, model_2_samples, title)
+        self._create_violinplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_samples,
+                                           model_2_data, model_2_samples, title)
 
     def _plot_score_diff(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
-        self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_samples, model_2_data, model_2_samples, title)
+        self._create_violinplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
+                                           model_1_samples, model_2_data, model_2_samples, title)
 
-    def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
+    def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
+                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax.boxplot(
-            [
-                model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
-                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
-            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        sb.violinplot(
+            x=BINARIZED_LABEL, y=column_to_plot, hue='model', data=pd.concat([model_1_data, model_2_data]), ax=ax, split=True, palette={'model_1': 'red', 'model_2': 'blue'}
         )
+        # ax.boxplot(
+        #     [
+        #         model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
+        #         model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
+        #         model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
+        #         model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
+        #     ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        # )
         ax.set_ylim(0.0, 1.0)
         if model_1_n_samples == model_2_n_samples:
             ax.set_title(f'{title}\n(n={model_1_n_samples})')
@@ -621,6 +629,10 @@ def main():
     # Adding column containing the imputed AF
     add_imputed_af(m1)
     add_imputed_af(m2)
+
+    # Adding column to know what model the data originated from
+    add_model_column(m1, 'model_1')
+    add_model_column(m2, 'model_2')
 
     # Plotting
     plotter = Plotter(process_consequences)
