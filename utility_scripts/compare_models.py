@@ -273,8 +273,8 @@ def add_imputed_af(merged_dataset):
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
 
 
-def add_model_column(unmerged_dataset, column_fill):
-    unmerged_dataset['model'] = column_fill
+# def add_model_column(unmerged_dataset, column_fill):
+#     unmerged_dataset['model'] = column_fill
 
 
 def calculate_auc(dataset: pd.DataFrame):
@@ -302,7 +302,7 @@ class Plotter:
     @staticmethod
     def _set_figure_size(process_consequences):
         if process_consequences:
-            return 20, 40
+            return 15, 40
         else:
             return 10, 15
 
@@ -370,7 +370,7 @@ class Plotter:
             )
             self.consequences = split_consequences(merged_model_1_data['Consequence'])
             self.n_cols = 4
-            self.n_rows = math.ceil((len(self.consequences) / self.n_cols) + 1)
+            self.n_rows = math.ceil((len(self.consequences) / (self.n_cols / 2)) + 1)
         else:
             print('Creating single plot per figure.\n')
 
@@ -380,12 +380,14 @@ class Plotter:
 
         print('Plotting global ROC, AUC, AF Bins, Score distributions and Score differences.')
         self._plot_roc_auc_afbins(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples)
-        self._plot_score_dist(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples, 'Global')
-        self._plot_score_diff(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples, 'Global')
+        self._plot_score_dist(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
+                              'Global')
+        self._plot_score_diff(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
+                              'Global')
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
-            self.index += 1
+            self.index += 2
             self._plot_consequences(merged_model_1_data, merged_model_2_data)
             print('Plotting per consequence done.\n')
 
@@ -416,7 +418,7 @@ class Plotter:
             self._plot_auc(auc_m1, m1_samples, auc_m2, m2_samples, consequence)
             self._plot_score_dist(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
             self._plot_score_diff(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
-            self.index += 1
+            self.index += 2
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
                   auc_model_2):
@@ -432,7 +434,8 @@ class Plotter:
         ax_roc.legend(loc='lower right')
 
     @staticmethod
-    def _create_af_bins_plotlabels(bin_label, model_1_size: int, model_1_auc: float, model_2_size: int,
+    def _create_af_bins_plotlabels(bin_label, model_1_size: int, model_1_auc: float,
+                                   model_2_size: int,
                                    model_2_auc: float):
         if model_1_size == model_2_size:
             return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
@@ -551,46 +554,77 @@ class Plotter:
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
         ax_afb.legend(loc='upper right', bbox_to_anchor=(1.35, 1.01))
 
+    @staticmethod
+    def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
+        # Note: the .4f is to make sure all legends align properly horizontally
+        if model_1_ss == model_2_ss:
+            return f'Model 1: {model_1_auc:.4f}', f'Model 2: {model_2_auc:.4f}', f'n: {model_1_ss}'
+        else:
+            # \n because of the horizontal alignment
+            return f'Model 1: {model_1_auc:.4f}\nn: {model_1_ss}', \
+                   f'Model 2: {model_2_auc:.4f}\nn: {model_2_ss}', \
+                   None
+
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
         # Plotting AUCs
         ax_auc = self.fig_auc.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax_auc.bar(1, auc_model_1, color='red', label=f'Model 1: {auc_model_1}\n'
-                                                      f'n: {model_1_n_samples}')
-        ax_auc.bar(2, auc_model_2, color='blue', label=f'Model 2: {auc_model_2}\n'
-                                                       f'n: {model_2_n_samples}')
+        labels = self._create_auc_label(
+            auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples
+        )
+        ax_auc.bar(1, auc_model_1, color='red', label=labels[0])
+        ax_auc.bar(2, auc_model_2, color='blue', label=labels[1])
         ax_auc.set_title(title)
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
         ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc='lower right')
+        ax_auc.legend(loc='upper right', bbox_to_anchor=(1.8, 1.03), title=labels[2])
 
     def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
-        self._create_violinplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_samples,
-                                           model_2_data, model_2_samples, title)
+        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
+                                        model_1_samples,
+                                        model_2_data, model_2_samples, title)
 
     def _plot_score_diff(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
-        self._create_violinplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                           model_1_samples, model_2_data, model_2_samples, title)
+        self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
+                                        model_1_samples, model_2_data, model_2_samples, title)
 
-    def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
+    @staticmethod
+    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
+        n_benign_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 0].shape[0]
+        n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
+        n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
+        n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
+        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}', \
+               f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+
+    def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
+                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        sb.violinplot(
-            x=BINARIZED_LABEL, y=column_to_plot, hue='model', data=pd.concat([model_1_data, model_2_data]), ax=ax, split=True, palette={'model_1': 'red', 'model_2': 'blue'}
-        )
-        # ax.boxplot(
-        #     [
-        #         model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
-        #         model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
-        #         model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
-        #         model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
-        #     ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        # sb.violinplot(
+        #     x=BINARIZED_LABEL, y=column_to_plot, hue='model',
+        #     data=pd.concat([model_1_data, model_2_data]), ax=ax, split=True,
+        #     palette={'model_1': 'red', 'model_2': 'blue'}
         # )
+        ax.boxplot(
+            [
+                model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
+            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        )
         ax.set_ylim(0.0, 1.0)
-        if model_1_n_samples == model_2_n_samples:
-            ax.set_title(f'{title}\n(n={model_1_n_samples})')
-        else:
-            ax.set_title(f'{title}\n(n model 1={model_1_n_samples}, n model 2={model_2_n_samples})')
+        ax.set_title(title)
+        ax.legend(
+            self._create_boxplot_label(
+                model_1_data,
+                model_1_n_samples,
+                model_2_data,
+                model_2_n_samples
+            ),
+            loc='upper right',
+            bbox_to_anchor=(1.6, 1.03)
+        )
 
     def export(self, output):
         print(f'Exporting figures to: {output}')
@@ -630,9 +664,9 @@ def main():
     add_imputed_af(m1)
     add_imputed_af(m2)
 
-    # Adding column to know what model the data originated from
-    add_model_column(m1, 'model_1')
-    add_model_column(m2, 'model_2')
+    # # Adding column to know what model the data originated from
+    # add_model_column(m1, 'model_1')
+    # add_model_column(m2, 'model_2')
 
     # Plotting
     plotter = Plotter(process_consequences)
