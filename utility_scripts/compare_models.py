@@ -7,7 +7,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import seaborn as sb
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve
 
@@ -366,7 +365,6 @@ class Plotter:
             )
             self.consequences = split_consequences(merged_model_1_data['Consequence'])
             self.n_cols = 3
-            # self.n_rows = math.ceil((len(self.consequences) / (self.n_cols / 2)) + 1)
             self.n_rows = math.ceil((len(self.consequences) / self.n_cols + 1))
         else:
             print('Creating single plot per figure.\n')
@@ -559,17 +557,15 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.35, 1.01))
+        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01))
 
     @staticmethod
     def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
-        # Note: the .4f is to make sure all legends align properly horizontally
         if model_1_ss == model_2_ss:
-            return f'Model 1: {model_1_auc:.4f}', f'Model 2: {model_2_auc:.4f}', f'n: {model_1_ss}'
+            return f'Model 1: {model_1_auc}', f'Model 2: {model_2_auc}', f'n: {model_1_ss}'
         else:
-            # \n because of the horizontal alignment
-            return f'Model 1: {model_1_auc:.4f}\nn: {model_1_ss}', \
-                   f'Model 2: {model_2_auc:.4f}\nn: {model_2_ss}', \
+            return f'Model 1: {model_1_auc}\nn: {model_1_ss}', \
+                   f'Model 2: {model_2_auc}\nn: {model_2_ss}', \
                    None
 
     def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
@@ -584,7 +580,7 @@ class Plotter:
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
         ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc='upper left', bbox_to_anchor=(1.4, 1.02), title=labels[2])
+        ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
     def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
         self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
@@ -601,7 +597,7 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n', \
+        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n\n' \
                f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
@@ -615,15 +611,19 @@ class Plotter:
                 model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
             ], labels=['M1B', 'M1P', 'M2B', 'M2P']
         )
-        ax.set_ylim(0.0, 1.0)
-        ax.set_title(title)
-        ax.legend(
-            self._create_boxplot_label(
+        ax.plot(
+            np.NaN,
+            np.NaN,
+            color='none',
+            label=self._create_boxplot_label(
                 model_1_data,
                 model_1_n_samples,
                 model_2_data,
-                model_2_n_samples
-            ),
+                model_2_n_samples)
+        )
+        ax.set_ylim(0.0, 1.0)
+        ax.set_title(title)
+        ax.legend(
             loc='upper left',
             bbox_to_anchor=(1.0, 1.02)
         )
