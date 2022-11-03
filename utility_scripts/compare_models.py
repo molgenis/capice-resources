@@ -407,7 +407,7 @@ class Plotter:
                 auc_m1 = calculate_auc(subset_m1)
                 auc_m2 = calculate_auc(subset_m2)
             except ValueError:
-                print(f'Could not calculate AUC for Model 1 for consequence: {consequence}')
+                print(f'Could not calculate AUC for consequence: {consequence}')
                 continue
 
             self._plot_auc(auc_m1, m1_samples, auc_m2, m2_samples, consequence)
@@ -625,7 +625,8 @@ class Plotter:
         ax.set_title(title)
         ax.legend(
             loc='upper left',
-            bbox_to_anchor=(1.0, 1.02)
+            bbox_to_anchor=(1.0, 1.02),
+            handlelength=0
         )
 
     def export(self, output):
