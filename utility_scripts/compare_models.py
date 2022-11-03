@@ -298,7 +298,7 @@ class Plotter:
     @staticmethod
     def _set_figure_size(process_consequences):
         if process_consequences:
-            return 15, 40
+            return 20, 40
         else:
             return 10, 15
 
@@ -326,7 +326,7 @@ class Plotter:
             f'Model 2 labels: {model_2_label_path}\n'
         )
         self.fig_roc.set_constrained_layout(constrained_layout)
-        self.fig_afb = plt.figure(figsize=(10, 11))
+        self.fig_afb = plt.figure(figsize=(11, 11))
         self.fig_afb.suptitle(
             f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n'
             f'Model 1 scores: {model_1_score_path}\n'
@@ -365,8 +365,9 @@ class Plotter:
                 'Creating required amount of rows and columns according to present Consequences.\n'
             )
             self.consequences = split_consequences(merged_model_1_data['Consequence'])
-            self.n_cols = 4
-            self.n_rows = math.ceil((len(self.consequences) / (self.n_cols / 2)) + 1)
+            self.n_cols = 3
+            # self.n_rows = math.ceil((len(self.consequences) / (self.n_cols / 2)) + 1)
+            self.n_rows = math.ceil((len(self.consequences) / self.n_cols + 1))
         else:
             print('Creating single plot per figure.\n')
 
@@ -383,7 +384,7 @@ class Plotter:
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
-            self.index += 2
+            self.index += 1
             self._plot_consequences(merged_model_1_data, merged_model_2_data)
             print('Plotting per consequence done.\n')
 
@@ -414,7 +415,7 @@ class Plotter:
             self._plot_auc(auc_m1, m1_samples, auc_m2, m2_samples, consequence)
             self._plot_score_dist(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
             self._plot_score_diff(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
-            self.index += 2
+            self.index += 1
 
     def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
                   auc_model_2):
@@ -434,13 +435,17 @@ class Plotter:
                                    model_2_size: int,
                                    model_2_auc: float):
         if model_1_size == model_2_size:
-            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
+            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}\n'
         else:
-            return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\nModel 2: {model_2_auc} (n: {model_2_auc})'
+            return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\n' \
+                   f'Model 2: {model_2_auc} (n: {model_2_size})\n'
 
     @staticmethod
-    def _subset_af_bin(dataset, upper_bound, lower_bound):
-        return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+    def _subset_af_bin(dataset, upper_bound, lower_bound, last_iter=False):
+        if last_iter:
+            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] <= upper_bound)]
+        else:
+            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
 
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
@@ -475,7 +480,7 @@ class Plotter:
             np.NaN,
             np.NaN,
             label=self._create_af_bins_plotlabels(
-                "0",
+                '"0"',
                 model_1_data[model_1_data["is_imputed"]].shape[0],
                 f_auc_m1,
                 model_2_data[model_2_data["is_imputed"]].shape[0],
@@ -488,10 +493,13 @@ class Plotter:
         # Sadly bins*100 doesn't work for 1e-6, cause of rounding errors
         bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
         for i in range(1, len(bins)):
+            last_iter = False
             upper_bound = bins[i]
+            if upper_bound == bins[-1]:
+                last_iter = True
             lower_bound = bins[i - 1]
-            subset_m1 = self._subset_af_bin(model_1_data, upper_bound, lower_bound)
-            subset_m2 = self._subset_af_bin(model_2_data, upper_bound, lower_bound)
+            subset_m1 = self._subset_af_bin(model_1_data, upper_bound, lower_bound, last_iter)
+            subset_m2 = self._subset_af_bin(model_2_data, upper_bound, lower_bound, last_iter)
             try:
                 auc_m1 = calculate_auc(subset_m1)
                 auc_m2 = calculate_auc(subset_m2)
@@ -502,7 +510,10 @@ class Plotter:
                 )
                 auc_m1 = np.NaN
                 auc_m2 = np.NaN
-            bin_label = f'{bins_labels[i - 1]} <= x < {bins_labels[i]}%'
+            if last_iter:
+                bin_label = f'{bins_labels[i - 1]} <= x <= {bins_labels[i]}%'
+            else:
+                bin_label = f'{bins_labels[i - 1]} <= x < {bins_labels[i]}%'
             bin_labels.append(bin_label)
 
             ax_afb.bar(
@@ -548,7 +559,7 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc='upper right', bbox_to_anchor=(1.35, 1.01))
+        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.35, 1.01))
 
     @staticmethod
     def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
@@ -573,7 +584,7 @@ class Plotter:
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
         ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc='upper right', bbox_to_anchor=(1.8, 1.03), title=labels[2])
+        ax_auc.legend(loc='upper left', bbox_to_anchor=(1.4, 1.02), title=labels[2])
 
     def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
         self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
@@ -590,7 +601,7 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}', \
+        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n', \
                f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
@@ -613,8 +624,8 @@ class Plotter:
                 model_2_data,
                 model_2_n_samples
             ),
-            loc='upper right',
-            bbox_to_anchor=(1.6, 1.03)
+            loc='upper left',
+            bbox_to_anchor=(1.0, 1.02)
         )
 
     def export(self, output):
