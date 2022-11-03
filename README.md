@@ -324,6 +324,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     ```
 
 Optional for validation with CAPICE from paper:
+
 19. If not done so already, download/prepare CAPICE v1.1: 
     ```shell
     wget https://github.com/molgenis/capice/archive/refs/tags/v1.1.tar.gz
