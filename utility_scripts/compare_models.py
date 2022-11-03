@@ -407,8 +407,8 @@ class Plotter:
                 auc_m1 = calculate_auc(subset_m1)
                 auc_m2 = calculate_auc(subset_m2)
             except ValueError:
-                print(f'Could not calculate AUC for consequence: {consequence}')
-                continue
+                auc_m1 = np.NaN
+                auc_m2 = np.NaN
 
             self._plot_auc(auc_m1, m1_samples, auc_m2, m2_samples, consequence)
             self._plot_score_dist(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
@@ -594,8 +594,18 @@ class Plotter:
         labels = self._create_auc_label(
             auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples
         )
+
         ax_auc.bar(1, auc_model_1, color='red', label=labels[0])
         ax_auc.bar(2, auc_model_2, color='blue', label=labels[1])
+
+        if math.isnan(auc_model_1):
+            ax_auc.text(
+                1.5, 0.5, "Not available",
+                fontsize='x-large',
+                horizontalalignment='center',
+                verticalalignment='center'
+            )
+
         ax_auc.set_title(title)
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
