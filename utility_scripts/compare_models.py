@@ -7,7 +7,9 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import pyplot as plt
+from matplotlib import patches as mpatches
 from sklearn.metrics import roc_auc_score, roc_curve
 
 ID_SEPARATOR = '!'
@@ -272,6 +274,10 @@ def add_imputed_af(merged_dataset):
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
 
 
+def add_model_identifier(dataset, model_number):
+    dataset['model'] = model_number
+
+
 def calculate_auc(dataset: pd.DataFrame):
     return round(roc_auc_score(y_true=dataset[BINARIZED_LABEL], y_score=dataset[SCORE]), 4)
 
@@ -450,10 +456,10 @@ class Plotter:
                 {\n}
         """
         if model_1_size == model_2_size:
-            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}\n'
+            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
         else:
             return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\n' \
-                   f'Model 2: {model_2_auc} (n: {model_2_size})\n'
+                   f'Model 2: {model_2_auc} (n: {model_2_size})'
 
     @staticmethod
     def _subset_af_bin(dataset, upper_bound, lower_bound, last_iter=False):
@@ -568,7 +574,7 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01))
+        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01), labelspacing=2)
 
     @staticmethod
     def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
@@ -627,36 +633,32 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n\n' \
+        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}', \
                f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax.boxplot(
-            [
-                model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
-                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
-                model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
-            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+        sns.violinplot(
+            data=pd.concat([model_1_data, model_2_data]),
+            x=BINARIZED_LABEL,
+            y=column_to_plot,
+            hue='model',
+            ax=ax,
+            split=True,
+            palette={'model_1': 'red', 'model_2': 'blue'},
+            legend=False
         )
-        ax.plot(
-            np.NaN,
-            np.NaN,
-            color='none',
-            label=self._create_boxplot_label(
-                model_1_data,
-                model_1_n_samples,
-                model_2_data,
-                model_2_n_samples)
-        )
+        labels = self._create_boxplot_label(model_1_data, model_1_n_samples, model_2_data, model_2_n_samples)
+        red_patch = mpatches.Patch(color='red', label=labels[0])
+        blue_patch = mpatches.Patch(color='blue', label=labels[1])
         ax.set_ylim(0.0, 1.0)
         ax.set_title(title)
         ax.legend(
+            handles=[red_patch, blue_patch],
             loc='upper left',
             bbox_to_anchor=(1.0, 1.02),
-            handlelength=0
+            labelspacing=2
         )
 
     def export(self, output):
@@ -696,6 +698,10 @@ def main():
     # Adding column containing the imputed AF
     add_imputed_af(m1)
     add_imputed_af(m2)
+
+    # Adding model identifier to the dataset for violin plots
+    add_model_identifier(m1, 'model_1')
+    add_model_identifier(m2, 'model_2')
 
     # Plotting
     plotter = Plotter(process_consequences)
