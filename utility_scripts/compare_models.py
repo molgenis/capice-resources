@@ -432,6 +432,23 @@ class Plotter:
     def _create_af_bins_plotlabels(bin_label, model_1_size: int, model_1_auc: float,
                                    model_2_size: int,
                                    model_2_auc: float):
+        """
+        Creates a label specifically for the allele frequency bins
+
+        Returns single string:
+            If sample sizes match:
+                {bin_label}
+                Model 1: {auc}
+                Model 2: {auc}
+                {sample_size}
+                {\n}
+
+            If not:
+                {bin_label}
+                Model 1: {auc} (n: {sample_size})
+                Model 2: {auc} (n: {sample_size})
+                {\n}
+        """
         if model_1_size == model_2_size:
             return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}\n'
         else:
@@ -444,6 +461,35 @@ class Plotter:
             return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] <= upper_bound)]
         else:
             return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+
+    def _plot_bin(self, ax, x_index, label, auc_m1, m1_ss, auc_m2, m2_ss):
+        width = 0.3
+        ax.bar(
+            x_index - 0.3,
+            auc_m1,
+            width,
+            align='edge',
+            color='red'
+        )
+        ax.bar(
+            x_index,
+            auc_m2,
+            width,
+            align='edge',
+            color='blue'
+        )
+        ax.plot(
+            np.NaN,
+            np.NaN,
+            color='none',
+            label=self._create_af_bins_plotlabels(
+                label,
+                m1_ss,
+                auc_m1,
+                m2_ss,
+                auc_m2
+            )
+        )
 
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
@@ -460,31 +506,14 @@ class Plotter:
             f_auc_m2 = np.NaN
         bin_labels.append('"0"')
 
-        ax_afb.bar(
-            0 - width,
-            f_auc_m1,
-            width,
-            align='edge',
-            color='red'
-        )
-        ax_afb.bar(
+        self._plot_bin(
+            ax_afb,
             0,
+            '"0"',
+            f_auc_m1,
+            model_1_data[model_1_data['is_imputed']].shape[0],
             f_auc_m2,
-            width,
-            align='edge',
-            color='blue'
-        )
-        ax_afb.plot(
-            np.NaN,
-            np.NaN,
-            label=self._create_af_bins_plotlabels(
-                '"0"',
-                model_1_data[model_1_data["is_imputed"]].shape[0],
-                f_auc_m1,
-                model_2_data[model_2_data["is_imputed"]].shape[0],
-                f_auc_m2
-            ),
-            color='none'
+            model_2_data[model_2_data['is_imputed']].shape[0]
         )
 
         bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin
@@ -514,31 +543,14 @@ class Plotter:
                 bin_label = f'{bins_labels[i - 1]} <= x < {bins_labels[i]}%'
             bin_labels.append(bin_label)
 
-            ax_afb.bar(
-                i - width,
-                auc_m1,
-                width,
-                align='edge',
-                color='red'
-            )
-            ax_afb.bar(
+            self._plot_bin(
+                ax_afb,
                 i,
+                bin_label,
+                auc_m1,
+                subset_m1.shape[0],
                 auc_m2,
-                width,
-                align='edge',
-                color='blue'
-            )
-            ax_afb.plot(
-                np.NaN,
-                np.NaN,
-                label=self._create_af_bins_plotlabels(
-                    bin_label,
-                    subset_m1.shape[0],
-                    auc_m1,
-                    subset_m2.shape[0],
-                    auc_m2
-                ),
-                color='none'
+                subset_m2.shape[0]
             )
         ax_afb.plot(
             np.NaN,
@@ -561,6 +573,15 @@ class Plotter:
 
     @staticmethod
     def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
+        """
+        Creates the label for specifically AUC (sub)plots
+
+        Returns tuple of 3:
+        - Label for model 1. If element 3 returns None, contains sample size as well.
+        - Label for model 2. If element 3 returns None, contains sample size as well.
+        - Label for legend title (if sample sizes match). Returns None (matplotlib legend title default) if sample
+        sizes do not match.
+        """
         if model_1_ss == model_2_ss:
             return f'Model 1: {model_1_auc}', f'Model 2: {model_2_auc}', f'n: {model_1_ss}'
         else:
@@ -582,14 +603,14 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
-    def _plot_score_dist(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
+    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
         self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
-                                        model_1_samples,
-                                        model_2_data, model_2_samples, title)
+                                        model_1_n_samples,
+                                        model_2_data, model_2_n_samples, title)
 
-    def _plot_score_diff(self, model_1_data, model_1_samples, model_2_data, model_2_samples, title):
+    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
         self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_samples, model_2_data, model_2_samples, title)
+                                        model_1_n_samples, model_2_data, model_2_n_samples, title)
 
     @staticmethod
     def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
