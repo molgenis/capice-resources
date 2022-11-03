@@ -465,7 +465,7 @@ class Plotter:
     def _plot_bin(self, ax, x_index, label, auc_m1, m1_ss, auc_m2, m2_ss):
         width = 0.3
         ax.bar(
-            x_index - 0.3,
+            x_index - width,
             auc_m1,
             width,
             align='edge',
@@ -493,7 +493,6 @@ class Plotter:
 
     def _plot_af_bins(self, model_1_data, model_2_data):
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
-        width = 0.3
         bin_labels = []
 
         # Plotting the NaN AF values as if they were singletons
