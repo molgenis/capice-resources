@@ -273,10 +273,6 @@ def add_imputed_af(merged_dataset):
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
 
 
-# def add_model_column(unmerged_dataset, column_fill):
-#     unmerged_dataset['model'] = column_fill
-
-
 def calculate_auc(dataset: pd.DataFrame):
     return round(roc_auc_score(y_true=dataset[BINARIZED_LABEL], y_score=dataset[SCORE]), 4)
 
@@ -600,11 +596,6 @@ class Plotter:
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        # sb.violinplot(
-        #     x=BINARIZED_LABEL, y=column_to_plot, hue='model',
-        #     data=pd.concat([model_1_data, model_2_data]), ax=ax, split=True,
-        #     palette={'model_1': 'red', 'model_2': 'blue'}
-        # )
         ax.boxplot(
             [
                 model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
@@ -663,10 +654,6 @@ def main():
     # Adding column containing the imputed AF
     add_imputed_af(m1)
     add_imputed_af(m2)
-
-    # # Adding column to know what model the data originated from
-    # add_model_column(m1, 'model_1')
-    # add_model_column(m2, 'model_2')
 
     # Plotting
     plotter = Plotter(process_consequences)
