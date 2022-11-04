@@ -18,22 +18,11 @@ class VKGL:
         data = pd.read_csv(file_location, sep='\t')
         self.validator.validate_vkgl(data)
         self._correct_column_names(data)
-        self._correct_single_consensus(data)
+        self._correct_support(data)
         correct_order_vcf_notation(data)
         self._apply_review_status(data)
         data['source'] = 'VKGL'
         data = data[_COLUMNS_OF_INTEREST]
-        equalize_class(
-            data,
-            equalize_dict={
-                'Likely benign': 'LB',
-                'Benign': 'B',
-                '(Likely) benign': 'LB',
-                'Pathogenic': 'P',
-                'Likely pathogenic': 'LP',
-                '(Likely) pathogenic': 'LP'
-            }
-        )
         apply_binarized_label(data)
         data.reset_index(drop=True, inplace=True)
         return data
@@ -42,38 +31,13 @@ class VKGL:
     def _apply_review_status(data: pd.DataFrame):
         print('Applying review status.')
         data['review'] = 2
-        data.loc[data[data['labs'] == 1].index, 'review'] = 1
+        data.loc[data[data['support'] == 1].index, 'review'] = 1
         return data
 
     @staticmethod
-    def _correct_single_consensus(data: pd.DataFrame):
-        print('Correcting single consensus.')
-        lab_concensi = []
-        for col in data.columns:
-            if col.endswith('_link'):
-                lab_concensi.append(col.split('_link')[0])
-        for lab in lab_concensi:
-            data[lab].fillna('', inplace=True)
-        # The true amount of labs doesn't matter, as long as it is at least 2
-        data['labs'] = 2
-        # Grabbing the variants that only have 1 lab supporting the consensus
-        data.loc[
-            data[
-                data[
-                    'class'
-                ] == 'Classified by one lab'
-                ].index,
-            'labs'
-        ] = 1
-        # Correcting consensus
-        data.loc[
-            data[
-                data[
-                    'class'
-                ] == 'Classified by one lab'
-                ].index,
-            'class'
-        ] = data[lab_concensi].astype(str).agg(''.join, axis=1)
+    def _correct_support(data: pd.DataFrame):
+        print('Correcting support.')
+        data['support'] = data['support'].str.split(' ', expand=True)[0].astype(int)
         return data
 
     @staticmethod
@@ -85,7 +49,7 @@ class VKGL:
                 'start': 'POS',
                 'ref': 'REF',
                 'alt': 'ALT',
-                'consensus_classification': 'class'
+                'classification': 'class'
             }, inplace=True
         )
         return data
