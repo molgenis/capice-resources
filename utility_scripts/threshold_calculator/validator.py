@@ -1,4 +1,5 @@
 import os
+import typing
 
 import pandas as pd
 
@@ -40,3 +41,10 @@ class Validator:
     def _validate_output_extension(path):
         if not path.endswith('.tsv.gz'):
             raise NotTSVError(2, "Output path does not have a gzipped TSV extension!")
+
+    @staticmethod
+    def validate_columns_dataset(dataset: pd.DataFrame, required_columns: typing.Iterable):
+        for column in required_columns:
+            if column not in dataset.columns:
+                raise KeyError(2, f"Required column {column} missing!")
+        return dataset
