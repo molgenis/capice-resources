@@ -33,13 +33,13 @@ def main():
         ScoreColumns.list()
     )
     validator.validate_sample_size_match(ds_validation_raw, ds_validation_score)
-    calculator = ThresholdCalculator(ds_validation_raw, ds_validation_score)
-    result = calculator.calculate_threshold()
-    exporter = ThresholdExporter(result)
-    exporter.export(path_output)
+    dataset = pd.concat([ds_validation_raw, ds_validation_score], axis=1)
+    result = ThresholdCalculator().calculate_threshold(dataset)
+    exporter = ThresholdExporter(path_output)
+    exporter.export_thresholds(result)
     plotter = ThresholdPlotter(result)
-    plotter.plot_threshold(ds_validation_score)
-    plotter.export(path_output)
+    figure = plotter.plot_threshold(dataset)
+    exporter.export_plot(figure)
 
 
 if __name__ == '__main__':
