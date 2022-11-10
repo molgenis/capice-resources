@@ -129,9 +129,9 @@ def parse_input_argument(input_path: os.PathLike) -> (list[os.PathLike], list[os
     for (root, dirs, files) in os.walk(input_path):
         for file in files:
             if file.endswith('.pickle.dat'):
-                models.append(Path(os.path.join(root, files)))
+                models.append(Path(os.path.join(root, file)))
             elif file.endswith('.tsv.gz'):
-                scores.append(Path(os.path.join(root, files)))
+                scores.append(Path(os.path.join(root, file)))
     return models, scores
 
 
@@ -161,6 +161,8 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
                 importances_dict[it] = ip
             else:
                 importances_dict[it].map(importances)
+    print(importances_dict)
+    exit()
     return importances_dict
 
 
