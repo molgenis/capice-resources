@@ -160,9 +160,7 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
                 ip = pd.DataFrame(data=[importances.keys(), importances.values()], index=['feature', i]).T
                 importances_dict[it] = ip
             else:
-                importances_dict[it].map(importances)
-    print(importances_dict)
-    exit()
+                importances_dict[it]['feature'].map(importances)
     return importances_dict
 
 
