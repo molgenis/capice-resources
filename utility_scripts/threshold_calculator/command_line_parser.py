@@ -35,8 +35,7 @@ class CommandLineParser:
             type=str,
             action='store',
             required=True,
-            help='Output path and filename to store the output recall score threshold tsv. '
-                 'Has to have the .tsv.gz extension! Plot figure will also be placed in this directory.'
+            help='Output directory where the output plot and thresholds TSV should be placed.'
         )
         return parser
 
