@@ -146,7 +146,7 @@ def read_models(model_paths: list[os.PathLike]) -> list[xgb.XGBClassifier]:
 def read_scores(score_paths: list[os.PathLike]) -> list[pd.DataFrame]:
     scores = []
     for file in score_paths:
-        scores.append(pd.read_csv(file, sep='\t', low_memory=False))
+        scores.append(pd.read_csv(file, sep='\t', low_memory=False, usecols=['score']))
     return scores
 
 
@@ -169,18 +169,22 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
     return importances_dict
 
 
+def merge_model_files(scores: list[pd.DataFrame], validation: pd.DataFrame) -> pd.DataFrame:
+    return
+
+
 class Plotter:
     def __init__(self, output_path):
         self.output_path = output_path
         self.mf_indexes = {}
+        self.fip = plt.figure(figsize=(40, 40))
+        self.mp = plt.figure(figsize=(40, 40))
 
     def plot_model_importances(self, model_stats: dict[str, pd.DataFrame]):
         importance_types = list(model_stats.keys())
-        # importance_types.append('rank')
-        figure = plt.figure(figsize=(40, 40))
-        figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
+        self.fip.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
         for i, it in enumerate(importance_types, start=1):
-            ax = figure.add_subplot(len(importance_types) + 1, 1, i)
+            ax = self.fip.add_subplot(len(importance_types) + 1, 1, i)
             data = model_stats[it]
             if i == 1:
                 for feature_number, feature in enumerate(data['feature'].values):
@@ -208,7 +212,7 @@ class Plotter:
             ax.scatter(data_xticks, data_mean)
             ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
             ax.ticklabel_format(axis='y', useOffset=False, style='plain')
-        ax = figure.add_subplot(len(importance_types) + 1, 1, i+1)
+        ax = self.fip.add_subplot(len(importance_types) + 1, 1, i+1)
         rank_columns = []
         for col in model_stats['gain']:
             if col.startswith('rank_'):
@@ -226,6 +230,13 @@ class Plotter:
         ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
         ax.ticklabel_format(axis='y', useOffset=False, style='plain')
 
+    def plot_model_performances(self, merged_model_scores: pd.DataFrame):
+        self.mp.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
+
+    def export(self):
+        self.fip.savefig(os.path.join(self.output_path, 'model_features.png'))
+        self.mp.savefig(os.path.join(self.output_path, 'model_performances.png'))
+
 
 def main():
     clp = CommandLineParser()
@@ -238,10 +249,12 @@ def main():
     models = read_models(model_paths)
     model_stats = obtain_models_stats(models)
     plotter.plot_model_importances(model_stats)
-    exit()
     del model_paths, models, model_stats
-    scores = read_models(score_paths)
-    validation = pd.read_csv(input_validation, sep='\t', low_memory=False)
+    scores = read_scores(score_paths)
+    validation = pd.read_csv(
+        input_validation, sep='\t', low_memory=False, usecols=['binarized_label']
+    )
+    plotter.export()
 
 
 if __name__ == '__main__':
