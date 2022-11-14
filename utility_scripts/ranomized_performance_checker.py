@@ -156,27 +156,75 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
     for it in importance_types:
         for i, model in enumerate(models):
             importances = model.get_booster().get_score(importance_type=it)
+            ip = pd.DataFrame(
+                    data=[importances.keys(), importances.values()],
+                    index=['feature', f'score_{i}']
+                ).T
+            if it == 'gain':
+                ip[f'rank_{i}'] = ip.index + 1
             if i == 0:
-                ip = pd.DataFrame(data=[importances.keys(), importances.values()], index=['feature', i]).T
                 importances_dict[it] = ip
             else:
-                importances_dict[it]['feature'].map(importances)
+                importances_dict[it] = importances_dict[it].merge(ip, on='feature', how='inner')
     return importances_dict
 
 
 class Plotter:
     def __init__(self, output_path):
         self.output_path = output_path
+        self.mf_indexes = {}
 
-
-    def plot_model_importances(self, model_stats: pd.DataFrame):
-        importance_types = model_stats.columns
+    def plot_model_importances(self, model_stats: dict[str, pd.DataFrame]):
+        importance_types = list(model_stats.keys())
+        # importance_types.append('rank')
         figure = plt.figure(figsize=(40, 40))
         figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
         for i, it in enumerate(importance_types, start=1):
-            ax = figure.add_subplot(len(importance_types), 1, i)
-
-        pass
+            ax = figure.add_subplot(len(importance_types) + 1, 1, i)
+            data = model_stats[it]
+            if i == 1:
+                for feature_number, feature in enumerate(data['feature'].values):
+                    self.mf_indexes[feature] = feature_number
+            data['x_ticks'] = data['feature'].map(self.mf_indexes)
+            data.sort_values(by='x_ticks', inplace=True)
+            score_columns = []
+            for column in data.columns:
+                if column.startswith('score_'):
+                    score_columns.append(column)
+            normalization_mean = data[score_columns].mean().mean()
+            normalization_std = data[score_columns].std().std()
+            data_mean = (
+                    (data[score_columns] - normalization_mean) / normalization_std
+            ).mean(axis=1)
+            data_std = (
+                    (data[score_columns] - normalization_mean) / normalization_std
+            ).std(axis=1)
+            data_xticks = data['x_ticks']
+            ax.set_title(it)
+            ax.set_ylabel(it)
+            ax.set_xlabel('feature')
+            ax.set_xticks(data_xticks)
+            ax.set_xticklabels(self.mf_indexes.keys(), rotation=45, ha='right', minor=False)
+            ax.scatter(data_xticks, data_mean)
+            ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
+            ax.ticklabel_format(axis='y', useOffset=False, style='plain')
+        ax = figure.add_subplot(len(importance_types) + 1, 1, i+1)
+        rank_columns = []
+        for col in model_stats['gain']:
+            if col.startswith('rank_'):
+                rank_columns.append(col)
+        data = model_stats['gain']
+        data_mean = data[rank_columns].mean(axis=1)
+        data_std = data[rank_columns].std(axis=1)
+        data_xticks = data['x_ticks']
+        ax.set_title('rank')
+        ax.set_ylabel('rank')
+        ax.set_xlabel('feature')
+        ax.set_xticks(data_xticks)
+        ax.set_xticklabels(self.mf_indexes.keys(), rotation=45, ha='right', minor=False)
+        ax.scatter(data_xticks, data_mean)
+        ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
+        ax.ticklabel_format(axis='y', useOffset=False, style='plain')
 
 
 def main():
@@ -190,6 +238,7 @@ def main():
     models = read_models(model_paths)
     model_stats = obtain_models_stats(models)
     plotter.plot_model_importances(model_stats)
+    exit()
     del model_paths, models, model_stats
     scores = read_models(score_paths)
     validation = pd.read_csv(input_validation, sep='\t', low_memory=False)
