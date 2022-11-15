@@ -192,12 +192,20 @@ class Plotter:
         self.output_path = output_path
         self.mf_indexes = {}
         self.fip = plt.figure(figsize=(40, 40))
-        self.mp = plt.figure(figsize=(40, 40))
+        self.mp_roc = plt.figure(figsize=(11, 11))
+        self.mp_auc = plt.figure(figsize=(20, 40))
         self.models_colormap = {}
+        self.mp_models = []
+        self.mp_ncols = 1
+        self.index = 1
+        self._set_constrained_layout()
+
+    def _set_constrained_layout(self):
+        for figure in [self.fip, self.mp_roc, self.mp_auc]:
+            figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
 
     def plot_model_importances(self, model_stats: dict[str, pd.DataFrame]):
         importance_types = list(model_stats.keys())
-        self.fip.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
         for i, it in enumerate(importance_types, start=1):
             ax = self.fip.add_subplot(len(importance_types) + 1, 1, i)
             data = model_stats[it]
@@ -242,25 +250,47 @@ class Plotter:
         ax.ticklabel_format(axis='y', useOffset=False, style='plain')
 
     def plot_model_performances(self, merged_model_scores: pd.DataFrame):
-        self.mp.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
-        self._set_models_colormap(merged_model_scores)
-        pass
+        self._determine_n_models(merged_model_scores)
+        self._set_models_colormap()
+        self._plot_roc(merged_model_scores)
+        self._determine_consequences_performances(merged_model_scores)
 
-    def _set_models_colormap(self, model_score_data):
+    def _determine_consequences_performances(self, merged_model_scores):
+        consequences = pd.Series(
+            merged_model_scores['Consequence'].str.split('&', expand=True).values.ravel()
+        ).dropna().sort_values(ignore_index=True).unique()
+        output_means = []
+        output_stds = []
+
+    def _determine_n_models(self, model_score_data):
         for col in model_score_data.columns:
             if col.startswith('model') and col not in self.models_colormap.keys():
-                self.models_colormap[col] = []
-        cmap = cm.get_cmap('inferno', len(self.models_colormap.keys()))
-        for model, color in zip(self.models_colormap.keys(), cmap.colors):
+                self.mp_models.append(col)
+
+    def _set_models_colormap(self):
+        cmap = cm.get_cmap('viridis', len(self.mp_models))
+        for model, color in zip(self.mp_models, cmap.colors):
             self.models_colormap[model] = color
 
-    def _plot_roc(self, y_true, y_score):
-        fpr, tpr, _ = roc_curve(y_true=y_true, y_score=y_score)
-
+    def _plot_roc(self, model_score_data):
+        ax = self.mp_roc.add_subplot(1, 1, 1)
+        for model in self.mp_models:
+            y_true = model_score_data['binarized_label']
+            y_score = model_score_data[model]
+            fpr, tpr, _ = roc_curve(y_true=y_true, y_score=y_score)
+            auc = roc_auc_score(y_true=y_true, y_score=y_score)
+            ax.plot(fpr, tpr, color=self.models_colormap[model], label=f'{model}: {auc:.4f}')
+        ax.set_title('Receiver Operator Curve')
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.0])
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive Rate')
+        ax.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01))
 
     def export(self):
         self.fip.savefig(os.path.join(self.output_path, 'model_features.png'))
-        # self.mp.savefig(os.path.join(self.output_path, 'model_performances.png'))
+        self.mp_roc.savefig(os.path.join(self.output_path, 'model_roc.png'))
+        self.mp_auc.savefig(os.path.join(self.output_path, 'model_auc.png'))
 
 
 def main():
