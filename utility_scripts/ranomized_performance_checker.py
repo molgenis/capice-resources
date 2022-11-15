@@ -7,7 +7,9 @@ import argparse
 import pandas as pd
 import xgboost as xgb
 from pathlib import Path
+from matplotlib import cm
 from matplotlib import pyplot as plt
+from sklearn.metrics import roc_curve, roc_auc_score
 
 
 class Validator:
@@ -180,7 +182,9 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
 
 
 def merge_model_files(scores: list[pd.DataFrame], validation: pd.DataFrame) -> pd.DataFrame:
-    return
+    for i, score in enumerate(scores, start=1):
+        validation[f'model_{i}'] = score['score']
+    return validation
 
 
 class Plotter:
@@ -189,6 +193,7 @@ class Plotter:
         self.mf_indexes = {}
         self.fip = plt.figure(figsize=(40, 40))
         self.mp = plt.figure(figsize=(40, 40))
+        self.models_colormap = {}
 
     def plot_model_importances(self, model_stats: dict[str, pd.DataFrame]):
         importance_types = list(model_stats.keys())
@@ -238,6 +243,20 @@ class Plotter:
 
     def plot_model_performances(self, merged_model_scores: pd.DataFrame):
         self.mp.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
+        self._set_models_colormap(merged_model_scores)
+        pass
+
+    def _set_models_colormap(self, model_score_data):
+        for col in model_score_data.columns:
+            if col.startswith('model') and col not in self.models_colormap.keys():
+                self.models_colormap[col] = []
+        cmap = cm.get_cmap('inferno', len(self.models_colormap.keys()))
+        for model, color in zip(self.models_colormap.keys(), cmap.colors):
+            self.models_colormap[model] = color
+
+    def _plot_roc(self, y_true, y_score):
+        fpr, tpr, _ = roc_curve(y_true=y_true, y_score=y_score)
+
 
     def export(self):
         self.fip.savefig(os.path.join(self.output_path, 'model_features.png'))
@@ -258,8 +277,10 @@ def main():
     del model_paths, models, model_stats
     scores = read_scores(score_paths)
     validation = pd.read_csv(
-        input_validation, sep='\t', low_memory=False, usecols=['binarized_label']
+        input_validation, sep='\t', low_memory=False, usecols=['binarized_label', 'Consequence']
     )
+    merged = merge_model_files(scores, validation)
+    plotter.plot_model_performances(merged)
     plotter.export()
 
 
