@@ -153,19 +153,29 @@ def read_scores(score_paths: list[os.PathLike]) -> list[pd.DataFrame]:
 def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFrame]:
     importance_types = ['gain', 'total_gain', 'weight', 'cover', 'total_cover']
     importances_dict = {}
+    score_columns = []
     for it in importance_types:
         for i, model in enumerate(models):
+            score_string = f'score_{i}'
+            if score_string not in score_columns:
+                score_columns.append(score_string)
             importances = model.get_booster().get_score(importance_type=it)
             ip = pd.DataFrame(
                     data=[importances.keys(), importances.values()],
-                    index=['feature', f'score_{i}']
+                    index=['feature', score_string]
                 ).T
+            ip.sort_values(by=score_string, ascending=False, inplace=True, ignore_index=True)
             if it == 'gain':
                 ip[f'rank_{i}'] = ip.index + 1
             if i == 0:
                 importances_dict[it] = ip
             else:
                 importances_dict[it] = importances_dict[it].merge(ip, on='feature', how='inner')
+    # Sorting
+    for it in importance_types:
+        importances_dict[it]['sorting'] = importances_dict[it][score_columns].mean(axis=1)
+        importances_dict[it].sort_values(by='sorting', ascending=False, ignore_index=True, inplace=True)
+        importances_dict[it].drop(columns='sorting', inplace=True)
     return importances_dict
 
 
@@ -204,14 +214,7 @@ class Plotter:
                     (data[score_columns] - normalization_mean) / normalization_std
             ).std(axis=1)
             data_xticks = data['x_ticks']
-            ax.set_title(it)
-            ax.set_ylabel(it)
-            ax.set_xlabel('feature')
-            ax.set_xticks(data_xticks)
-            ax.set_xticklabels(self.mf_indexes.keys(), rotation=45, ha='right', minor=False)
-            ax.scatter(data_xticks, data_mean)
-            ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
-            ax.ticklabel_format(axis='y', useOffset=False, style='plain')
+            self._plot_scatter_with_errorbar(ax, data_xticks, it, data_mean, data_std)
         ax = self.fip.add_subplot(len(importance_types) + 1, 1, i+1)
         rank_columns = []
         for col in model_stats['gain']:
@@ -221,13 +224,16 @@ class Plotter:
         data_mean = data[rank_columns].mean(axis=1)
         data_std = data[rank_columns].std(axis=1)
         data_xticks = data['x_ticks']
-        ax.set_title('rank')
-        ax.set_ylabel('rank')
+        self._plot_scatter_with_errorbar(ax, data_xticks, 'rank', data_mean, data_std)
+
+    def _plot_scatter_with_errorbar(self, ax, xticks, title, data_mean, data_std):
+        ax.set_title(title)
+        ax.set_ylabel(title)
         ax.set_xlabel('feature')
-        ax.set_xticks(data_xticks)
+        ax.set_xticks(xticks)
         ax.set_xticklabels(self.mf_indexes.keys(), rotation=45, ha='right', minor=False)
-        ax.scatter(data_xticks, data_mean)
-        ax.errorbar(data_xticks, data_mean, data_std, linestyle='None')
+        ax.scatter(xticks, data_mean)
+        ax.errorbar(xticks, data_mean, data_std, linestyle='None')
         ax.ticklabel_format(axis='y', useOffset=False, style='plain')
 
     def plot_model_performances(self, merged_model_scores: pd.DataFrame):
@@ -235,7 +241,7 @@ class Plotter:
 
     def export(self):
         self.fip.savefig(os.path.join(self.output_path, 'model_features.png'))
-        self.mp.savefig(os.path.join(self.output_path, 'model_performances.png'))
+        # self.mp.savefig(os.path.join(self.output_path, 'model_performances.png'))
 
 
 def main():
