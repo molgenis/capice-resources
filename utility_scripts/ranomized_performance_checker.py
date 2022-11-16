@@ -173,7 +173,7 @@ def obtain_models_stats(models: list[xgb.XGBClassifier]) -> dict[str, pd.DataFra
                 importances_dict[it] = ip
             else:
                 importances_dict[it] = importances_dict[it].merge(ip, on='feature', how='inner')
-    # Sorting
+    # Sorting and normalizing
     for it in importance_types:
         importances_dict[it]['sorting'] = importances_dict[it][score_columns].mean(axis=1)
         importances_dict[it].sort_values(by='sorting', ascending=False, ignore_index=True, inplace=True)
@@ -218,8 +218,8 @@ class Plotter:
             for column in data.columns:
                 if column.startswith('score_'):
                     score_columns.append(column)
-            normalization_mean = data[score_columns].mean().mean()
-            normalization_std = data[score_columns].std().std()
+            normalization_mean = data[score_columns].mean()
+            normalization_std = data[score_columns].std()
             data_mean = (
                     (data[score_columns] - normalization_mean) / normalization_std
             ).mean(axis=1)
