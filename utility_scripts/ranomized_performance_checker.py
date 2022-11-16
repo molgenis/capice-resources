@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import os
+import math
 import pickle
 import warnings
 import argparse
+import numpy as np
 import pandas as pd
 import xgboost as xgb
 from pathlib import Path
@@ -196,7 +198,8 @@ class Plotter:
         self.mp_auc = plt.figure(figsize=(20, 40))
         self.models_colormap = {}
         self.mp_models = []
-        self.mp_ncols = 1
+        self.mp_ncols = 3
+        self.mp_nrows = 0
         self.index = 1
         self._set_constrained_layout()
 
@@ -249,18 +252,65 @@ class Plotter:
         ax.errorbar(xticks, data_mean, data_std, linestyle='None')
         ax.ticklabel_format(axis='y', useOffset=False, style='plain')
 
+    @staticmethod
+    def _plot_scatter_with_errorbar_model_performances(ax, consequence, mean, std, counts_benign,
+                                                       counts_pathogenic):
+        ax.set_title(consequence)
+        ax.set_ylabel('AUC')
+        ax.scatter(0, mean, label=f'Mean: {mean:.4f}+-{std:.4f}\n'
+                                  f'n_benig: {counts_benign}\n'
+                                  f'n_patho: {counts_pathogenic}')
+        ax.errorbar(0, mean, std, linestyle='None')
+        ax.legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+        ax.set_ylim((0.0, 1.0))
+        ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+
     def plot_model_performances(self, merged_model_scores: pd.DataFrame):
         self._determine_n_models(merged_model_scores)
         self._set_models_colormap()
         self._plot_roc(merged_model_scores)
-        self._determine_consequences_performances(merged_model_scores)
+        means, stds, counts_b, counts_p = self._determine_consequences_performances(
+            merged_model_scores)
+        for i, consequence in enumerate(means.keys(), start=1):
+            ax = self.mp_auc.add_subplot(self.mp_nrows, self.mp_ncols, i)
+            self._plot_scatter_with_errorbar_model_performances(
+                ax,
+                consequence,
+                means[consequence],
+                stds[consequence],
+                counts_b[consequence],
+                counts_p[consequence]
+            )
 
     def _determine_consequences_performances(self, merged_model_scores):
         consequences = pd.Series(
             merged_model_scores['Consequence'].str.split('&', expand=True).values.ravel()
         ).dropna().sort_values(ignore_index=True).unique()
-        output_means = []
-        output_stds = []
+        self.mp_nrows = math.ceil(len(consequences) / self.mp_ncols)
+        intermediate_aucs = []
+        output_means = {}
+        output_stds = {}
+        output_count_b = {}
+        output_count_p = {}
+        for consequence in consequences:
+            subset = merged_model_scores[
+                merged_model_scores['Consequence'].str.contains(consequence)
+            ]
+            for model in self.mp_models:
+                try:
+                    auc = roc_auc_score(
+                        y_true=subset['binarized_label'], y_score=subset[model]
+                    )
+                except ValueError:
+                    auc = np.nan
+                intermediate_aucs.append(auc)
+            array = np.array(intermediate_aucs)
+            output_means[consequence] = array.mean()
+            output_stds[consequence] = array.std()
+            output_count_b[consequence] = subset[subset['binarized_label'] == 0].shape[0]
+            output_count_p[consequence] = subset[subset['binarized_label'] == 1].shape[0]
+            intermediate_aucs = []
+        return output_means, output_stds, output_count_b, output_count_p
 
     def _determine_n_models(self, model_score_data):
         for col in model_score_data.columns:
