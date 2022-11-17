@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from errors import NotTSVError, FileMismatchError
+from utility_scripts.threshold_calculator.errors import NotTSVError, FileMismatchError
 
 
 class Validator:
@@ -36,8 +36,8 @@ class Validator:
 
     @staticmethod
     def _validate_output_directory_exist(path):
-        if not os.path.isdir(os.path.dirname(path)):
-            warnings.warn('Output does not exist, attempting to create.')
+        if not os.path.isdir(path):
+            warnings.warn('Output directory does not exist, attempting to create.')
             os.makedirs(path)
 
     @staticmethod

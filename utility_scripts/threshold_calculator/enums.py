@@ -7,9 +7,9 @@ class ExtendedEnum(Enum):
         return list(map(lambda c: c.value, cls))
 
 
-class ValidationColumns(ExtendedEnum):
+class RequiredValidationColumns(ExtendedEnum):
     BINARIZED_LABEL = 'binarized_label'
 
 
-class ScoreColumns(ExtendedEnum):
+class RequiredScoreColumns(ExtendedEnum):
     SCORE = 'score'

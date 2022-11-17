@@ -7,7 +7,7 @@ from plotter import ThresholdPlotter
 from exporter import ThresholdExporter
 from calculator import ThresholdCalculator
 from command_line_parser import CommandLineParser
-from enums import ValidationColumns, ScoreColumns
+from enums import RequiredValidationColumns, RequiredScoreColumns
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
             sep='\t',
             low_memory=False
         ),
-        ValidationColumns.list()
+        RequiredValidationColumns.list()
     )
     ds_validation_score = validator.validate_columns_dataset(
         pd.read_csv(
@@ -30,7 +30,7 @@ def main():
             sep='\t',
             low_memory=False
         ),
-        ScoreColumns.list()
+        RequiredScoreColumns.list()
     )
     validator.validate_sample_size_match(ds_validation_raw, ds_validation_score)
     dataset = pd.concat([ds_validation_raw, ds_validation_score], axis=1)

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from enums import ValidationColumns, ScoreColumns
 from sklearn.metrics import recall_score, precision_score, f1_score
+from utility_scripts.threshold_calculator.enums import RequiredValidationColumns, RequiredScoreColumns
 
 
 class ThresholdCalculator:
@@ -14,17 +14,17 @@ class ThresholdCalculator:
 
         for i in np.arange(0, 1, 0.01):
             i = round(i, 2)
-            dataset.loc[dataset[ScoreColumns.SCORE.value] >= i, 'calculated_threshold'] = 1
+            dataset.loc[dataset[RequiredScoreColumns.SCORE.value] >= i, 'calculated_threshold'] = 1
             recall = recall_score(
-                y_true=dataset[ValidationColumns.BINARIZED_LABEL.value],
+                y_true=dataset[RequiredValidationColumns.BINARIZED_LABEL.value],
                 y_pred=dataset['calculated_threshold']
             )
             precision = precision_score(
-                y_true=dataset[ValidationColumns.BINARIZED_LABEL.value],
+                y_true=dataset[RequiredValidationColumns.BINARIZED_LABEL.value],
                 y_pred=dataset['calculated_threshold']
             )
             f1 = f1_score(
-                y_true=dataset[ValidationColumns.BINARIZED_LABEL.value],
+                y_true=dataset[RequiredValidationColumns.BINARIZED_LABEL.value],
                 y_pred=dataset['calculated_threshold']
             )
             threshold_store.append(i)

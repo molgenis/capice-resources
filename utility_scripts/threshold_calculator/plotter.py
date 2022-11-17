@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
-from enums import ValidationColumns, ScoreColumns
+from enums import RequiredValidationColumns, RequiredScoreColumns
 
 
 class ThresholdPlotter:
@@ -16,21 +16,21 @@ class ThresholdPlotter:
     def plot_threshold(self, validation_score_data: pd.DataFrame):
         ax_plot = self.figure.add_subplot(1, 1, 1)
         subset_benign = validation_score_data[
-            validation_score_data[ValidationColumns.BINARIZED_LABEL.value] == 0
-        ]
+            validation_score_data[RequiredValidationColumns.BINARIZED_LABEL.value] == 0
+            ]
         subset_pathogenic = validation_score_data[
-            validation_score_data[ValidationColumns.BINARIZED_LABEL.value] == 1
-        ]
+            validation_score_data[RequiredValidationColumns.BINARIZED_LABEL.value] == 1
+            ]
         ax_plot.scatter(
             subset_benign.index,
-            subset_benign[ScoreColumns.SCORE.value],
+            subset_benign[RequiredScoreColumns.SCORE.value],
             s=0.5,
             color='green',
             label=f'N benign: {subset_benign.shape[0]}'
         )
         ax_plot.scatter(
             subset_pathogenic.index,
-            subset_pathogenic[ScoreColumns.SCORE.value],
+            subset_pathogenic[RequiredScoreColumns.SCORE.value],
             s=0.5,
             color='red',
             label=f'N pathogenic: {subset_pathogenic.shape[0]}'
