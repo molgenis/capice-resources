@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from utility_scripts.balance_dataset import correct_column_names, Split, Balancer, \
+from utility_scripts.balance_dataset import Balancer, \
     CommandLineArgumentsValidator, InputDatasetValidator, __bins__
 
 _project_root_directory = Path(__file__).absolute().parent.parent.parent
@@ -19,19 +19,17 @@ class TestBalancer(unittest.TestCase):
     def setUpClass(cls) -> None:
         if not os.path.isdir(cls.__test_path__):
             os.makedirs(cls.__test_path__)
-        cls.dataset = correct_column_names(
-            pd.read_csv(
-                os.path.join(
-                    cls.__current_directory__,
-                    'utility_scripts',
-                    'test',
-                    'resources',
-                    'train_input.tsv.gz'
-                ),
-                sep='\t',
-                na_values='.',
-                low_memory=False
-            )
+        cls.dataset = pd.read_csv(
+            os.path.join(
+                cls.__current_directory__,
+                'utility_scripts',
+                'test',
+                'resources',
+                'train_input.tsv.gz'
+            ),
+            sep='\t',
+            na_values='.',
+            low_memory=False
         )
 
     @classmethod
@@ -56,29 +54,6 @@ class TestBalancer(unittest.TestCase):
 
     def tearDown(self) -> None:
         print('Done.')
-
-    def test_split(self):
-        """
-        Function to test the splitter class
-        """
-        print('Splitter')
-        n_b_tot = self.dataset[self.dataset['binarized_label'] == 0].shape[0]
-        p10_b = round(n_b_tot * 0.1)
-        p90_b = round(n_b_tot - p10_b)
-        n_p_tot = self.dataset[self.dataset['binarized_label'] == 1].shape[0]
-        p10_p = round(n_p_tot * 0.1)
-        p90_p = round(n_p_tot - p10_p)
-        splitter = Split()
-        copy_of_dataset = self.dataset.copy(deep=True)
-        validation_dataset, dataset = splitter.split(copy_of_dataset)
-        self.assertAlmostEqual(
-            validation_dataset[validation_dataset['binarized_label'] == 0].shape[0], p10_b)
-        self.assertAlmostEqual(
-            validation_dataset[validation_dataset['binarized_label'] == 1].shape[0], p10_p)
-        self.assertAlmostEqual(dataset[dataset['binarized_label'] == 0].shape[0], p90_b)
-        self.assertAlmostEqual(dataset[dataset['binarized_label'] == 1].shape[0], p90_p)
-        self.assertGreater(dataset.shape[0], 0)
-        self.assertGreater(validation_dataset.shape[0], 0)
 
     def test_balancer(self):
         """
@@ -120,24 +95,35 @@ class TestBalancer(unittest.TestCase):
             self.__current_directory__
         )
         self.assertRaises(
-            FileNotFoundError,
+            OSError,
             validator.validate_input_path,
             str(Path(__file__))
         )
         self.assertRaises(
             OSError,
             validator.validate_output_path,
-            os.path.join(self.__current_directory__, 'no', 'directory')
+            os.path.join(self.__current_directory__, 'no', 'directory'),
+            False
         )
-        new_dir = '.another_test_output'
+        new_file = 'output.tsv.gz'
         validator.validate_output_path(
             os.path.join(
                 self.__current_directory__,
-                new_dir
-            )
+                new_file
+            ), force=False
         )
-        self.assertIn(new_dir, os.listdir(self.__current_directory__))
-        os.rmdir(os.path.join(self.__current_directory__, new_dir))
+        self.assertRaises(
+            FileExistsError,
+            validator.validate_output_path,
+            os.path.join(
+                self.__current_directory__,
+                'utility_scripts',
+                'test',
+                'resources',
+                'train_input.tsv.gz'
+            ),
+            False
+        )
 
     def test_dataset_validator(self):
         """
