@@ -18,46 +18,27 @@ __random_state__ = 5
 __bins__ = [0.0, 0.01, 0.05, 0.1, 0.5, 1.0]
 
 
-def correct_column_names(dataset):
-    new_columns = []
-    for col in dataset.columns:
-        if col.startswith('%'):
-            new_columns.append(col.split('%')[1])
-        elif col.startswith('#'):
-            new_columns.append(col.split('#')[1])
-        else:
-            new_columns.append(col)
-    dataset.columns = new_columns
-    return dataset
-
-
 def main():
     # Parse CLA
     cla_parser = ArgumentParser()
     input_path = cla_parser.get_argument('input')[0]
     output_directory = cla_parser.get_argument('output')[0]
-    split = cla_parser.get_argument('split')
+    force = cla_parser.get_argument('force')
     # Validate CLA
     cla_validator = CommandLineArgumentsValidator()
     cla_validator.validate_input_path(input_path)
-    cla_validator.validate_output_directory(output_directory)
+    cla_validator.validate_output_path(output_directory, force)
     # Load in dataset
     dataset = pd.read_csv(input_path, na_values='.', sep='\t', low_memory=False)
-    dataset = correct_column_names(dataset)
     # Validate dataset
     dataset_validator = InputDatasetValidator()
     dataset_validator.validate_columns_required(dataset)
     dataset_validator.validate_b_p_present(dataset)
     # Run
-    exporter = BalanceExporter(output_path=output_directory)
-    splitter = Split()
-    if split:
-        validation_dataset, dataset = splitter.split(dataset)
-        # Export here so the splitter function is easier to test
-        exporter.export_validation_dataset(validation_dataset)
     balancer = Balancer()
     balanced_dataset = balancer.balance(dataset)
     # Export
+    exporter = BalanceExporter(output_path=output_directory)
     exporter.export_train_test_dataset(balanced_dataset)
 
 
@@ -99,11 +80,10 @@ class ArgumentParser:
             help='The output directory in which the files should be placed.'
         )
         parser.add_argument(
-            '-s',
-            '--split',
+            '-f',
+            '--force',
             action='store_true',
-            help='Whenever the input dataset should be split into 20% '
-                 'validation and 80% train/test.'
+            help='Overwrite the output if exists.'
         )
 
         return parser
@@ -129,7 +109,7 @@ class CommandLineArgumentsValidator:
 
     def validate_input_path(self, input_path):
         self._validate_input_exists(input_path)
-        self._validate_input_extension(input_path)
+        self._validate_extension(input_path)
 
     @staticmethod
     def _validate_input_exists(input_path):
@@ -137,35 +117,18 @@ class CommandLineArgumentsValidator:
             raise FileNotFoundError('Input file does not exist!')
 
     @staticmethod
-    def _validate_input_extension(input_path):
-        if not input_path.endswith(('.tsv', '.tsv.gz')):
-            raise FileNotFoundError('Input file is not TSV or gzipped TSV!')
+    def _validate_extension(path):
+        if not path.endswith('.tsv.gz'):
+            raise IOError('Given file argument is not gzipped TSV!')
 
-    def validate_output_directory(self, output_directory):
-        self._validate_output_directory_parent_exists(output_directory)
-        self._validate_output_parent_writable(output_directory)
-        self._ensure_output(output_directory)
-
-    @staticmethod
-    def _validate_output_directory_parent_exists(output_directory):
-        if (
-                not os.path.isdir(output_directory)
-                and not os.path.isdir(Path(output_directory).parent)
-        ):
-            raise OSError('Given output directory parent does not exist!')
+    def validate_output_path(self, output, force):
+        self._validate_extension(output)
+        self._validate_output_file(output, force)
 
     @staticmethod
-    def _validate_output_parent_writable(output_directory):
-        if (
-                not os.path.isdir(output_directory)
-                and not os.access(Path(output_directory).parent, os.W_OK)
-        ):
-            raise OSError('New directory can not be created in a read/execute only directory!')
-
-    @staticmethod
-    def _ensure_output(output_directory):
-        if not os.path.isdir(output_directory):
-            os.makedirs(output_directory)
+    def _validate_output_file(output, force):
+        if os.path.isfile(output) and not force:
+            raise FileExistsError('Output file already exists and force is not called!')
 
 
 class InputDatasetValidator:
@@ -189,43 +152,6 @@ class InputDatasetValidator:
             raise ValueError('Not enough benign samples to balance!')
         if dataset[dataset['binarized_label'] == 1].shape[0] == 0:
             raise ValueError('Not enough pathogenic samples to balance!')
-
-
-class Split:
-    """
-    Class dedicated to splitting the data into a validation dataset and a train/test dataset.
-    """
-
-    @staticmethod
-    def split(dataset: pd.DataFrame):
-        """
-        Splits 10% of the pathogenic and 10% of the benign samples into a validation dataset
-        and immediately exports said validation dataset. Returns the train-test dataset.
-        """
-        validation_dataset = pd.DataFrame(columns=dataset.columns)
-        return_dataset = pd.DataFrame(columns=dataset.columns)
-        # Benign
-        all_benign = dataset[dataset['binarized_label'] == 0]
-        all_benign._is_copy = None
-        v_benign_samples = all_benign.sample(frac=0.1, random_state=__random_state__)
-        # A bit cryptic to remove the random samples from the benign dataset, but it works
-        all_benign = pd.concat([all_benign, v_benign_samples], axis=0, ignore_index=True)
-        all_benign.drop_duplicates(keep=False, inplace=True)
-        return_dataset = pd.concat([return_dataset, all_benign], axis=0, ignore_index=True)
-        validation_dataset = pd.concat([validation_dataset, v_benign_samples], axis=0,
-                                       ignore_index=True)
-
-        # Pathogenic
-        all_pathogenic = dataset[dataset['binarized_label'] == 1]
-        all_pathogenic._is_copy = None
-        v_patho_samples = all_pathogenic.sample(frac=0.1, random_state=__random_state__)
-        # Again a cryptic way to remove the randomly samples pathogenic samples
-        all_pathogenic = pd.concat([all_pathogenic, v_patho_samples], axis=0, ignore_index=True)
-        all_pathogenic.drop_duplicates(keep=False, inplace=True)
-        return_dataset = pd.concat([return_dataset, all_pathogenic], axis=0, ignore_index=True)
-        validation_dataset = pd.concat([validation_dataset, v_patho_samples], axis=0,
-                                       ignore_index=True)
-        return validation_dataset, return_dataset
 
 
 class Balancer:
@@ -321,18 +247,11 @@ class BalanceExporter:
     def __init__(self, output_path):
         self.output_path = output_path
 
-    def export_validation_dataset(self, dataset):
-        self._export_dataset(dataset, 'validation.tsv.gz')
-
-    def export_train_test_dataset(self, dataset):
-        self._export_dataset(dataset, 'train_test_split.tsv.gz')
-
-    def _export_dataset(self, dataset: pd.DataFrame, dataset_name: str):
-        full_export = os.path.join(self.output_path, dataset_name)
+    def export_dataset(self, dataset):
         dataset.to_csv(
-            path_or_buf=full_export, sep='\t', na_rep='.', index=False, compression='gzip'
+            path_or_buf=self.output_path, sep='\t', na_rep='.', index=False, compression='gzip'
         )
-        print(f'Successfully exported {dataset_name} to {full_export}')
+        print(f'Successfully exported {self.output_path}')
 
 
 if __name__ == '__main__':

@@ -126,11 +126,11 @@ class TestBalancer(unittest.TestCase):
         )
         self.assertRaises(
             OSError,
-            validator.validate_output_directory,
+            validator.validate_output_path,
             os.path.join(self.__current_directory__, 'no', 'directory')
         )
         new_dir = '.another_test_output'
-        validator.validate_output_directory(
+        validator.validate_output_path(
             os.path.join(
                 self.__current_directory__,
                 new_dir
