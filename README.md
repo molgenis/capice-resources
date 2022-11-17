@@ -190,16 +190,16 @@ is described in 1 step and a step later mentions the same filename, they both re
        2. Update the defined capice version & filename.
        3. Run `sudo singularity build sif/capice-4.0.0.sif def/capice-4.0.0.def` (where `sif/capice-4.0.0.sif` is the output path)
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull`).
-3. Download latest non-public GRCh37 VKGL (`/apps/data/VKGL/GRCh37`)
-   and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
+3. Download latest public GRCh37 [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
    ```shell
+   wget https://downloads.molgeniscloud.org/downloads/VKGL/VKGL_public_consensus_<date>.tsv
    wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz
    ```
 4. Use [train_data_creator](./train_data_creator/README.md) to create a train-test and validation VCFs:  
    ```shell
    module load Python/3.9.1-GCCcore-7.3.0-bare
    source ./venv/bin/activate
-   python3 ./train_data_creator/main.py --input_vkgl </path/to/vkgl_consensus.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output_train_data>
+   python3 ./train_data_creator/main.py --input_vkgl </path/to/vkgl_public_consensus_<date>.tsv> --input_clinvar </path/to/clinvar.vcf.gz> -o </path/to/output_train_data>
    deactivate
    ```
 5. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
@@ -356,8 +356,7 @@ Optional for validation with CAPICE from paper:
 
 ## Making train-test and validation VCF files
 
-Download the latest non-public GRCh37 VKGL (GCC `/apps/data/VKGL/GRCh37/vkgl_consensus_*.tsv`)
-and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets and simply supply them to main.py within
+Download the latest public GRCh37 [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets and simply supply them to main.py within
 train_data_creator. For further details, use `python3 main.py -h` or refer to the README in the train_data_creator
 module.
 
