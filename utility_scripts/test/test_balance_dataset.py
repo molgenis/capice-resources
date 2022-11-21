@@ -14,6 +14,15 @@ _project_root_directory = Path(__file__).absolute().parent.parent.parent
 class TestBalancer(unittest.TestCase):
     __current_directory__ = _project_root_directory
     __test_path__ = os.path.join(__current_directory__, '.test_folder')
+    depth_1_directory = Path(os.path.join(
+        _project_root_directory,
+        'some_directory'
+    ))
+    depth_2_directory = Path(os.path.join(
+        _project_root_directory,
+        'other_directory',
+        'further_directory'
+    ))
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -34,6 +43,9 @@ class TestBalancer(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
+        os.rmdir(cls.depth_1_directory)
+        os.rmdir(cls.depth_2_directory)
+        os.rmdir(cls.depth_2_directory.parent)
         if os.path.isdir(cls.__test_path__):
             for filename in os.listdir(cls.__test_path__):
                 filepath = os.path.join(cls.__test_path__, filename)
@@ -80,12 +92,29 @@ class TestBalancer(unittest.TestCase):
                                  (balanced_dataset['binarized_label'] == 1)].shape[0]
             )
 
+    def test_duplicate_processing_balancer(self):
+        """
+        Test to see if a sample with multiple consequences gets sampled only once
+        """
+        test_dataset = pd.DataFrame(
+            {
+                'Consequence': [
+                    'consequence_1&consequence_2',
+                    'consequence_1',
+                    'consequence_2',
+                    'consequence_2'
+                ],
+                'binarized_label': [0, 1, 0, 1],
+                'gnomAD_AF': [0.0, 0.0, 0.0, 0.0]
+            }
+        )
+        observed = Balancer().balance(test_dataset)
+        print(observed)
+        self.assertFalse(observed.duplicated().any())
+
     def test_cla_validator(self):
         """
         Function to test the Command Line Arguments validator
-
-        (does not test the -if directory is writable- validation, which is incredably difficult
-        to implement)
         """
         print('CLA Validator')
         validator = CommandLineArgumentsValidator()
@@ -99,31 +128,22 @@ class TestBalancer(unittest.TestCase):
             validator.validate_input_path,
             str(Path(__file__))
         )
-        self.assertRaises(
-            OSError,
+
+        self.assertWarns(
+            UserWarning,
             validator.validate_output_path,
-            os.path.join(self.__current_directory__, 'no', 'directory'),
-            False
+            self.depth_1_directory
         )
-        new_file = 'output.tsv.gz'
-        validator.validate_output_path(
-            os.path.join(
-                self.__current_directory__,
-                new_file
-            ), force=False
-        )
-        self.assertRaises(
-            FileExistsError,
+        self.assertIn('some_directory', os.listdir(_project_root_directory))
+
+        self.assertWarns(
+            UserWarning,
             validator.validate_output_path,
-            os.path.join(
-                self.__current_directory__,
-                'utility_scripts',
-                'test',
-                'resources',
-                'train_input.tsv.gz'
-            ),
-            False
+            self.depth_2_directory
         )
+        self.assertIn('other_directory', os.listdir(_project_root_directory))
+        self.assertIn('further_directory',
+                      os.listdir(os.path.join(_project_root_directory, 'other_directory')))
 
     def test_dataset_validator(self):
         """

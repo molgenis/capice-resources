@@ -10,6 +10,8 @@ gnomAD_AF: The desired allele frequency per variant. Can originate from gnomAD o
 """
 import os
 import argparse
+import warnings
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -21,13 +23,12 @@ __bins__ = [0.0, 0.01, 0.05, 0.1, 0.5, 1.0]
 def main():
     # Parse CLA
     cla_parser = ArgumentParser()
-    input_path = cla_parser.get_argument('input')[0]
-    output_directory = cla_parser.get_argument('output')[0]
-    force = cla_parser.get_argument('force')
+    input_path = cla_parser.get_argument('input')
+    output_directory = Path(cla_parser.get_argument('output')).absolute()
     # Validate CLA
     cla_validator = CommandLineArgumentsValidator()
     cla_validator.validate_input_path(input_path)
-    cla_validator.validate_output_path(output_directory, force)
+    cla_validator.validate_output_path(output_directory)
     # Load in dataset
     dataset = pd.read_csv(input_path, na_values='.', sep='\t', low_memory=False)
     # Validate dataset
@@ -39,7 +40,7 @@ def main():
     balanced_dataset = balancer.balance(dataset)
     # Export
     exporter = BalanceExporter(output_path=output_directory)
-    exporter.export_train_test_dataset(balanced_dataset)
+    exporter.export_balanced_dataset(balanced_dataset)
 
 
 class ArgumentParser:
@@ -55,35 +56,25 @@ class ArgumentParser:
     def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog=os.path.basename(__file__),
-            description='Helper script to balance out an possible input '
-                        'dataset on allele frequency and Consequence. Requires '
-                        'the columns (%)Consequence, (%)gnomAD_AF and '
-                        'binarized_label. gnomAD_AF can originate from anywhere, '
-                        'as long as it is called gnomAD_AF. Note: when -s/--split '
-                        'is called, it will split before balancing.'
+            description='Balancing script to balance a CAPICE dataset on Consequence and allele '
+                        'frequency.'
         )
 
         parser.add_argument(
             '-i',
             '--input',
-            nargs=1,
             type=str,
+            action='store',
             required=True,
             help='The input file location. Must be TSV or gzipped TSV!'
         )
         parser.add_argument(
             '-o',
             '--output',
-            nargs=1,
             type=str,
+            action='store',
             required=True,
             help='The output directory in which the files should be placed.'
-        )
-        parser.add_argument(
-            '-f',
-            '--force',
-            action='store_true',
-            help='Overwrite the output if exists.'
         )
 
         return parser
@@ -109,7 +100,7 @@ class CommandLineArgumentsValidator:
 
     def validate_input_path(self, input_path):
         self._validate_input_exists(input_path)
-        self._validate_extension(input_path)
+        self._validate_input_extension(input_path)
 
     @staticmethod
     def _validate_input_exists(input_path):
@@ -117,18 +108,18 @@ class CommandLineArgumentsValidator:
             raise FileNotFoundError('Input file does not exist!')
 
     @staticmethod
-    def _validate_extension(path):
+    def _validate_input_extension(path):
         if not path.endswith('.tsv.gz'):
-            raise IOError('Given file argument is not gzipped TSV!')
+            raise IOError('Input argument is not gzipped TSV!')
 
-    def validate_output_path(self, output, force):
-        self._validate_extension(output)
-        self._validate_output_file(output, force)
+    def validate_output_path(self, output):
+        self._validate_output_exists(output)
 
     @staticmethod
-    def _validate_output_file(output, force):
-        if os.path.isfile(output) and not force:
-            raise FileExistsError('Output file already exists and force is not called!')
+    def _validate_output_exists(output):
+        if not os.path.isdir(output):
+            warnings.warn(f'Output {output} does not exist, attempting to create.')
+            os.makedirs(output)
 
 
 class InputDatasetValidator:
@@ -162,6 +153,8 @@ class Balancer:
     def __init__(self):
         self.bins = __bins__
         self.columns = []
+        self.drop_benign = pd.Index([])
+        self.drop_pathogenic = pd.Index([])
 
     @staticmethod
     def _obtain_consequences(consequences: pd.Series):
@@ -177,9 +170,7 @@ class Balancer:
         consequences = self._obtain_consequences(dataset['Consequence'])
         for consequence in consequences:
             selected_pathogenic = pathogenic[pathogenic['Consequence'].str.contains(consequence)]
-            pathogenic.drop(index=selected_pathogenic.index, inplace=True)
             selected_benign = benign[benign['Consequence'].str.contains(consequence)]
-            benign.drop(index=selected_benign.index, inplace=True)
             processed_consequence = self._process_consequence(
                 pathogenic_dataset=selected_pathogenic, benign_dataset=selected_benign
             )
@@ -187,8 +178,12 @@ class Balancer:
                 [
                     return_dataset,
                     processed_consequence
-                ], axis=0, ignore_index=True
+                ], axis=0
             )
+            benign.drop(index=self.drop_benign, inplace=True)
+            self.drop_benign = pd.Index([])
+            pathogenic.drop(index=self.drop_pathogenic, inplace=True)
+            self.drop_pathogenic = pd.Index([])
         return return_dataset
 
     def _process_consequence(self, pathogenic_dataset, benign_dataset):
@@ -214,7 +209,7 @@ class Balancer:
                     self._process_bins(
                         pathogenic_dataset, benign_dataset, upper_bound, lower_bound, sample_number
                     )
-                ], axis=0, ignore_index=True
+                ], axis=0
             )
         return processed_bins
 
@@ -239,8 +234,10 @@ class Balancer:
                 selected_benign.shape[0],
                 random_state=__random_state__
             )
+        self.drop_benign = self.drop_benign.union(return_benign.index)
+        self.drop_pathogenic = self.drop_pathogenic.union(return_pathogenic.index)
         return pd.concat(
-            [return_benign, return_pathogenic], axis=0,  ignore_index=True
+            [return_benign, return_pathogenic], axis=0
         )
 
     @staticmethod
@@ -256,11 +253,20 @@ class BalanceExporter:
     def __init__(self, output_path):
         self.output_path = output_path
 
-    def export_dataset(self, dataset):
+    def export_balanced_dataset(self, dataset):
+        output_path = os.path.join(self.output_path, 'balanced_dataset.tsv.gz')
+        self._export_dataset(dataset, output_path)
+
+    def export_remainder_dataset(self, dataset):
+        output_path = os.path.join(self.output_path, 'remainder_dataset.tsv.gz')
+        self._export_dataset(dataset, output_path)
+
+    @staticmethod
+    def _export_dataset(dataset, path):
         dataset.to_csv(
-            path_or_buf=self.output_path, sep='\t', na_rep='.', index=False, compression='gzip'
+            path_or_buf=path, sep='\t', na_rep='.', index=False, compression='gzip'
         )
-        print(f'Successfully exported {self.output_path}')
+        print(f'Successfully exported {path}')
 
 
 if __name__ == '__main__':
