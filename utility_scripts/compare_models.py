@@ -640,13 +640,19 @@ class Plotter:
         )
 
     @staticmethod
-    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
+    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss, return_tuple=False):
         n_benign_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n\n' \
-               f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+        return_value = (
+            f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}',
+            f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+        )
+        if return_tuple:
+            return return_value
+        else:
+            return '\n\n'.join(return_value)
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
@@ -691,7 +697,9 @@ class Plotter:
             palette={'model_1': 'red', 'model_2': 'blue'},
             legend=False
         )
-        labels = self._create_boxplot_label(model_1_data, model_1_n_samples, model_2_data, model_2_n_samples)
+        labels = self._create_boxplot_label(
+            model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, return_tuple=True
+        )
         red_patch = mpatches.Patch(color='red', label=labels[0])
         blue_patch = mpatches.Patch(color='blue', label=labels[1])
         ax.set_ylim(0.0, 1.0)
