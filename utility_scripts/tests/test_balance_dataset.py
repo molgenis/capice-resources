@@ -92,6 +92,13 @@ class TestBalancer(unittest.TestCase):
                                  (balanced_dataset['binarized_label'] == 1)].shape[0]
             )
 
+    def test_balancer_known_input(self):
+        """
+        Tests the balancer function with a hardcoded dataframe
+        """
+        # TODO:finish writing test
+        pass
+
     def test_duplicate_processing_balancer(self):
         """
         Test to see if a sample with multiple consequences gets sampled only once
@@ -109,7 +116,6 @@ class TestBalancer(unittest.TestCase):
             }
         )
         observed = Balancer().balance(test_dataset)
-        print(observed)
         self.assertFalse(observed.duplicated().any())
 
     def test_cla_validator(self):
