@@ -646,6 +646,7 @@ class Plotter:
             hue='model',
             ax=ax,
             split=True,
+            bw=0.1,
             palette={'model_1': 'red', 'model_2': 'blue'},
             legend=False
         )
