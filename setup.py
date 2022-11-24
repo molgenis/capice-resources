@@ -26,7 +26,8 @@ setup(
         'numpy==1.22.0',
         'matplotlib==3.5.1',
         'scikit-learn==1.0.2',
-        'graphviz==0.19.1'
+        'graphviz==0.19.1',
+        'seaborn==0.12.1'
     ],
     extras_require={
         'test': [

@@ -294,8 +294,10 @@ class Plotter:
         self.fig_auc = plt.figure()
         self.fig_roc = plt.figure()
         self.fig_afb = plt.figure()
-        self.fig_score_dist = plt.figure()
-        self.fig_score_diff = plt.figure()
+        self.fig_score_dist_box = plt.figure()
+        self.fig_score_dist_vio = plt.figure()
+        self.fig_score_diff_box = plt.figure()
+        self.fig_score_diff_vio = plt.figure()
         self.consequences = []
         self.n_rows = 1
         self.n_cols = 1
@@ -340,28 +342,32 @@ class Plotter:
             f'Model 2 labels: {model_2_label_path}\n'
         )
         self.fig_afb.set_constrained_layout(constrained_layout)
-        self.fig_score_dist = plt.figure(figsize=figsize)
-        self.fig_score_dist.suptitle(
-            f'Model 1 vs Model 2 raw CAPICE score distributions\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n'
-        )
-        self.fig_score_dist.set_constrained_layout(constrained_layout)
-        self.fig_score_diff = plt.figure(figsize=figsize)
-        self.fig_score_diff.suptitle(
-            f'Model 1 vs Model 2 absolute score difference to the true label\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n'
-        )
-        self.fig_score_diff.set_constrained_layout(constrained_layout)
+        self.fig_score_dist_box = plt.figure(figsize=figsize)
+        self.fig_score_dist_vio = plt.figure(figsize=figsize)
+        for figure in [self.fig_score_dist_box, self.fig_score_dist_vio]:
+            figure.suptitle(
+                f'Model 1 vs Model 2 raw CAPICE score distributions\n'
+                f'Model 1 scores: {model_1_score_path}\n'
+                f'Model 1 labels: {model_1_label_path}\n'
+                f'Model 2 scores: {model_2_score_path}\n'
+                f'Model 2 labels: {model_2_label_path}\n'
+                f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+                f'Pathogenic)\n'
+            )
+            figure.set_constrained_layout(constrained_layout)
+        self.fig_score_diff_box = plt.figure(figsize=figsize)
+        self.fig_score_diff_vio = plt.figure(figsize=figsize)
+        for figure in [self.fig_score_diff_box, self.fig_score_diff_vio]:
+            figure.suptitle(
+                f'Model 1 vs Model 2 absolute score difference to the true label\n'
+                f'Model 1 scores: {model_1_score_path}\n'
+                f'Model 1 labels: {model_1_label_path}\n'
+                f'Model 2 scores: {model_2_score_path}\n'
+                f'Model 2 labels: {model_2_label_path}\n'
+                f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+                f'Pathogenic)\n'
+            )
+            figure.set_constrained_layout(constrained_layout)
         print('Plot figures prepared.\n')
 
     def prepare_subplots(self, merged_model_1_data):
@@ -619,13 +625,12 @@ class Plotter:
         ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
     def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
-                                        model_1_n_samples,
-                                        model_2_data, model_2_n_samples, title)
+        self._create_violinplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_n_samples, model_2_data,
+                                           model_2_n_samples, title)
 
     def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_n_samples, model_2_data, model_2_n_samples, title)
+        self._create_violinplot_for_column(self.fig_score_diff, 'score_diff', model_1_data, model_1_n_samples,
+                                           model_2_data, model_2_n_samples, title)
 
     @staticmethod
     def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
@@ -637,7 +642,11 @@ class Plotter:
                f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
+                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
+
+
+    def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
+                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         sns.violinplot(
             data=pd.concat([model_1_data, model_2_data]),
