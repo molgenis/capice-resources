@@ -32,7 +32,7 @@ class TestBalancer(unittest.TestCase):
             os.path.join(
                 cls.__current_directory__,
                 'utility_scripts',
-                'test',
+                'tests',
                 'resources',
                 'train_input.tsv.gz'
             ),
@@ -59,7 +59,7 @@ class TestBalancer(unittest.TestCase):
             try:
                 os.rmdir(cls.__test_path__)
             except Exception as e:
-                print(f'Failed to remove test folder {cls.__test_path__}, reason: {e}')
+                print(f'Failed to remove tests folder {cls.__test_path__}, reason: {e}')
 
     def setUp(self) -> None:
         print('Testing Class:')
