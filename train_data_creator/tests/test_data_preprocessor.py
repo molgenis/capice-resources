@@ -1,10 +1,9 @@
 import os
 import unittest
 
-import numpy as np
 import pandas as pd
 
-from train_data_creator.test import get_project_root_dir
+from train_data_creator.tests import get_project_root_dir
 from train_data_creator.src.main.data_preprocessor import VKGL, ClinVar
 
 
@@ -12,8 +11,8 @@ class TestDataProcessor(unittest.TestCase):
     __CHROM__ = '#CHROM'
 
     def setUp(self) -> None:
-        self.vkgl = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl.tsv.gz')
-        self.clinvar = os.path.join(get_project_root_dir(), 'test', 'resources',
+        self.vkgl = os.path.join(get_project_root_dir(), 'tests', 'resources', 'smol_vkgl.tsv.gz')
+        self.clinvar = os.path.join(get_project_root_dir(), 'tests', 'resources',
                                     'smol_clinvar.vcf.gz')
         self.dataset = pd.DataFrame(
             {
@@ -225,7 +224,7 @@ class TestDataProcessor(unittest.TestCase):
         pd.testing.assert_frame_equal(observed, expected)
 
     def test_clinvar__get_n_header(self):
-        file = os.path.join(get_project_root_dir(), 'test', 'resources', 'hashtag_file.txt')
+        file = os.path.join(get_project_root_dir(), 'tests', 'resources', 'hashtag_file.txt')
         observed = ClinVar()._get_n_header(file)
         self.assertEqual(observed, 14)
 
