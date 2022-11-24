@@ -12,7 +12,13 @@ _project_root_directory = Path(__file__).absolute().parent.parent.parent
 
 
 class TestExtendedEnum(unittest.TestCase):
-    def test_list_correct(self):
+    def test_list_single_enum_correct(self):
+        class EnumTestCase(ExtendedEnum):
+            SOME_VAR = 'some_var'
+
+        self.assertListEqual(['some_var'], EnumTestCase.list())
+
+    def test_list_multiple_enum_correct(self):
         class EnumTestCase(ExtendedEnum):
             SOME_VAR = 'some_var'
             OTHER_VAR = 'other_var'
@@ -42,21 +48,39 @@ class TestValidator(unittest.TestCase):
         os.rmdir(cls.depth_2_directory.parent)
 
     def test_1_depth_correct(self):
-        self.assertWarns(
-            UserWarning,
-            self.validator.validate_output_argument,
-            self.depth_1_directory
-        )
+        with self.assertWarns(UserWarning) as w:
+            self.validator.validate_output_argument(self.depth_1_directory)
         self.assertIn('some_directory', os.listdir(_project_root_directory))
+        self.assertEqual('Output directory does not exist, attempting to create.', str(w.warning))
 
     def test_2_depth_correct(self):
-        self.assertWarns(
-            UserWarning,
-            self.validator.validate_output_argument,
-            self.depth_2_directory
-        )
+        with self.assertWarns(UserWarning) as w:
+            self.validator.validate_output_argument(self.depth_2_directory)
         self.assertIn('other_directory', os.listdir(_project_root_directory))
         self.assertIn('further_directory', os.listdir(os.path.join(_project_root_directory, 'other_directory')))
+        self.assertEqual('Output directory does not exist, attempting to create.', str(w.warning))
+
+    def test_incorrect_columns_raised(self):
+        class ColumnsEnum(ExtendedEnum):
+            first_column = 'first_column'
+            second_column = 'second_column'
+            third_column = 'third_column'
+
+        test_dataframe = pd.DataFrame(
+            {
+                'first_column': [1, 2, 3],
+                'foo_column': [1, 2, 3],
+                'bar_column': [1, 2, 3],
+            }
+        )
+
+        with self.assertRaises(KeyError) as e:
+            self.validator.validate_columns_dataset(test_dataframe, ColumnsEnum.list(), 'testcase')
+        # Additional quotes are because raise KeyError adds single quotes to the error message exception
+        self.assertEqual(
+            "'Required column(s) second_column, third_column missing from testcase!'",
+            str(e.exception)
+        )
 
 
 class TestCalculator:
@@ -64,7 +88,7 @@ class TestCalculator:
         resources_directory = os.path.join(
                 _project_root_directory,
                 'utility_scripts',
-                'test',
+                'tests',
                 'resources')
         dataset = pd.read_csv(
             os.path.join(

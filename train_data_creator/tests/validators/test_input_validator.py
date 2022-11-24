@@ -2,7 +2,7 @@ import os
 import unittest
 import stat
 
-from train_data_creator.test import get_project_root_dir
+from train_data_creator.tests import get_project_root_dir
 from train_data_creator.src.main.validators.input_validator import InputValidator
 
 
@@ -26,15 +26,15 @@ class TestInputValidator(unittest.TestCase):
             os.removedirs(os.path.join(get_project_root_dir(), cls.__READONLY_DIRECTORY__))
 
     def test_vkgl_corr(self):
-        input_path = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl.tsv.gz')
+        input_path = os.path.join(get_project_root_dir(), 'tests', 'resources', 'smol_vkgl.tsv.gz')
         self.validator.validate_vkgl(input_path)
 
     def test_clinvar_corr(self):
-        input_path = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_clinvar.vcf.gz')
+        input_path = os.path.join(get_project_root_dir(), 'tests', 'resources', 'smol_clinvar.vcf.gz')
         self.validator.validate_clinvar(input_path)
 
     def test_vkgl_incorr(self):
-        input_path = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_clinvar.vcf.gz')
+        input_path = os.path.join(get_project_root_dir(), 'tests', 'resources', 'smol_clinvar.vcf.gz')
         self.assertRaises(
             IOError,
             self.validator.validate_vkgl,
@@ -42,7 +42,7 @@ class TestInputValidator(unittest.TestCase):
         )
 
     def test_clinvar_incorr(self):
-        input_path = os.path.join(get_project_root_dir(), 'test', 'resources', 'smol_vkgl.tsv.gz')
+        input_path = os.path.join(get_project_root_dir(), 'tests', 'resources', 'smol_vkgl.tsv.gz')
         self.assertRaises(
             IOError,
             self.validator.validate_clinvar,
@@ -50,7 +50,7 @@ class TestInputValidator(unittest.TestCase):
         )
 
     def test__validate_file_exist(self):
-        input_path = os.path.join(get_project_root_dir(), 'test', 'resources', 'not_a_file.tsv.gz')
+        input_path = os.path.join(get_project_root_dir(), 'tests', 'resources', 'not_a_file.tsv.gz')
         self.assertRaises(
             FileNotFoundError,
             self.validator._validate_file_exist,

@@ -22,7 +22,8 @@ def main():
             sep='\t',
             low_memory=False
         ),
-        RequiredValidationColumns.list()
+        RequiredValidationColumns.list(),
+        'validation file'
     )
     ds_validation_score = validator.validate_columns_dataset(
         pd.read_csv(
@@ -30,7 +31,8 @@ def main():
             sep='\t',
             low_memory=False
         ),
-        RequiredScoreColumns.list()
+        RequiredScoreColumns.list(),
+        'score file'
     )
     validator.validate_sample_size_match(ds_validation_raw, ds_validation_score)
     dataset = pd.concat([ds_validation_raw, ds_validation_score], axis=1)
