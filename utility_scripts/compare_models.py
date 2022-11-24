@@ -313,59 +313,57 @@ class Plotter:
                       model_2_label_path):
         print('Preparing plot figures.')
         figsize = self._set_figure_size(self.process_consequences)
-        constrained_layout = {'w_pad': 0.2, 'h_pad': 0.2}
         print('Preparing plots.')
         figure_supertitle = f'Model 1 scores: {model_1_score_path}\n' \
                             f'Model 1 labels: {model_1_label_path}\n' \
                             f'Model 2 scores: {model_2_score_path}\n' \
                             f'Model 2 labels: {model_2_label_path}\n'
-        self.fig_auc = plt.figure(figsize=figsize)
-        self.fig_auc.suptitle(
-            f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n{figure_supertitle}'
-        )
-        self.fig_auc.set_constrained_layout(constrained_layout)
+        post_supertitle = '(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, ' \
+                          'M2B = Model 2 Benign, M2P = Model 2 Pathogenic)\n'
 
-        self.fig_roc = plt.figure(figsize=(10, 15))
-        self.fig_roc.suptitle(
-            f'Model 1 vs Model 2 Receiver Operator Curves\n{figure_supertitle}'
-        )
-        self.fig_roc.set_constrained_layout(constrained_layout)
+        self._prepare_plots(self.fig_auc, 'Area Under Receiver Operator Curve', figure_supertitle, figsize)
 
-        self.fig_afb = plt.figure(figsize=(11, 11))
-        self.fig_afb.suptitle(
-            f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n{figure_supertitle}'
-        )
-        self.fig_afb.set_constrained_layout(constrained_layout)
+        self._prepare_plots(self.fig_roc, 'Receiver Operator Curves', figure_supertitle, (10, 15))
 
-        self.fig_score_dist_box = plt.figure(figsize=figsize)
-        self.fig_score_dist_box.suptitle(
-            f'Model 1 vs Model 2 raw CAPICE score distributions\n'
-            f'{figure_supertitle}'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n')
-        self.fig_score_dist_box.set_constrained_layout(constrained_layout)
+        self._prepare_plots(self.fig_afb, 'Allele Frequency bins performance comparison', figure_supertitle, (11, 11))
 
-        self.fig_score_dist_vio = plt.figure(figsize=figsize)
-        self.fig_score_dist_vio.suptitle(
-            f'Model 1 vs Model 2 raw CAPICE score distributions\n{figure_supertitle}'
+        self._prepare_plots(
+            self.fig_score_dist_box, 'raw CAPICE score distributions', f'{figure_supertitle}{post_supertitle}', figsize
         )
-        self.fig_score_dist_vio.set_constrained_layout(constrained_layout)
 
-        self.fig_score_diff_box = plt.figure(figsize=figsize)
-        self.fig_score_diff_box.suptitle(
-            f'Model 1 vs Model 2 absolute score difference to the true label\n'
-            f'{figure_supertitle}\n'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n'
+        self._prepare_plots(
+            self.fig_score_dist_vio, 'raw CAPICE score distributions', figure_supertitle, figsize
         )
-        self.fig_score_diff_box.set_constrained_layout(constrained_layout)
 
-        self.fig_score_diff_vio = plt.figure(figsize=figsize)
-        self.fig_score_diff_vio.suptitle(
-            f'Model 1 vs Model 2 raw CAPICE score distributions\n{figure_supertitle}'
+        self._prepare_plots(
+            self.fig_score_diff_box,
+            'absolute score differences to the true label',
+            f'{figure_supertitle}{post_supertitle}',
+            figsize
         )
-        self.fig_score_diff_vio.set_constrained_layout(constrained_layout)
+
+        self._prepare_plots(
+            self.fig_score_diff_vio,
+            'absolute score differences to the true label',
+            figure_supertitle,
+            figsize
+        )
+
         print('Plot figures prepared.\n')
+
+    @staticmethod
+    def _prepare_plots(
+            figure: plt.Figure,
+            plot_type: str,
+            figure_supertitle: str,
+            figure_size: tuple
+    ):
+        figure.set_figwidth(figure_size[0])
+        figure.set_figheight(figure_size[1])
+        figure.suptitle(
+            f'Model 1 vs Model 2 {plot_type}\n{figure_supertitle}'
+        )
+        figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
 
     def prepare_subplots(self, merged_model_1_data):
         if self.process_consequences:
