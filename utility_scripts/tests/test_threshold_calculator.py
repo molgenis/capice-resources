@@ -70,7 +70,7 @@ class TestValidator(unittest.TestCase):
             {
                 'first_column': [1, 2, 3],
                 'foo_column': [1, 2, 3],
-                'bar_column': [1, 2, 3],
+                'bar_column': [1, 2, 3]
             }
         )
 
