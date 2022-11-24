@@ -315,59 +315,56 @@ class Plotter:
         figsize = self._set_figure_size(self.process_consequences)
         constrained_layout = {'w_pad': 0.2, 'h_pad': 0.2}
         print('Preparing plots.')
+        figure_supertitle = f'Model 1 scores: {model_1_score_path}\n' \
+                            f'Model 1 labels: {model_1_label_path}\n' \
+                            f'Model 2 scores: {model_2_score_path}\n' \
+                            f'Model 2 labels: {model_2_label_path}\n'
         self.fig_auc = plt.figure(figsize=figsize)
         self.fig_auc.suptitle(
-            f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+            f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n{figure_supertitle}'
         )
         self.fig_auc.set_constrained_layout(constrained_layout)
+
         self.fig_roc = plt.figure(figsize=(10, 15))
         self.fig_roc.suptitle(
-            f'Model 1 vs Model 2 Receiver Operator Curves\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+            f'Model 1 vs Model 2 Receiver Operator Curves\n{figure_supertitle}'
         )
         self.fig_roc.set_constrained_layout(constrained_layout)
+
         self.fig_afb = plt.figure(figsize=(11, 11))
         self.fig_afb.suptitle(
-            f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+            f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n{figure_supertitle}'
         )
         self.fig_afb.set_constrained_layout(constrained_layout)
+
         self.fig_score_dist_box = plt.figure(figsize=figsize)
+        self.fig_score_dist_box.suptitle(
+            f'Model 1 vs Model 2 raw CAPICE score distributions\n'
+            f'{figure_supertitle}'
+            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+            f'Pathogenic)\n')
+        self.fig_score_dist_box.set_constrained_layout(constrained_layout)
+
         self.fig_score_dist_vio = plt.figure(figsize=figsize)
-        for figure in [self.fig_score_dist_box, self.fig_score_dist_vio]:
-            figure.suptitle(
-                f'Model 1 vs Model 2 raw CAPICE score distributions\n'
-                f'Model 1 scores: {model_1_score_path}\n'
-                f'Model 1 labels: {model_1_label_path}\n'
-                f'Model 2 scores: {model_2_score_path}\n'
-                f'Model 2 labels: {model_2_label_path}\n'
-                f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-                f'Pathogenic)\n'
-            )
-            figure.set_constrained_layout(constrained_layout)
+        self.fig_score_dist_vio.suptitle(
+            f'Model 1 vs Model 2 raw CAPICE score distributions\n{figure_supertitle}'
+        )
+        self.fig_score_dist_vio.set_constrained_layout(constrained_layout)
+
         self.fig_score_diff_box = plt.figure(figsize=figsize)
+        self.fig_score_diff_box.suptitle(
+            f'Model 1 vs Model 2 absolute score difference to the true label\n'
+            f'{figure_supertitle}\n'
+            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
+            f'Pathogenic)\n'
+        )
+        self.fig_score_diff_box.set_constrained_layout(constrained_layout)
+
         self.fig_score_diff_vio = plt.figure(figsize=figsize)
-        for figure in [self.fig_score_diff_box, self.fig_score_diff_vio]:
-            figure.suptitle(
-                f'Model 1 vs Model 2 absolute score difference to the true label\n'
-                f'Model 1 scores: {model_1_score_path}\n'
-                f'Model 1 labels: {model_1_label_path}\n'
-                f'Model 2 scores: {model_2_score_path}\n'
-                f'Model 2 labels: {model_2_label_path}\n'
-                f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-                f'Pathogenic)\n'
-            )
-            figure.set_constrained_layout(constrained_layout)
+        self.fig_score_diff_vio.suptitle(
+            f'Model 1 vs Model 2 raw CAPICE score distributions\n{figure_supertitle}'
+        )
+        self.fig_score_diff_vio.set_constrained_layout(constrained_layout)
         print('Plot figures prepared.\n')
 
     def prepare_subplots(self, merged_model_1_data):
