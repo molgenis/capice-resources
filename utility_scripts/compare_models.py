@@ -625,12 +625,22 @@ class Plotter:
         ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
     def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_violinplot_for_column(self.fig_score_dist, SCORE, model_1_data, model_1_n_samples, model_2_data,
-                                           model_2_n_samples, title)
+        self._create_boxplot_for_column(
+            self.fig_score_dist_box, SCORE, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title
+        )
+        self._create_violinplot_for_column(
+            self.fig_score_dist_vio, SCORE, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title
+        )
 
     def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_violinplot_for_column(self.fig_score_diff, 'score_diff', model_1_data, model_1_n_samples,
-                                           model_2_data, model_2_n_samples, title)
+        self._create_boxplot_for_column(
+            self.fig_score_diff_box, 'score_diff', model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+            title
+        )
+        self._create_violinplot_for_column(
+            self.fig_score_diff_vio, 'score_diff', model_1_data, model_1_n_samples,model_2_data, model_2_n_samples,
+            title
+        )
 
     @staticmethod
     def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
@@ -638,12 +648,37 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}', \
+        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n\n' \
                f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
-
+                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
+        ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
+        ax.boxplot(
+            [
+                model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
+                model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
+            ], labels=['M1B', 'M2B', 'M1P', 'M2P']
+        )
+        ax.plot(
+            np.NaN,
+            np.NaN,
+            color='none',
+            label=self._create_boxplot_label(
+                model_1_data,
+                model_1_n_samples,
+                model_2_data,
+                model_2_n_samples)
+        )
+        ax.set_ylim(0.0, 1.0)
+        ax.set_title(title)
+        ax.legend(
+            loc='upper left',
+            bbox_to_anchor=(1.0, 1.02),
+            handlelength=0
+        )
 
     def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                       model_1_n_samples, model_2_data, model_2_n_samples, title):
@@ -676,8 +711,10 @@ class Plotter:
         self.fig_roc.savefig(os.path.join(output, 'roc.png'))
         self.fig_auc.savefig(os.path.join(output, 'auc.png'))
         self.fig_afb.savefig(os.path.join(output, 'allele_frequency.png'))
-        self.fig_score_dist.savefig(os.path.join(output, 'score_distributions.png'))
-        self.fig_score_diff.savefig(os.path.join(output, 'score_differences.png'))
+        self.fig_score_dist_box.savefig(os.path.join(output, 'score_distributions_box.png'))
+        self.fig_score_dist_vio.savefig(os.path.join(output, 'score_distributions_violin.png'))
+        self.fig_score_diff_box.savefig(os.path.join(output, 'score_differences_box.png'))
+        self.fig_score_diff_vio.savefig(os.path.join(output, 'score_differences_violin.png'))
         print('Export done.')
 
 
