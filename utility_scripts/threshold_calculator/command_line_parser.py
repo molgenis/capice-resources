@@ -27,7 +27,15 @@ class CommandLineParser:
             type=str,
             action='store',
             required=True,
-            help=''
+            help='Input location of the scores dataset.'
+        )
+
+        required.add_argument(
+            '--output',
+            type=str,
+            action='store',
+            required=True,
+            help='Output directory where the output plot and thresholds TSV should be placed.'
         )
         return parser
 

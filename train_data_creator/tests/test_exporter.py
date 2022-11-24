@@ -3,7 +3,7 @@ import unittest
 
 import pandas as pd
 
-from train_data_creator.test import get_project_root_dir
+from train_data_creator.tests import get_project_root_dir
 from train_data_creator.src.main.exporter import Exporter
 
 
