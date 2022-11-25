@@ -164,8 +164,20 @@ class Balancer:
             consequences.str.split('&', expand=True).values.ravel()
         ).dropna().sort_values(ignore_index=True).unique()
 
+    @staticmethod
+    def _mark_and_impute(dataset: pd.DataFrame):
+        dataset['is_imputed'] = 0
+        dataset.loc[dataset['gnomAD_AF'].isnull(), 'is_imputed'] = 1
+        dataset['gnomAD_AF'].fillna(0, inplace=True)
+
+    @staticmethod
+    def _reset_impute(dataset: pd.DataFrame):
+        dataset.loc[dataset['is_imputed'] == 1, 'gnomAD_AF'] = None
+        dataset.drop(columns=['is_imputed'], inplace=True)
+
     def balance(self, dataset: pd.DataFrame):
         self.columns = dataset.columns
+        self._mark_and_impute(dataset)
         pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]
         benign = dataset.loc[dataset[dataset['binarized_label'] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)
@@ -186,6 +198,7 @@ class Balancer:
             self.drop_benign = pd.Index([])
             pathogenic.drop(index=self.drop_pathogenic, inplace=True)
             self.drop_pathogenic = pd.Index([])
+        self._reset_impute(return_dataset)
         return return_dataset
 
     def _process_consequence(self, pathogenic_dataset, benign_dataset):
