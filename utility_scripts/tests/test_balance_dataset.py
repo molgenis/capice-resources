@@ -96,8 +96,32 @@ class TestBalancer(unittest.TestCase):
         """
         Tests the balancer function with a hardcoded dataframe
         """
-        # TODO:finish writing test
-        pass
+        # TODO: expand test to cover all use cases un till fully assured that balancing works
+        # Perhaps make it as a list of lists, like numpy 2d array, clearer overview
+        test_case = pd.DataFrame(
+            {
+                'variant': [
+                    'variant_1',
+                    'variant_2',
+                    'variant_3',
+                    'variant_4',
+                    'variant_5'
+                ],
+                'Consequence': [
+                    'consequence_1',
+                    'consequence_2',
+                    'consequence_1',
+                    'consequence_2',
+                    'consequence_2'
+                ],
+                'gnomAD_AF': [0.8, 0.2, 0.75, 0.01, 0.45],
+                'binarized_label': [0, 1, 1, 0, 0]
+            }
+        )
+        balanced = Balancer().balance(test_case)
+        expected_variants = ['variant_1', 'variant_2', 'variant_3', 'variant_5']
+        for variant in expected_variants:
+            self.assertIn(variant, balanced['variant'].values)
 
     def test_duplicate_processing_balancer(self):
         """
