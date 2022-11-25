@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 This is a helper script to balance out an input dataset.
 Requires columns (%)Consequence and *_AF.
@@ -164,8 +166,8 @@ class Balancer:
 
     def balance(self, dataset: pd.DataFrame):
         self.columns = dataset.columns
-        pathogenic = dataset[dataset['binarized_label'] == 1]
-        benign = dataset[dataset['binarized_label'] == 0]
+        pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]
+        benign = dataset.loc[dataset[dataset['binarized_label'] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)
         consequences = self._obtain_consequences(dataset['Consequence'])
         for consequence in consequences:
