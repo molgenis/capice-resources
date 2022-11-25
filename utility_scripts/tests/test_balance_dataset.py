@@ -96,22 +96,31 @@ class TestBalancer(unittest.TestCase):
         """
         Tests the balancer function with a hardcoded dataframe
         """
-        # TODO: expand test to cover all use cases un till fully assured that balancing works
-        # Perhaps make it as a list of lists, like numpy 2d array, clearer overview
         variant_data = [
-            ['variant_1', 'consequence_1', 0.8, 0],
-            ['variant_2', 'consequence_2', 0.2, 1],
-            ['variant_3', 'consequence_1', 0.75, 1],
-            ['variant_4', 'consequence_2', 0.01, 0],
-            ['variant_5', 'consequence_2', 0.45, 0]
+            ['variant_1', 'consequence_1', 0.8, 0],  # Paired with variant_2
+            ['variant_2', 'consequence_1', 0.75, 1],  # Paired with variant_1
+            ['variant_3', 'consequence_2', 0.2, 1],  # Paired with variant_5
+            ['variant_4', 'consequence_2', 0.01, 0],  # Paired with variant_6
+            ['variant_5', 'consequence_2', 0.45, 0],  # Paired with variant_3
+            ['variant_6', 'consequence_1&consequence_2', 0.02, 1],  # Paired with variant_4
+            ['variant_7', 'consequence_2&consequence_3', 0.001, 1],  # Removed
+            ['variant_8', 'consequence_3', 0.9, 0]  # Removed
         ]
         test_case = pd.DataFrame(
             variant_data, columns=['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
         )
         balanced = Balancer().balance(test_case)
-        expected_variants = ['variant_1', 'variant_2', 'variant_3', 'variant_5']
-        for variant in expected_variants:
-            self.assertIn(variant, balanced['variant'].values)
+        expected_variants = [
+            'variant_1',
+            'variant_2',
+            'variant_3',
+            'variant_4',
+            'variant_5',
+            'variant_6'
+        ]
+        for variant in balanced['variant'].values:
+            self.assertIn(variant, expected_variants)
+        self.assertFalse(balanced['variant'].duplicated().any())
 
     def test_duplicate_processing_balancer(self):
         """
