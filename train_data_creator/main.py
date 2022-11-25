@@ -2,6 +2,7 @@
 
 import gc
 
+from train_data_creator.src.main.filter import SVFilter
 from train_data_creator.src.main.exporter import Exporter
 from train_data_creator.src.main.split_datasets import SplitDatasets
 from train_data_creator.src.main.sample_weighter import SampleWeighter
@@ -53,6 +54,9 @@ def main():
 
     # Applying sample weight
     SampleWeighter().apply_sample_weight(data)
+
+    # Filtering out unwanted variants
+    SVFilter().filter(data)
 
     # Deviding into train-test and validation
     train_test, validation = SplitDatasets().split(data)
