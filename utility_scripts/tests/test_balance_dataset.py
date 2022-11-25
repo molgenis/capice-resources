@@ -98,25 +98,15 @@ class TestBalancer(unittest.TestCase):
         """
         # TODO: expand test to cover all use cases un till fully assured that balancing works
         # Perhaps make it as a list of lists, like numpy 2d array, clearer overview
+        variant_data = [
+            ['variant_1', 'consequence_1', 0.8, 0],
+            ['variant_2', 'consequence_2', 0.2, 1],
+            ['variant_3', 'consequence_1', 0.75, 1],
+            ['variant_4', 'consequence_2', 0.01, 0],
+            ['variant_5', 'consequence_2', 0.45, 0]
+        ]
         test_case = pd.DataFrame(
-            {
-                'variant': [
-                    'variant_1',
-                    'variant_2',
-                    'variant_3',
-                    'variant_4',
-                    'variant_5'
-                ],
-                'Consequence': [
-                    'consequence_1',
-                    'consequence_2',
-                    'consequence_1',
-                    'consequence_2',
-                    'consequence_2'
-                ],
-                'gnomAD_AF': [0.8, 0.2, 0.75, 0.01, 0.45],
-                'binarized_label': [0, 1, 1, 0, 0]
-            }
+            variant_data, columns=['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
         )
         balanced = Balancer().balance(test_case)
         expected_variants = ['variant_1', 'variant_2', 'variant_3', 'variant_5']
