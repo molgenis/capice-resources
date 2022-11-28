@@ -39,10 +39,11 @@ def main():
     dataset_validator.validate_b_p_present(dataset)
     # Run
     balancer = Balancer()
-    balanced_dataset = balancer.balance(dataset)
+    balanced_dataset, remainder = balancer.balance(dataset)
     # Export
     exporter = BalanceExporter(output_path=output_directory)
     exporter.export_balanced_dataset(balanced_dataset)
+    exporter.export_remainder_dataset(remainder)
 
 
 class ArgumentParser:
@@ -199,7 +200,9 @@ class Balancer:
             pathogenic.drop(index=self.drop_pathogenic, inplace=True)
             self.drop_pathogenic = pd.Index([])
         self._reset_impute(return_dataset)
-        return return_dataset
+        remainder = pd.concat([benign, pathogenic], ignore_index=True, axis=0)
+        self._reset_impute(remainder)
+        return return_dataset, remainder
 
     def _process_consequence(self, pathogenic_dataset, benign_dataset):
         n_patho = pathogenic_dataset.shape[0]
