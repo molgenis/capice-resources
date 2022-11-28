@@ -47,6 +47,17 @@ class TestSVFilter(unittest.TestCase):
         self.assertNotIn(self.structural_variant, test_case['ALT'].values)
         self.assertEqual(shape - 2, test_case.shape[0])
 
+    def test_filter_none_removed(self):
+        test_case = pd.DataFrame(
+            {
+                'REF': ['C', 'A', 'T'],
+                'ALT': ['G', 'T', 'A']
+            }
+        )
+        shape = test_case.shape[0]
+        self.sv_filter.filter(test_case)
+        self.assertEqual(test_case.shape[0], shape)
+
 
 if __name__ == '__main__':
     unittest.main()
