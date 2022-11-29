@@ -340,25 +340,25 @@ class Plotter:
 
         self._prepare_plots(
             self.fig_score_dist_box,
-            f'raw CAPICE score distributions\n{figure_supertitle}',
+            f'raw CAPICE score distribution box plots\n{figure_supertitle}',
             figsize
         )
 
         self._prepare_plots(
             self.fig_score_dist_vio,
-            f'raw CAPICE score distributions\n{figure_supertitle}',
+            f'raw CAPICE score distribution violin plots\n{figure_supertitle}',
             figsize
         )
 
         self._prepare_plots(
             self.fig_score_diff_box,
-            f'absolute score differences to the true label\n{figure_supertitle}',
+            f'absolute score differences to the true label box plots\n{figure_supertitle}',
             figsize
         )
 
         self._prepare_plots(
             self.fig_score_diff_vio,
-            f'absolute score differences to the true label\n{figure_supertitle}',
+            f'absolute score differences to the true label violin plots\n{figure_supertitle}',
             figsize
         )
 
