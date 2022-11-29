@@ -42,7 +42,8 @@ class CommandLineParser:
         parser = self._create_argument_parser()
         self.arguments = parser.parse_args()
 
-    def _create_argument_parser(self):
+    @staticmethod
+    def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog='Compare models',
             description='Compares the performance of 2 different XGBoost style models. '
@@ -318,34 +319,46 @@ class Plotter:
                             f'Model 1 labels: {model_1_label_path}\n' \
                             f'Model 2 scores: {model_2_score_path}\n' \
                             f'Model 2 labels: {model_2_label_path}\n'
-        post_supertitle = '(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, ' \
-                          'M2B = Model 2 Benign, M2P = Model 2 Pathogenic)\n'
-
-        self._prepare_plots(self.fig_auc, 'Area Under Receiver Operator Curve', figure_supertitle, figsize)
-
-        self._prepare_plots(self.fig_roc, 'Receiver Operator Curves', figure_supertitle, (10, 15))
-
-        self._prepare_plots(self.fig_afb, 'Allele Frequency bins performance comparison', figure_supertitle, (11, 11))
 
         self._prepare_plots(
-            self.fig_score_dist_box, 'raw CAPICE score distributions', f'{figure_supertitle}{post_supertitle}', figsize
+            self.fig_auc,
+            f'Area Under Receiver Operator Curve\n{figure_supertitle}',
+            figsize
         )
 
         self._prepare_plots(
-            self.fig_score_dist_vio, 'raw CAPICE score distributions', figure_supertitle, figsize
+            self.fig_roc,
+            f'Receiver Operator Curves\n{figure_supertitle}',
+            (10, 15)
+        )
+
+        self._prepare_plots(
+            self.fig_afb,
+            f'Allele Frequency bins performance comparison\n{figure_supertitle}',
+            (11, 11)
+        )
+
+        self._prepare_plots(
+            self.fig_score_dist_box,
+            f'raw CAPICE score distributions\n{figure_supertitle}',
+            figsize
+        )
+
+        self._prepare_plots(
+            self.fig_score_dist_vio,
+            f'raw CAPICE score distributions\n{figure_supertitle}',
+            figsize
         )
 
         self._prepare_plots(
             self.fig_score_diff_box,
-            'absolute score differences to the true label',
-            f'{figure_supertitle}{post_supertitle}',
+            f'absolute score differences to the true label\n{figure_supertitle}',
             figsize
         )
 
         self._prepare_plots(
             self.fig_score_diff_vio,
-            'absolute score differences to the true label',
-            figure_supertitle,
+            f'absolute score differences to the true label\n{figure_supertitle}',
             figsize
         )
 
@@ -354,14 +367,25 @@ class Plotter:
     @staticmethod
     def _prepare_plots(
             figure: plt.Figure,
-            plot_type: str,
             figure_supertitle: str,
             figure_size: tuple
     ):
+        """
+        Prepares a matplotlib.pyplot.Figure supertitle, width, height and sets the constrained
+        layout of "w_pad" and "h_pad" to 0.2.
+
+        Args:
+            figure: the matplotlib.pyplot.Figure to be prepared.
+            figure_supertitle: single string of the complete figure supertitle, containing the
+                               type of the plot (AUC/ROC/score distributions etc.) followed by all
+                               the model paths and maybe a post_supertitle for the boxplots.
+                               Does NOT format the string!
+            figure_size: tuple containing the [0] figure width and [1] figure height.
+        """
         figure.set_figwidth(figure_size[0])
         figure.set_figheight(figure_size[1])
         figure.suptitle(
-            f'Model 1 vs Model 2 {plot_type}\n{figure_supertitle}'
+            f'Model 1 vs Model 2 {figure_supertitle}'
         )
         figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
 
@@ -465,9 +489,15 @@ class Plotter:
     @staticmethod
     def _subset_af_bin(dataset, upper_bound, lower_bound, last_iter=False):
         if last_iter:
-            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] <= upper_bound)]
+            return dataset[
+                (dataset['gnomAD_AF'] >= lower_bound) &
+                (dataset['gnomAD_AF'] <= upper_bound)
+                ]
         else:
-            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+            return dataset[
+                (dataset['gnomAD_AF'] >= lower_bound) &
+                (dataset['gnomAD_AF'] < upper_bound)
+                ]
 
     def _plot_bin(self, ax, x_index, label, auc_m1, m1_ss, auc_m2, m2_ss):
         width = 0.3
@@ -585,7 +615,8 @@ class Plotter:
         Returns tuple of 3:
         - Label for model 1. If element 3 returns None, contains sample size as well.
         - Label for model 2. If element 3 returns None, contains sample size as well.
-        - Label for legend title (if sample sizes match). Returns None (matplotlib legend title default) if sample
+        - Label for legend title (if sample sizes match).
+            Returns None (matplotlib legend title default) if sample
         sizes do not match.
         """
         if model_1_ss == model_2_ss:
@@ -619,26 +650,51 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
-    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
+    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
         self._create_boxplot_for_column(
-            self.fig_score_dist_box, SCORE, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title
-        )
-        self._create_violinplot_for_column(
-            self.fig_score_dist_vio, SCORE, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title
-        )
-
-    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_boxplot_for_column(
-            self.fig_score_diff_box, 'score_diff', model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+            self.fig_score_dist_box,
+            SCORE,
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
             title
         )
         self._create_violinplot_for_column(
-            self.fig_score_diff_vio, 'score_diff', model_1_data, model_1_n_samples,model_2_data, model_2_n_samples,
+            self.fig_score_dist_vio,
+            SCORE,
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
+
+    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
+        self._create_boxplot_for_column(
+            self.fig_score_diff_box,
+            'score_diff',
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
+        self._create_violinplot_for_column(
+            self.fig_score_diff_vio,
+            'score_diff',
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
             title
         )
 
     @staticmethod
-    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss, return_tuple=False):
+    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss,
+                              return_tuple=False):
         n_benign_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
@@ -661,7 +717,13 @@ class Plotter:
                 model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
                 model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
                 model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
-            ], labels=['M1B', 'M2B', 'M1P', 'M2P']
+            ],
+            labels=[
+                'Model 1\nBenign',
+                'Model 2\nBenign',
+                'Model 1\nPathogenic',
+                'Model 2\nPathogenic'
+            ]
         )
         ax.plot(
             np.NaN,
@@ -701,6 +763,10 @@ class Plotter:
         red_patch = mpatches.Patch(color='red', label=labels[0])
         blue_patch = mpatches.Patch(color='blue', label=labels[1])
         ax.set_ylim(0.0, 1.0)
+        ax.set_xlim(-0.5, 1.5)
+        ax.set_xticks([0.0, 1.0])
+        ax.set_xticklabels(['benign', 'pathogenic'])
+        ax.set_xlabel('label')
         ax.set_title(title)
         ax.legend(
             handles=[red_patch, blue_patch],
@@ -724,8 +790,8 @@ class Plotter:
 def main():
     # Processing and validating CLA
     validator = Validator()
-    m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge, \
-    output_path = process_cla(validator)
+    (m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge,
+     output_path) = process_cla(validator)
 
     # Reading in data and validating data
     m1, m1_cons = prepare_data_file(validator, m1_scores_path, m1_labels_path, 1, force_merge)
