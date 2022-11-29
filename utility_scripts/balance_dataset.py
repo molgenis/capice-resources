@@ -14,7 +14,6 @@ import os
 import argparse
 import warnings
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 
@@ -154,7 +153,7 @@ class Balancer:
     """
 
     def __init__(self):
-        self.bins = __bins__
+        self.bins = [pd.IntervalIndex]
         self.columns = []
         self.drop_benign = pd.Index([])
         self.drop_pathogenic = pd.Index([])
@@ -176,9 +175,16 @@ class Balancer:
         dataset.loc[dataset['is_imputed'] == 1, 'gnomAD_AF'] = None
         dataset.drop(columns=['is_imputed'], inplace=True)
 
+    def _set_bins(self, bins: pd.Series):
+        self.bins = bins.unique()
+
     def balance(self, dataset: pd.DataFrame):
         self.columns = dataset.columns
         self._mark_and_impute(dataset)
+        dataset['bin'] = pd.cut(
+            dataset['gnomAD_AF'], bins=__bins__, right=False, include_lowest=True
+        )
+        self._set_bins(dataset['bin'])
         pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]
         benign = dataset.loc[dataset[dataset['binarized_label'] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)
@@ -187,14 +193,10 @@ class Balancer:
             selected_pathogenic = pathogenic[pathogenic['Consequence'].str.contains(consequence)]
             selected_benign = benign[benign['Consequence'].str.contains(consequence)]
             processed_consequence = self._process_consequence(
-                pathogenic_dataset=selected_pathogenic, benign_dataset=selected_benign
+                pathogenic_dataset=selected_pathogenic,
+                benign_dataset=selected_benign
             )
-            return_dataset = pd.concat(
-                [
-                    return_dataset,
-                    processed_consequence
-                ], axis=0
-            )
+            return_dataset = pd.concat([return_dataset, processed_consequence], axis=0)
             benign.drop(index=self.drop_benign, inplace=True)
             self.drop_benign = pd.Index([])
             pathogenic.drop(index=self.drop_pathogenic, inplace=True)
@@ -204,63 +206,35 @@ class Balancer:
         self._reset_impute(remainder)
         return return_dataset, remainder
 
+    @staticmethod
+    def _sample_variants(dataset: pd.DataFrame, n_required: int):
+        if dataset.shape[0] > n_required:
+            dataset = dataset.sample(n=n_required, random_state=__random_state__)
+        return dataset
+
     def _process_consequence(self, pathogenic_dataset, benign_dataset):
-        n_patho = pathogenic_dataset.shape[0]
-        n_benign = benign_dataset.shape[0]
-        if n_patho > n_benign:
-            pathogenic_dataset = pathogenic_dataset.sample(
-                n_benign,
-                random_state=__random_state__
-            )
-        pathogenic_histogram, bins = np.histogram(
-            pathogenic_dataset['gnomAD_AF'],
-            bins=self.bins
-        )
+        pathogenic_dataset = self._sample_variants(pathogenic_dataset, benign_dataset.shape[0])
+        benign_dataset = self._sample_variants(benign_dataset, pathogenic_dataset.shape[0])
         processed_bins = pd.DataFrame(columns=self.columns)
-        for ind in range(len(bins) - 1):
-            lower_bound = bins[ind]
-            upper_bound = bins[ind + 1]
-            sample_number = pathogenic_histogram[ind]
+        for af_bin in self.bins:
             processed_bins = pd.concat(
-                [
-                    processed_bins,
-                    self._process_bins(
-                        pathogenic_dataset, benign_dataset, upper_bound, lower_bound, sample_number
-                    )
-                ], axis=0
+                [processed_bins, self._process_bins(pathogenic_dataset, benign_dataset, af_bin)],
+                axis=0
             )
         return processed_bins
 
-    def _process_bins(
-            self, pathogenic_dataset, benign_dataset, upper_bound, lower_bound, sample_num
-    ):
-        selected_pathogenic = self._get_variants_within_range(
-            pathogenic_dataset, upper_bound=upper_bound, lower_bound=lower_bound
-        )
-        selected_benign = self._get_variants_within_range(
-            benign_dataset, upper_bound=upper_bound, lower_bound=lower_bound
-        )
-        if sample_num < selected_benign.shape[0]:
-            return_benign = selected_benign.sample(
-                sample_num,
-                random_state=__random_state__
-            )
-            return_pathogenic = selected_pathogenic
-        else:
-            return_benign = selected_benign
-            return_pathogenic = selected_pathogenic.sample(
-                selected_benign.shape[0],
-                random_state=__random_state__
-            )
+    def _process_bins(self, pathogenic_dataset, benign_dataset, af_bin):
+        selected_pathogenic = self._get_variants_within_range(pathogenic_dataset, af_bin)
+        selected_benign = self._get_variants_within_range(benign_dataset, af_bin)
+        return_benign = self._sample_variants(selected_benign, selected_pathogenic.shape[0])
+        return_pathogenic = self._sample_variants(selected_pathogenic, selected_benign.shape[0])
         self.drop_benign = self.drop_benign.union(return_benign.index)
         self.drop_pathogenic = self.drop_pathogenic.union(return_pathogenic.index)
-        return pd.concat(
-            [return_benign, return_pathogenic], axis=0
-        )
+        return pd.concat([return_benign, return_pathogenic], axis=0)
 
     @staticmethod
-    def _get_variants_within_range(dataset, upper_bound, lower_bound):
-        return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+    def _get_variants_within_range(dataset, af_bin):
+        return dataset[dataset['bin'] == af_bin]
 
 
 class BalanceExporter:

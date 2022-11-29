@@ -77,7 +77,7 @@ class TestBalancer(unittest.TestCase):
         print('Balancer')
         balancer = Balancer()
         dataset = self.dataset.copy(deep=True)
-        balanced_dataset = balancer.balance(dataset)
+        balanced_dataset, _ = balancer.balance(dataset)
         self.assertGreater(balanced_dataset.shape[0], 0)
         self.assertEqual(
             balanced_dataset[balanced_dataset['binarized_label'] == 0].shape[0],
@@ -247,6 +247,10 @@ class TestBalancer(unittest.TestCase):
 
     def _test_consequence(self, test_set: pd.DataFrame, expected_rows: dict):
         balancer = Balancer()
+        test_set['bin'] = pd.cut(
+            test_set['gnomAD_AF'], bins=__bins__, right=False, include_lowest=True
+        )
+        balancer._set_bins(test_set['bin'])
         for consequence in test_set['Consequence'].unique():
             observed = balancer._process_consequence(
                 test_set[
@@ -259,6 +263,13 @@ class TestBalancer(unittest.TestCase):
                     ]
             )
             self.assertEqual(observed.shape[0], expected_rows[consequence])
+
+    def test_process_bins_equal(self):
+        """
+        Test with a single consequence, but spread over 2 separate AF bins, equal distribution of
+        benign and pathogenic
+        """
+        pass
 
     def test_balancer_known_input(self):
         """
@@ -277,7 +288,7 @@ class TestBalancer(unittest.TestCase):
         test_case = pd.DataFrame(
             variant_data, columns=['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
         )
-        balanced = Balancer().balance(test_case)
+        balanced, _ = Balancer().balance(test_case)
         expected_variants = [
             'variant_1',
             'variant_2',
@@ -306,7 +317,7 @@ class TestBalancer(unittest.TestCase):
                 'gnomAD_AF': [0.0, 0.0, 0.0, 0.0]
             }
         )
-        observed = Balancer().balance(test_dataset)
+        observed, _ = Balancer().balance(test_dataset)
         self.assertFalse(observed.duplicated().any())
 
     def test_cla_validator(self):
