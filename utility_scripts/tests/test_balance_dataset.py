@@ -40,12 +40,15 @@ class TestBalancer(unittest.TestCase):
             na_values='.',
             low_memory=False
         )
+        cls.hardcoded_columns = ['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
 
     @classmethod
     def tearDownClass(cls) -> None:
-        os.rmdir(cls.depth_1_directory)
-        os.rmdir(cls.depth_2_directory)
-        os.rmdir(cls.depth_2_directory.parent)
+        if os.path.isdir(cls.depth_1_directory):
+            os.rmdir(cls.depth_1_directory)
+        if os.path.isdir(cls.depth_2_directory):
+            os.rmdir(cls.depth_2_directory)
+            os.rmdir(cls.depth_2_directory.parent)
         if os.path.isdir(cls.__test_path__):
             for filename in os.listdir(cls.__test_path__):
                 filepath = os.path.join(cls.__test_path__, filename)
@@ -91,6 +94,171 @@ class TestBalancer(unittest.TestCase):
                                  (balanced_dataset['gnomAD_AF'] < upper_bound) &
                                  (balanced_dataset['binarized_label'] == 1)].shape[0]
             )
+
+    def test_process_consequence_equal(self):
+        """
+        Test for the _process_consequence method with 2 consequences that have an equal amount of
+        benign and pathogenic variants
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 0],
+            ['variant_3', 'consequence_1', 0.03, 0],
+            ['variant_4', 'consequence_1', 0.03, 1],
+            ['variant_5', 'consequence_1', 0.02, 1],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 0],
+            ['variant_9', 'consequence_2', 0.03, 0],
+            ['variant_10', 'consequence_2', 0.03, 1],
+            ['variant_11', 'consequence_2', 0.02, 1],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 6, 'consequence_2': 6}
+        self._test_consequence(test_set, expected_rows)
+
+    def test_process_consequence_patho_bias(self):
+        """
+        Test for the _process_consequence method with 2 consequences, of which one has a pathogenic
+        variant bias
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 1],
+            ['variant_3', 'consequence_1', 0.03, 1],
+            ['variant_4', 'consequence_1', 0.03, 1],
+            ['variant_5', 'consequence_1', 0.02, 1],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 0],
+            ['variant_9', 'consequence_2', 0.03, 0],
+            ['variant_10', 'consequence_2', 0.03, 1],
+            ['variant_11', 'consequence_2', 0.02, 1],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 2, 'consequence_2': 6}
+        self._test_consequence(test_set, expected_rows)
+
+    def test_process_consequence_double_patho_bias(self):
+        """
+        Test for the _process_consequence method with 2 consequences, both having more pathogenic
+        variants than benign
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 1],
+            ['variant_3', 'consequence_1', 0.03, 1],
+            ['variant_4', 'consequence_1', 0.03, 1],
+            ['variant_5', 'consequence_1', 0.02, 1],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 1],
+            ['variant_9', 'consequence_2', 0.03, 1],
+            ['variant_10', 'consequence_2', 0.03, 1],
+            ['variant_11', 'consequence_2', 0.02, 1],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 2, 'consequence_2': 2}
+        self._test_consequence(test_set, expected_rows)
+
+    def test_process_consequence_benign_bias(self):
+        """
+        Test for the _process_consequence method with 2 consequences, of which one has more benign
+        variants than pathogenic
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 0],
+            ['variant_3', 'consequence_1', 0.03, 0],
+            ['variant_4', 'consequence_1', 0.03, 0],
+            ['variant_5', 'consequence_1', 0.02, 0],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 0],
+            ['variant_9', 'consequence_2', 0.03, 0],
+            ['variant_10', 'consequence_2', 0.03, 1],
+            ['variant_11', 'consequence_2', 0.02, 1],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 2, 'consequence_2': 6}
+        self._test_consequence(test_set, expected_rows)
+
+    def test_process_consequence_double_benign_bias(self):
+        """
+        Test for the _process_consequence method with 2 consequences, both having more benign
+        variants than pathogenic
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 0],
+            ['variant_3', 'consequence_1', 0.03, 0],
+            ['variant_4', 'consequence_1', 0.03, 0],
+            ['variant_5', 'consequence_1', 0.02, 0],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 0],
+            ['variant_9', 'consequence_2', 0.03, 0],
+            ['variant_10', 'consequence_2', 0.03, 0],
+            ['variant_11', 'consequence_2', 0.02, 0],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 2, 'consequence_2': 2}
+        self._test_consequence(test_set, expected_rows)
+
+    def test_process_consequence_double_bias(self):
+        """
+        Test for the _process_consequence method with 2 consequences, one having a pathogenic bias
+        and the other a benign bias
+        """
+        test_data = [
+            ['variant_1', 'consequence_1', 0.01, 0],
+            ['variant_2', 'consequence_1', 0.02, 0],
+            ['variant_3', 'consequence_1', 0.03, 0],
+            ['variant_4', 'consequence_1', 0.03, 0],
+            ['variant_5', 'consequence_1', 0.02, 0],
+            ['variant_6', 'consequence_1', 0.01, 1],
+            ['variant_7', 'consequence_2', 0.01, 0],
+            ['variant_8', 'consequence_2', 0.02, 1],
+            ['variant_9', 'consequence_2', 0.03, 1],
+            ['variant_10', 'consequence_2', 0.03, 1],
+            ['variant_11', 'consequence_2', 0.02, 1],
+            ['variant_12', 'consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 2, 'consequence_2': 2}
+        self._test_consequence(test_set, expected_rows)
+
+    def _test_consequence(self, test_set: pd.DataFrame, expected_rows: dict):
+        balancer = Balancer()
+        for consequence in test_set['Consequence'].unique():
+            observed = balancer._process_consequence(
+                test_set[
+                    (test_set['Consequence'] == consequence) &
+                    (test_set['binarized_label'] == 1)
+                    ],
+                test_set[
+                    (test_set['Consequence'] == consequence) &
+                    (test_set['binarized_label'] == 0)
+                    ]
+            )
+            self.assertEqual(observed.shape[0], expected_rows[consequence])
 
     def test_balancer_known_input(self):
         """
