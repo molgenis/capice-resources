@@ -73,11 +73,13 @@ class CommandLineParser:
         )
 
         required.add_argument(
-            '-l1',
-            '--label_file_model_1',
+            '-l',
+            '--label_file',
             type=str,
             required=True,
-            help='Input location of the file containing the labels for the model 1 score file. '
+            help='Input location of the validation file used to create the score files. '
+                 'If 2 seperate validation files are used, this argument is for the validation '
+                 'file used to generate -s1/--score_file_model_1. '
                  'Column `Consequence` is required to be present in either the score file or '
                  'the label file (or both). '
                  'Has to contain the `binarized_label` column and '
@@ -97,16 +99,14 @@ class CommandLineParser:
                  'must be supplied in either TSV or gzipped TSV format!'
         )
 
-        required.add_argument(
+        optional.add_argument(
             '-l2',
             '--label_file_model_2',
             type=str,
-            required=True,
-            help='Input location of the file containing the labels for model 2. '
-                 'Column `Consequence` is required to be present in either the score file or '
-                 'the label file (or both). '
-                 'Has to contain the `binarized_label` column and '
-                 'must be supplied in either TSV or gzipped TSV format!'
+            default=None,
+            help='Optional input location of the file containing the labels for model 2. '
+                 'Must be supplied in either TSV or gzipped TSV format! (default: -l1 input '
+                 'argument)'
         )
 
         required.add_argument(
@@ -250,9 +250,11 @@ def process_cla(validator):
     print('Obtaining CLA.')
     cla = CommandLineParser()
     m1_scores = cla.get_argument('score_file_model_1')
-    m1_labels = cla.get_argument('label_file_model_1')
+    m1_labels = cla.get_argument('label_file')
     m2_scores = cla.get_argument('score_file_model_2')
     m2_labels = cla.get_argument('label_file_model_2')
+    if m2_labels is None:
+        m2_labels = m1_labels
     force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
 
