@@ -218,9 +218,9 @@ def split_consequences(consequences: pd.Series):
 
 
 def prepare_data_file(validator, scores, labels, model_number, force_merge):
-    scores_model = pd.read_csv(scores, sep='\t', na_values='.')
+    scores_model = pd.read_csv(scores, sep='\t', na_values='.', low_memory=False)
     validator.validate_score_column_present(scores_model, model_number)
-    labels_model = pd.read_csv(labels, sep='\t', na_values='.')
+    labels_model = pd.read_csv(labels, sep='\t', na_values='.', low_memory=False)
     validator.validate_bl_column_present(labels_model, model_number)
     validator.validate_af_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
