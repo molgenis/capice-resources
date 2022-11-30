@@ -3,6 +3,7 @@ import shutil
 import unittest
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from utility_scripts.balance_dataset import Balancer, \
@@ -41,6 +42,14 @@ class TestBalancer(unittest.TestCase):
             low_memory=False
         )
         cls.hardcoded_columns = ['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
+        cls.test_sampler_data = pd.DataFrame(
+            {
+                'variant': ['variant_1', 'consequence_1', 0.02, 0],
+                'Consequence': ['variant_2', 'consequence_1', 0.01, 1],
+                'gnomAD_AF': ['variant_3', 'consequence_2', 0.02, 0],
+                'binarized_label': ['variant_4', 'consequence_2', 0.01, 1]
+            }
+        )
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -70,6 +79,51 @@ class TestBalancer(unittest.TestCase):
     def tearDown(self) -> None:
         print('Done.')
 
+    def test_obtain_consequences(self):
+        balancer = Balancer()
+        consequence_series = pd.Series(
+            name='Consequence',
+            data=[
+                'consequence_1',
+                'consequence_2',
+                'consequence_3&consequence_4',
+                'consequence_3'
+            ]
+        )
+        self.assertTrue(
+            np.array_equal(
+                np.array(
+                    [
+                        'consequence_1',
+                        'consequence_2',
+                        'consequence_3',
+                        'consequence_4'
+                    ]
+                ),
+                balancer._obtain_consequences(consequence_series)
+            )
+        )
+
+    def test_sampler_unchanged_more_required(self):
+        balancer = Balancer()
+        test_set = self.test_sampler_data.copy(deep=True)
+        self.assertEqual(balancer._sample_variants(test_set, 5).shape[0], 4)
+
+    def test_sampler_unchanged_equal_required(self):
+        balancer = Balancer()
+        test_set = self.test_sampler_data.copy(deep=True)
+        self.assertEqual(balancer._sample_variants(test_set, 4).shape[0], 4)
+
+    def test_sampler_changed_less_required(self):
+        balancer = Balancer()
+        test_set = self.test_sampler_data.copy(deep=True)
+        self.assertEqual(balancer._sample_variants(test_set, 2).shape[0], 2)
+
+    def test_sampler_changed_zero_required(self):
+        balancer = Balancer()
+        test_set = self.test_sampler_data.copy(deep=True)
+        self.assertEqual(balancer._sample_variants(test_set, 0).shape[0], 0)
+
     def test_balancer(self):
         """
         Function to test the balancer
@@ -83,17 +137,28 @@ class TestBalancer(unittest.TestCase):
             balanced_dataset[balanced_dataset['binarized_label'] == 0].shape[0],
             balanced_dataset[balanced_dataset['binarized_label'] == 1].shape[0]
         )
+        incorrect_consequences = []
+        conseqs = balancer._obtain_consequences(balanced_dataset['Consequence'])
+        for consequence in conseqs:
+            subset = balanced_dataset[balanced_dataset['Consequence'].str.contains(consequence)]
+            n_benign = subset[subset['binarized_label'] == 0].shape[0]
+            n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
+            if n_benign != n_pathogenic:
+                incorrect_consequences.append(consequence)
+        self.assertListEqual([], incorrect_consequences)
+        incorrect_afbins = []
         for ind in range(len(__bins__) - 1):
             lower_bound = __bins__[ind]
             upper_bound = __bins__[ind + 1]
-            self.assertEqual(
-                balanced_dataset[(balanced_dataset['gnomAD_AF'] >= lower_bound) &
-                                 (balanced_dataset['gnomAD_AF'] < upper_bound) &
-                                 (balanced_dataset['binarized_label'] == 0)].shape[0],
-                balanced_dataset[(balanced_dataset['gnomAD_AF'] >= lower_bound) &
-                                 (balanced_dataset['gnomAD_AF'] < upper_bound) &
-                                 (balanced_dataset['binarized_label'] == 1)].shape[0]
-            )
+            subset = balanced_dataset[
+                (balanced_dataset['gnomAD_AF'] >= lower_bound) &
+                (balanced_dataset['gnomAD_AF'] < upper_bound)
+                ]
+            n_benign = subset[subset['binarized_label'] == 0].shape[0]
+            n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
+            if n_benign != n_pathogenic:
+                incorrect_afbins.append(f'{lower_bound}-{upper_bound}')
+        self.assertListEqual([], incorrect_afbins)
 
     def test_process_consequence_equal(self):
         """
@@ -247,10 +312,7 @@ class TestBalancer(unittest.TestCase):
 
     def _test_consequence(self, test_set: pd.DataFrame, expected_rows: dict):
         balancer = Balancer()
-        test_set['bin'] = pd.cut(
-            test_set['gnomAD_AF'], bins=__bins__, right=False, include_lowest=True
-        )
-        balancer._set_bins(test_set['bin'])
+        balancer._set_bins(test_set['gnomAD_AF'])
         for consequence in test_set['Consequence'].unique():
             observed = balancer._process_consequence(
                 test_set[
@@ -263,13 +325,6 @@ class TestBalancer(unittest.TestCase):
                     ]
             )
             self.assertEqual(observed.shape[0], expected_rows[consequence])
-
-    def test_process_bins_equal(self):
-        """
-        Test with a single consequence, but spread over 2 separate AF bins, equal distribution of
-        benign and pathogenic
-        """
-        pass
 
     def test_balancer_known_input(self):
         """

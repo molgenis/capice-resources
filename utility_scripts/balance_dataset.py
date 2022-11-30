@@ -175,16 +175,18 @@ class Balancer:
         dataset.loc[dataset['is_imputed'] == 1, 'gnomAD_AF'] = None
         dataset.drop(columns=['is_imputed'], inplace=True)
 
-    def _set_bins(self, bins: pd.Series):
-        self.bins = bins.unique()
+    def _set_bins(self, gnomad_af: pd.Series):
+        self.bins = pd.cut(
+                gnomad_af,
+                bins=__bins__,
+                right=False,
+                include_lowest=True
+            ).dropna().unique()
 
     def balance(self, dataset: pd.DataFrame):
         self.columns = dataset.columns
         self._mark_and_impute(dataset)
-        dataset['bin'] = pd.cut(
-            dataset['gnomAD_AF'], bins=__bins__, right=False, include_lowest=True
-        )
-        self._set_bins(dataset['bin'])
+        self._set_bins(dataset['gnomAD_AF'])
         pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]
         benign = dataset.loc[dataset[dataset['binarized_label'] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)
@@ -228,13 +230,13 @@ class Balancer:
         selected_benign = self._get_variants_within_range(benign_dataset, af_bin)
         return_benign = self._sample_variants(selected_benign, selected_pathogenic.shape[0])
         return_pathogenic = self._sample_variants(selected_pathogenic, selected_benign.shape[0])
-        self.drop_benign = self.drop_benign.union(return_benign.index)
-        self.drop_pathogenic = self.drop_pathogenic.union(return_pathogenic.index)
+        self.drop_benign = self.drop_benign.union(return_benign.index).astype(int)
+        self.drop_pathogenic = self.drop_pathogenic.union(return_pathogenic.index).astype(int)
         return pd.concat([return_benign, return_pathogenic], axis=0)
 
     @staticmethod
     def _get_variants_within_range(dataset, af_bin):
-        return dataset[dataset['bin'] == af_bin]
+        return dataset[dataset['gnomAD_AF'].apply(lambda value: value in af_bin)]
 
 
 class BalanceExporter:
