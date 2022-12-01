@@ -47,7 +47,8 @@ class CommandLineParser:
         parser = self._create_argument_parser()
         self.arguments = parser.parse_args()
 
-    def _create_argument_parser(self):
+    @staticmethod
+    def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog='Process VEP TSV',
             description='Processes an VEP output TSV (after running it through BCFTools). '
@@ -58,18 +59,32 @@ class CommandLineParser:
         optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
-            '-i',
-            '--input',
+            '-it',
+            '--input_train',
             type=str,
             required=True,
-            help='Input location of the VEP TSV'
+            help='Input location of the train-test VEP TSV'
+        )
+        required.add_argument(
+            '-iv',
+            '--input_validation',
+            type=str,
+            required=True,
+            help='Input location of the validation VEP TSV'
         )
         required.add_argument(
             '-o',
             '--output',
             type=str,
             required=True,
-            help='Output path + filename'
+            help='Output path'
+        )
+        required.add_argument(
+            '-j',
+            '--train_features_json',
+            type=str,
+            required=True,
+            help='The train features json that is used in CAPICE training'
         )
         required.add_argument(
             '-g',
@@ -147,23 +162,25 @@ def load_and_correct_cgd(path, present_genes: typing.Iterable):
 def process_cli(validator):
     print('Obtaining CLA.')
     cli = CommandLineParser()
-    data_path = cli.get_argument('input')
+    train_test_path = cli.get_argument('input_train')
+    validation_path = cli.get_argument('input_validation')
     output = cli.get_argument('output')
     grch38 = cli.get_argument('assembly')
     cgd = cli.get_argument('genes')
 
     print('Validating CLA.')
-    validator.validate_input_cla(data_path)
+    validator.validate_input_cla(train_test_path)
+    validator.validate_input_cla(validation_path)
     validator.validate_cgd_path(cgd)
     validator.validate_output_cla(output)
     print('Input arguments passed.\n')
-    return data_path, output, grch38, cgd
+    return train_test_path, validation_path, output, grch38, cgd
 
 
-def print_stats_dataset(data: pd.DataFrame, validator):
-    print('Validating dataset.')
+def print_stats_dataset(data: pd.DataFrame, validator, type_dataset: str):
+    print(f'Validating dataset: {type_dataset}.')
     validator.validate_input_dataset(data)
-    print('Dataset passed.')
+    print(f'{type_dataset} dataset passed.')
     n_samples = data.shape[0]
     print(f'Sample size: {n_samples}')
     print(f'Feature size: {data.shape[1]}')
@@ -171,7 +188,7 @@ def print_stats_dataset(data: pd.DataFrame, validator):
     print('Head:')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None,
                            'display.precision', 3):
-        print(data.head())
+        print(data.head(), end='\n\n')
 
 
 def drop_genes_empty(data: pd.DataFrame):
@@ -246,13 +263,27 @@ def export_data(data: pd.DataFrame, output):
     data.to_csv(output, index=False, compression='gzip', na_rep='.', sep='\t')
 
 
+def drop_duplicates(data: pd.DataFrame) -> None:
+    pass
+
+
+def merge_data(train_test_data, validation_data):
+    train_test_data['dataset_source'] = 'train_test'
+    validation_data['dataset_source'] = 'validation'
+    return pd.concat([train_test_data, validation_data], ignore_index=True, axis=0)
+
+
 def main():
     validator = Validator()
-    data_path, output, grch38, cgd = process_cli(validator)
+    train_test_path, validation_path, output, grch38, cgd = process_cli(validator)
 
     print('Reading in dataset')
-    data = pd.read_csv(data_path, sep='\t', na_values='.')
-    print_stats_dataset(data, validator)
+    train_test_data = pd.read_csv(train_test_path, sep='\t', na_values='.')
+    print_stats_dataset(train_test_data, validator, 'train_test')
+    validation_data = pd.read_csv(validation_path, sep='\t', na_values='.')
+    print_stats_dataset(validation_data, validator, 'validation')
+
+    data = merge_data(train_test_data, validation_data)
 
     drop_genes_empty(data)
 
