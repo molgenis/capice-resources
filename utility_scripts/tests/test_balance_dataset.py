@@ -185,6 +185,17 @@ class TestBalancer(unittest.TestCase):
                 )
         self.assertListEqual([], incorrect_afbins)
 
+    def test_balanced_remainder(self):
+        balancer = Balancer()
+        dataset = self.dataset.copy(deep=True)
+        balanced, remainder = balancer.balance(dataset)
+        # Subset because of the "balanced_on" column
+        self.assertFalse(
+            pd.concat(
+                [balanced, remainder],
+                axis=0
+            ).duplicated(subset=remainder.columns).any())
+
     def test_process_consequence_equal(self):
         """
         Test for the _process_consequence method with 2 consequences that have an equal amount of
