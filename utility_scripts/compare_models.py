@@ -7,7 +7,9 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import pyplot as plt
+from matplotlib import patches as mpatches
 from sklearn.metrics import roc_auc_score, roc_curve
 
 ID_SEPARATOR = '!'
@@ -40,7 +42,8 @@ class CommandLineParser:
         parser = self._create_argument_parser()
         self.arguments = parser.parse_args()
 
-    def _create_argument_parser(self):
+    @staticmethod
+    def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog='Compare models',
             description='Compares the performance of 2 different XGBoost style models. '
@@ -272,6 +275,10 @@ def add_imputed_af(merged_dataset):
     merged_dataset.loc[merged_dataset['gnomAD_AF'].isnull(), 'is_imputed'] = True
 
 
+def add_model_identifier(dataset, model_number):
+    dataset['model'] = model_number
+
+
 def calculate_auc(dataset: pd.DataFrame):
     return round(roc_auc_score(y_true=dataset[BINARIZED_LABEL], y_score=dataset[SCORE]), 4)
 
@@ -288,8 +295,10 @@ class Plotter:
         self.fig_auc = plt.figure()
         self.fig_roc = plt.figure()
         self.fig_afb = plt.figure()
-        self.fig_score_dist = plt.figure()
-        self.fig_score_diff = plt.figure()
+        self.fig_score_dist_box = plt.figure()
+        self.fig_score_dist_vio = plt.figure()
+        self.fig_score_diff_box = plt.figure()
+        self.fig_score_diff_vio = plt.figure()
         self.consequences = []
         self.n_rows = 1
         self.n_cols = 1
@@ -305,58 +314,80 @@ class Plotter:
                       model_2_label_path):
         print('Preparing plot figures.')
         figsize = self._set_figure_size(self.process_consequences)
-        constrained_layout = {'w_pad': 0.2, 'h_pad': 0.2}
         print('Preparing plots.')
-        self.fig_auc = plt.figure(figsize=figsize)
-        self.fig_auc.suptitle(
-            f'Model 1 vs Model 2 Area Under Receiver Operator Curve\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+        figure_supertitle = f'Model 1 scores: {model_1_score_path}\n' \
+                            f'Model 1 labels: {model_1_label_path}\n' \
+                            f'Model 2 scores: {model_2_score_path}\n' \
+                            f'Model 2 labels: {model_2_label_path}\n'
+
+        self._prepare_plots(
+            self.fig_auc,
+            f'Area Under Receiver Operator Curve\n{figure_supertitle}',
+            figsize
         )
-        self.fig_auc.set_constrained_layout(constrained_layout)
-        self.fig_roc = plt.figure(figsize=(10, 15))
-        self.fig_roc.suptitle(
-            f'Model 1 vs Model 2 Receiver Operator Curves\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+
+        self._prepare_plots(
+            self.fig_roc,
+            f'Receiver Operator Curves\n{figure_supertitle}',
+            (10, 15)
         )
-        self.fig_roc.set_constrained_layout(constrained_layout)
-        self.fig_afb = plt.figure(figsize=(11, 11))
-        self.fig_afb.suptitle(
-            f'Model 1 vs Model 2 Allele Frequency bins performance comparison\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
+
+        self._prepare_plots(
+            self.fig_afb,
+            f'Allele Frequency bins performance comparison\n{figure_supertitle}',
+            (11, 11)
         )
-        self.fig_afb.set_constrained_layout(constrained_layout)
-        self.fig_score_dist = plt.figure(figsize=figsize)
-        self.fig_score_dist.suptitle(
-            f'Model 1 vs Model 2 raw CAPICE score distributions\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n'
+
+        self._prepare_plots(
+            self.fig_score_dist_box,
+            f'raw CAPICE score distribution box plots\n{figure_supertitle}',
+            figsize
         )
-        self.fig_score_dist.set_constrained_layout(constrained_layout)
-        self.fig_score_diff = plt.figure(figsize=figsize)
-        self.fig_score_diff.suptitle(
-            f'Model 1 vs Model 2 absolute score difference to the true label\n'
-            f'Model 1 scores: {model_1_score_path}\n'
-            f'Model 1 labels: {model_1_label_path}\n'
-            f'Model 2 scores: {model_2_score_path}\n'
-            f'Model 2 labels: {model_2_label_path}\n'
-            f'(M1B = Model 1 Benign, M1P = Model 1 Pathogenic, M2B = Model 2 Benign, M2P = Model 2 '
-            f'Pathogenic)\n'
+
+        self._prepare_plots(
+            self.fig_score_dist_vio,
+            f'raw CAPICE score distribution violin plots\n{figure_supertitle}',
+            figsize
         )
-        self.fig_score_diff.set_constrained_layout(constrained_layout)
+
+        self._prepare_plots(
+            self.fig_score_diff_box,
+            f'absolute score differences to the true label box plots\n{figure_supertitle}',
+            figsize
+        )
+
+        self._prepare_plots(
+            self.fig_score_diff_vio,
+            f'absolute score differences to the true label violin plots\n{figure_supertitle}',
+            figsize
+        )
+
         print('Plot figures prepared.\n')
+
+    @staticmethod
+    def _prepare_plots(
+            figure: plt.Figure,
+            figure_supertitle: str,
+            figure_size: tuple
+    ):
+        """
+        Prepares a matplotlib.pyplot.Figure supertitle, width, height and sets the constrained
+        layout of "w_pad" and "h_pad" to 0.2.
+
+        Args:
+            figure: the matplotlib.pyplot.Figure to be prepared.
+            figure_supertitle: single string of the complete figure supertitle, containing the
+                               type of the plot (AUC/ROC/score distributions etc.) followed by all
+                               the model paths and maybe a post_supertitle for the boxplots.
+                               Does NOT format the string!
+            figure_size: tuple containing the [0] figure width and [1] figure height.
+        """
+        figure.set_figwidth(figure_size[0])
+        figure.set_figheight(figure_size[1])
+        figure.suptitle(
+            f'Model 1 vs Model 2 {figure_supertitle}'
+        )
+        figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
 
     def prepare_subplots(self, merged_model_1_data):
         if self.process_consequences:
@@ -450,17 +481,23 @@ class Plotter:
                 {\n}
         """
         if model_1_size == model_2_size:
-            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}\n'
+            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
         else:
             return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\n' \
-                   f'Model 2: {model_2_auc} (n: {model_2_size})\n'
+                   f'Model 2: {model_2_auc} (n: {model_2_size})'
 
     @staticmethod
     def _subset_af_bin(dataset, upper_bound, lower_bound, last_iter=False):
         if last_iter:
-            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] <= upper_bound)]
+            return dataset[
+                (dataset['gnomAD_AF'] >= lower_bound) &
+                (dataset['gnomAD_AF'] <= upper_bound)
+                ]
         else:
-            return dataset[(dataset['gnomAD_AF'] >= lower_bound) & (dataset['gnomAD_AF'] < upper_bound)]
+            return dataset[
+                (dataset['gnomAD_AF'] >= lower_bound) &
+                (dataset['gnomAD_AF'] < upper_bound)
+                ]
 
     def _plot_bin(self, ax, x_index, label, auc_m1, m1_ss, auc_m2, m2_ss):
         width = 0.3
@@ -568,7 +605,7 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01))
+        ax_afb.legend(loc='upper left', bbox_to_anchor=(1.0, 1.01), labelspacing=2)
 
     @staticmethod
     def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
@@ -578,7 +615,8 @@ class Plotter:
         Returns tuple of 3:
         - Label for model 1. If element 3 returns None, contains sample size as well.
         - Label for model 2. If element 3 returns None, contains sample size as well.
-        - Label for legend title (if sample sizes match). Returns None (matplotlib legend title default) if sample
+        - Label for legend title (if sample sizes match).
+            Returns None (matplotlib legend title default) if sample
         sizes do not match.
         """
         if model_1_ss == model_2_ss:
@@ -612,23 +650,63 @@ class Plotter:
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc='upper left', bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
-    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_boxplot_for_column(self.fig_score_dist, SCORE, model_1_data,
-                                        model_1_n_samples,
-                                        model_2_data, model_2_n_samples, title)
+    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
+        self._create_boxplot_for_column(
+            self.fig_score_dist_box,
+            SCORE,
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
+        self._create_violinplot_for_column(
+            self.fig_score_dist_vio,
+            SCORE,
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
 
-    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, title):
-        self._create_boxplot_for_column(self.fig_score_diff, 'score_diff', model_1_data,
-                                        model_1_n_samples, model_2_data, model_2_n_samples, title)
+    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
+                         title):
+        self._create_boxplot_for_column(
+            self.fig_score_diff_box,
+            'score_diff',
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
+        self._create_violinplot_for_column(
+            self.fig_score_diff_vio,
+            'score_diff',
+            model_1_data,
+            model_1_n_samples,
+            model_2_data,
+            model_2_n_samples,
+            title
+        )
 
     @staticmethod
-    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss):
+    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss,
+                              return_tuple=False):
         n_benign_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m1 = model_1_data[model_1_data[BINARIZED_LABEL] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[BINARIZED_LABEL] == 1].shape[0]
-        return f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}\n\n' \
-               f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+        return_value = (
+            f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}',
+            f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+        )
+        if return_tuple:
+            return return_value
+        else:
+            return '\n\n'.join(return_value)
 
     def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
                                    model_1_n_samples, model_2_data, model_2_n_samples, title):
@@ -636,10 +714,16 @@ class Plotter:
         ax.boxplot(
             [
                 model_1_data[model_1_data[BINARIZED_LABEL] == 0][column_to_plot],
-                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
                 model_2_data[model_2_data[BINARIZED_LABEL] == 0][column_to_plot],
+                model_1_data[model_1_data[BINARIZED_LABEL] == 1][column_to_plot],
                 model_2_data[model_2_data[BINARIZED_LABEL] == 1][column_to_plot],
-            ], labels=['M1B', 'M1P', 'M2B', 'M2P']
+            ],
+            labels=[
+                'Model 1\nBenign',
+                'Model 2\nBenign',
+                'Model 1\nPathogenic',
+                'Model 2\nPathogenic'
+            ]
         )
         ax.plot(
             np.NaN,
@@ -659,21 +743,55 @@ class Plotter:
             handlelength=0
         )
 
+    def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
+                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
+        ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
+        sns.violinplot(
+            data=pd.concat([model_1_data, model_2_data]),
+            x=BINARIZED_LABEL,
+            y=column_to_plot,
+            hue='model',
+            ax=ax,
+            split=True,
+            bw=0.1,
+            palette={'model_1': 'red', 'model_2': 'blue'},
+            legend=False
+        )
+        labels = self._create_boxplot_label(
+            model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, return_tuple=True
+        )
+        red_patch = mpatches.Patch(color='red', label=labels[0])
+        blue_patch = mpatches.Patch(color='blue', label=labels[1])
+        ax.set_ylim(0.0, 1.0)
+        ax.set_xlim(-0.5, 1.5)
+        ax.set_xticks([0.0, 1.0])
+        ax.set_xticklabels(['benign', 'pathogenic'])
+        ax.set_xlabel('label')
+        ax.set_title(title)
+        ax.legend(
+            handles=[red_patch, blue_patch],
+            loc='upper left',
+            bbox_to_anchor=(1.0, 1.02),
+            labelspacing=2
+        )
+
     def export(self, output):
         print(f'Exporting figures to: {output}')
         self.fig_roc.savefig(os.path.join(output, 'roc.png'))
         self.fig_auc.savefig(os.path.join(output, 'auc.png'))
         self.fig_afb.savefig(os.path.join(output, 'allele_frequency.png'))
-        self.fig_score_dist.savefig(os.path.join(output, 'score_distributions.png'))
-        self.fig_score_diff.savefig(os.path.join(output, 'score_differences.png'))
+        self.fig_score_dist_box.savefig(os.path.join(output, 'score_distributions_box.png'))
+        self.fig_score_dist_vio.savefig(os.path.join(output, 'score_distributions_violin.png'))
+        self.fig_score_diff_box.savefig(os.path.join(output, 'score_differences_box.png'))
+        self.fig_score_diff_vio.savefig(os.path.join(output, 'score_differences_violin.png'))
         print('Export done.')
 
 
 def main():
     # Processing and validating CLA
     validator = Validator()
-    m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge, \
-    output_path = process_cla(validator)
+    (m1_scores_path, m1_labels_path, m2_scores_path, m2_labels_path, force_merge,
+     output_path) = process_cla(validator)
 
     # Reading in data and validating data
     m1, m1_cons = prepare_data_file(validator, m1_scores_path, m1_labels_path, 1, force_merge)
@@ -696,6 +814,10 @@ def main():
     # Adding column containing the imputed AF
     add_imputed_af(m1)
     add_imputed_af(m2)
+
+    # Adding model identifier to the dataset for violin plots
+    add_model_identifier(m1, 'model_1')
+    add_model_identifier(m2, 'model_2')
 
     # Plotting
     plotter = Plotter(process_consequences)
