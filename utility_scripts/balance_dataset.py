@@ -187,7 +187,7 @@ class Balancer:
         self.columns = columns.append(pd.Index(['balanced_on']))
 
     def balance(self, dataset: pd.DataFrame):
-        self.columns = dataset.columns
+        self._set_columns(dataset.columns)
         self._mark_and_impute(dataset)
         self._set_bins(dataset['gnomAD_AF'])
         pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]

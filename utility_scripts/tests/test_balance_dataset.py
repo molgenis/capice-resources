@@ -141,6 +141,7 @@ class TestBalancer(unittest.TestCase):
             balanced_dataset[balanced_dataset['binarized_label'] == 0].shape[0],
             balanced_dataset[balanced_dataset['binarized_label'] == 1].shape[0]
         )
+        self.assertIn('balanced_on', balanced_dataset.columns)
         return balanced_dataset
 
     def test_balancer_consequences(self):
