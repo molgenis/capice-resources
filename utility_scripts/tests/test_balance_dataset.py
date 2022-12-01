@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from utility_scripts.balance_dataset import Balancer, \
-    CommandLineArgumentsValidator, InputDatasetValidator, __bins__
+    CommandLineArgumentsValidator, InputDatasetValidator, __bins__, VerbosityPrinter
 
 _project_root_directory = Path(__file__).absolute().parent.parent.parent
 
@@ -80,7 +80,7 @@ class TestBalancer(unittest.TestCase):
         print('Done.')
 
     def test_obtain_consequences(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         consequence_series = pd.Series(
             name='Consequence',
             data=[
@@ -105,27 +105,27 @@ class TestBalancer(unittest.TestCase):
         )
 
     def test_sampler_unchanged_more_required(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 5).shape[0], 4)
 
     def test_sampler_unchanged_equal_required(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 4).shape[0], 4)
 
     def test_sampler_changed_less_required(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 2).shape[0], 2)
 
     def test_sampler_changed_zero_required(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 0).shape[0], 0)
 
     def test_set_columns(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         columns = ['foo', 'bar', 'baz']
         test_dataset = pd.DataFrame(columns=columns)
         balancer._set_columns(test_dataset.columns)
@@ -133,7 +133,7 @@ class TestBalancer(unittest.TestCase):
         pd.testing.assert_index_equal(balancer.columns, pd.Index(columns))
 
     def set_up_test_balancer(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         dataset = self.dataset.copy(deep=True)
         balanced_dataset, _ = balancer.balance(dataset)
         self.assertGreater(balanced_dataset.shape[0], 0)
@@ -150,7 +150,7 @@ class TestBalancer(unittest.TestCase):
         """
         balanced_dataset = self.set_up_test_balancer()
         incorrect_consequences = []
-        conseqs = Balancer()._obtain_consequences(balanced_dataset['Consequence'])
+        conseqs = Balancer(VerbosityPrinter())._obtain_consequences(balanced_dataset['Consequence'])
         for consequence in conseqs:
             subset = balanced_dataset[balanced_dataset['balanced_on'] == consequence]
             n_benign = subset[subset['binarized_label'] == 0].shape[0]
@@ -186,7 +186,7 @@ class TestBalancer(unittest.TestCase):
         self.assertListEqual([], incorrect_afbins)
 
     def test_balanced_remainder(self):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         dataset = self.dataset.copy(deep=True)
         balanced, remainder = balancer.balance(dataset)
         # Subset because of the "balanced_on" column
@@ -364,7 +364,7 @@ class TestBalancer(unittest.TestCase):
         self._test_consequence(test_set, expected_rows)
 
     def _test_consequence(self, test_set: pd.DataFrame, expected_rows: dict):
-        balancer = Balancer()
+        balancer = Balancer(VerbosityPrinter())
         balancer._set_bins(test_set['gnomAD_AF'])
         consequences = balancer._obtain_consequences(test_set['Consequence'])
         for consequence in consequences:
@@ -401,7 +401,7 @@ class TestBalancer(unittest.TestCase):
         test_case = pd.DataFrame(
             variant_data, columns=['variant', 'Consequence', 'gnomAD_AF', 'binarized_label']
         )
-        balanced, _ = Balancer().balance(test_case)
+        balanced, _ = Balancer(VerbosityPrinter()).balance(test_case)
         expected_variants = [
             'variant_1',
             'variant_2',
@@ -430,7 +430,7 @@ class TestBalancer(unittest.TestCase):
                 'gnomAD_AF': [0.0, 0.0, 0.0, 0.0]
             }
         )
-        observed, _ = Balancer().balance(test_dataset)
+        observed, _ = Balancer(VerbosityPrinter()).balance(test_dataset)
         self.assertFalse(observed.duplicated().any())
 
     def test_cla_validator(self):

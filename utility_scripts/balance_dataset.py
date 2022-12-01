@@ -26,23 +26,43 @@ def main():
     cla_parser = ArgumentParser()
     input_path = cla_parser.get_argument('input')
     output_directory = Path(cla_parser.get_argument('output')).absolute()
+    verbose = cla_parser.get_argument('verbose')
+    printer = VerbosityPrinter(verbose)
     # Validate CLA
+    printer.print('Validating input arguments')
     cla_validator = CommandLineArgumentsValidator()
     cla_validator.validate_input_path(input_path)
     cla_validator.validate_output_path(output_directory)
+    printer.print('Input arguments passed')
     # Load in dataset
+    printer.print('Loading in dataset')
     dataset = pd.read_csv(input_path, na_values='.', sep='\t', low_memory=False)
+    printer.print(f'Dataset loaded, amount of samples: {dataset.shape[0]}')
     # Validate dataset
+    printer.print('Validating dataset')
     dataset_validator = InputDatasetValidator()
     dataset_validator.validate_columns_required(dataset)
     dataset_validator.validate_b_p_present(dataset)
+    printer.print('Dataset passed')
     # Run
-    balancer = Balancer()
+    printer.print('Starting balancing')
+    balancer = Balancer(printer)
     balanced_dataset, remainder = balancer.balance(dataset)
+    printer.print('Balancing passed')
     # Export
+    printer.print('Exporting')
     exporter = BalanceExporter(output_path=output_directory)
     exporter.export_balanced_dataset(balanced_dataset)
     exporter.export_remainder_dataset(remainder)
+
+
+class VerbosityPrinter:
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose
+
+    def print(self, message, *args, **kwargs):
+        if self.verbose:
+            print(message, *args, **kwargs)
 
 
 class ArgumentParser:
@@ -77,6 +97,13 @@ class ArgumentParser:
             action='store',
             required=True,
             help='The output directory in which the files should be placed.'
+        )
+
+        parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true',
+            help='Print verbose messages during balancing.'
         )
 
         return parser
@@ -152,7 +179,8 @@ class Balancer:
     Class dedicated to performing the balancing algorithm
     """
 
-    def __init__(self):
+    def __init__(self, verbosity_printer: VerbosityPrinter):
+        self.printer = verbosity_printer
         self.bins = [pd.IntervalIndex]
         self.columns = []
         self.drop_benign = pd.Index([])
@@ -182,6 +210,7 @@ class Balancer:
                 right=False,
                 include_lowest=True
             ).dropna().unique()
+        self.printer.print(f'Bins set: {self.bins}')
 
     def _set_columns(self, columns: pd.DataFrame.columns):
         self.columns = columns.append(pd.Index(['balanced_on']))
@@ -195,12 +224,16 @@ class Balancer:
         return_dataset = pd.DataFrame(columns=self.columns)
         consequences = self._obtain_consequences(dataset['Consequence'])
         for consequence in consequences:
+            self.printer.print(f'Processing: {consequence}')
             selected_pathogenic = pathogenic[pathogenic['Consequence'].str.contains(consequence)]
             selected_benign = benign[benign['Consequence'].str.contains(consequence)]
+            self.printer.print(f'Amount of pathogenic samples: {selected_pathogenic.shape[0]}')
+            self.printer.print(f'Amount of benign samples: {selected_benign.shape[0]}')
             processed_consequence = self._process_consequence(
                 pathogenic_dataset=selected_pathogenic,
                 benign_dataset=selected_benign
             )
+            self.printer.print(f'Amount sampled: {processed_consequence.shape[0]}', end='\n\n')
             processed_consequence['balanced_on'] = consequence
             return_dataset = pd.concat([return_dataset, processed_consequence], axis=0)
             return_dataset.sort_index(inplace=True)
@@ -211,6 +244,8 @@ class Balancer:
         self._reset_impute(return_dataset)
         remainder = pd.concat([benign, pathogenic], ignore_index=True, axis=0)
         self._reset_impute(remainder)
+        self.printer.print(f'Balanced set size: {return_dataset.shape[0]}')
+        self.printer.print(f'Remainder set size: {remainder.shape[0]}')
         return return_dataset, remainder
 
     @staticmethod
