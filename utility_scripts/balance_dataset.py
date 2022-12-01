@@ -183,6 +183,9 @@ class Balancer:
                 include_lowest=True
             ).dropna().unique()
 
+    def _set_columns(self, columns: pd.DataFrame.columns):
+        self.columns = columns.append(pd.Index(['balanced_on']))
+
     def balance(self, dataset: pd.DataFrame):
         self.columns = dataset.columns
         self._mark_and_impute(dataset)
@@ -198,7 +201,9 @@ class Balancer:
                 pathogenic_dataset=selected_pathogenic,
                 benign_dataset=selected_benign
             )
+            processed_consequence['balanced_on'] = consequence
             return_dataset = pd.concat([return_dataset, processed_consequence], axis=0)
+            return_dataset.sort_index(inplace=True)
             benign.drop(index=self.drop_benign, inplace=True)
             self.drop_benign = pd.Index([])
             pathogenic.drop(index=self.drop_pathogenic, inplace=True)

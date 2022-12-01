@@ -124,11 +124,15 @@ class TestBalancer(unittest.TestCase):
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 0).shape[0], 0)
 
-    def test_balancer(self):
-        """
-        Function to test the balancer
-        """
-        print('Balancer')
+    def test_set_columns(self):
+        balancer = Balancer()
+        columns = ['foo', 'bar', 'baz']
+        test_dataset = pd.DataFrame(columns=columns)
+        balancer._set_columns(test_dataset.columns)
+        columns.append('balanced_on')
+        pd.testing.assert_index_equal(balancer.columns, pd.Index(columns))
+
+    def set_up_test_balancer(self):
         balancer = Balancer()
         dataset = self.dataset.copy(deep=True)
         balanced_dataset, _ = balancer.balance(dataset)
@@ -137,15 +141,33 @@ class TestBalancer(unittest.TestCase):
             balanced_dataset[balanced_dataset['binarized_label'] == 0].shape[0],
             balanced_dataset[balanced_dataset['binarized_label'] == 1].shape[0]
         )
+        return balanced_dataset
+
+    def test_balancer_consequences(self):
+        """
+        Function to test the balancer consequences with a real life dataset
+        """
+        balanced_dataset = self.set_up_test_balancer()
         incorrect_consequences = []
-        conseqs = balancer._obtain_consequences(balanced_dataset['Consequence'])
+        conseqs = Balancer()._obtain_consequences(balanced_dataset['Consequence'])
         for consequence in conseqs:
-            subset = balanced_dataset[balanced_dataset['Consequence'].str.contains(consequence)]
+            subset = balanced_dataset[balanced_dataset['balanced_on'] == consequence]
             n_benign = subset[subset['binarized_label'] == 0].shape[0]
             n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
             if n_benign != n_pathogenic:
-                incorrect_consequences.append(consequence)
+                incorrect_consequences.append(
+                    f'{consequence} (n_b: {n_benign}, n_p: {n_pathogenic})'
+                )
         self.assertListEqual([], incorrect_consequences)
+
+    def test_balancer_afbins(self):
+        """
+        Function to test the balancer allele frequency bins with a real life dataset
+        :return:
+        """
+        balanced_dataset = self.set_up_test_balancer()
+        # Required, because 0 impute is reset during balancing
+        balanced_dataset['gnomAD_AF'].fillna(0, inplace=True)
         incorrect_afbins = []
         for ind in range(len(__bins__) - 1):
             lower_bound = __bins__[ind]
@@ -157,7 +179,9 @@ class TestBalancer(unittest.TestCase):
             n_benign = subset[subset['binarized_label'] == 0].shape[0]
             n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
             if n_benign != n_pathogenic:
-                incorrect_afbins.append(f'{lower_bound}-{upper_bound}')
+                incorrect_afbins.append(
+                    f'{lower_bound}-{upper_bound} (n_b: {n_benign}, n_p: {n_pathogenic})'
+                )
         self.assertListEqual([], incorrect_afbins)
 
     def test_process_consequence_equal(self):
@@ -310,21 +334,43 @@ class TestBalancer(unittest.TestCase):
         expected_rows = {'consequence_1': 2, 'consequence_2': 2}
         self._test_consequence(test_set, expected_rows)
 
+    def test_process_consequence_multiconsequence(self):
+        test_data = [
+            ['variant_1', 'consequence_1&consequence_2&consequence_3', 0.01, 0],
+            ['variant_2', 'consequence_2', 0.01, 0],
+            ['variant_3', 'consequence_2', 0.01, 0],
+            ['variant_4', 'consequence_1', 0.01, 1],
+            ['variant_5', 'consequence_1', 0.01, 1],
+            ['variant_6', 'consequence_1&consequence_2', 0.01, 1],
+            ['variant_7', 'consequence_1&consequence_3', 0.01, 0],
+            ['variant_8', 'consequence_1&consequence_2', 0.01, 1]
+        ]
+        test_set = pd.DataFrame(
+            test_data, columns=self.hardcoded_columns
+        )
+        expected_rows = {'consequence_1': 4, 'consequence_2': 4, 'consequence_3': 0}
+        self._test_consequence(test_set, expected_rows)
+
     def _test_consequence(self, test_set: pd.DataFrame, expected_rows: dict):
         balancer = Balancer()
         balancer._set_bins(test_set['gnomAD_AF'])
-        for consequence in test_set['Consequence'].unique():
+        consequences = balancer._obtain_consequences(test_set['Consequence'])
+        for consequence in consequences:
             observed = balancer._process_consequence(
                 test_set[
-                    (test_set['Consequence'] == consequence) &
+                    (test_set['Consequence'].str.contains(consequence, regex=False)) &
                     (test_set['binarized_label'] == 1)
                     ],
                 test_set[
-                    (test_set['Consequence'] == consequence) &
+                    (test_set['Consequence'].str.contains(consequence, regex=False)) &
                     (test_set['binarized_label'] == 0)
                     ]
             )
-            self.assertEqual(observed.shape[0], expected_rows[consequence])
+            self.assertEqual(
+                observed.shape[0],
+                expected_rows[consequence],
+                msg=f'Test failed on consequence: {consequence}'
+            )
 
     def test_balancer_known_input(self):
         """
