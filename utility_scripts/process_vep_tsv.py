@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import argparse
 import typing
 import warnings
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -26,17 +29,26 @@ ID_SEPARATOR = '!'
 # Defining it here so the initial size can be set, removing duplicated printing code
 class ProgressPrinter:
     def __init__(self):
-        self.before_drop = 0
+        self.before_drop = {}
 
-    def set_initial_size(self, sample_size: int):
-        self.before_drop = sample_size
+    def set_initial_size(self,
+                         sample_size: int,
+                         dataset_source: Literal['train_test', 'validation']
+                         ):
+        self.before_drop[dataset_source] = sample_size
 
-    def new_shape(self, sample_size: int):
-        print(f'Dropped {self.before_drop - sample_size} variants.\n')
-        self.before_drop = sample_size
+    def new_shape(self,
+                  sample_size: int,
+                  dataset_source: Literal['train_test', 'validation']
+                  ):
+        print(
+            f'Dropped {self.before_drop[dataset_source] - sample_size} variants from '
+            f'{dataset_source}.', end='\n\n')
+        self.before_drop[dataset_source] = sample_size
 
     def print_final_shape(self):
-        print(f'Final number of samples: {self.before_drop}')
+        print(f'Final number of samples in train_test: {self.before_drop["train_test"]}')
+        print(f'Final number of samples in validation: {self.before_drop["validation"]}')
 
 
 progress_printer = ProgressPrinter()
@@ -84,7 +96,7 @@ class CommandLineParser:
             '--train_features_json',
             type=str,
             required=True,
-            help='The train features json that is used in CAPICE training'
+            help='The train features json that is used in CAPICE training.'
         )
         required.add_argument(
             '-g',
@@ -110,25 +122,32 @@ class CommandLineParser:
 
 
 class Validator:
+    def validate_cla_dataset(self, input_path):
+        self._validate_input(input_path, ('.tsv.gz', '.tsv'))
+        return input_path
+
+    def validate_cla_json(self, input_path):
+        self._validate_input(input_path, ('.json', ))
+        return input_path
+
     @staticmethod
-    def validate_input_cla(input_path):
-        if not input_path.endswith(('.tsv.gz', '.tsv')):
-            raise IncorrectFileError('Input file is not a TSV!')
+    def _validate_input(input_path: os.PathLike, required_extension: tuple[str]):
+        if not os.path.isfile(input_path):
+            raise FileNotFoundError(f'{input_path} does not exist!')
+        if not input_path.endswith(required_extension):
+            raise IOError(f'{input_path} does not match the required extension: '
+                          f'{", ".join(required_extension)}')
 
     @staticmethod
     def validate_output_cla(output_path):
-        if not output_path.endswith('.tsv.gz'):
-            raise IncorrectFileError('Output file has to be defined as .tsv.gz!')
-        # This is intentional.
-        # You have more than enough time to prepare directories when VEP is running.
-        if not os.path.isdir(os.path.dirname(output_path)):
-            raise NotADirectoryError('Output file has to be placed in an directory that already '
-                                     'exists!')
+        output_path = Path(output_path).absolute()
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+        return output_path
 
-    @staticmethod
-    def validate_cgd_path(path):
-        if not path.endswith(('.txt.gz', '.tsv.gz')):
-            raise IncorrectFileError('Input CGD file is not either a gzipped txt or tsv file!')
+    def validate_cgd_path(self, path):
+        self._validate_input(path, ('.txt.gz', '.tsv.gz'))
+        return path
 
     @staticmethod
     def validate_cgd_content(cgd_data):
@@ -138,11 +157,15 @@ class Validator:
                 raise DataError(f'Missing required column in CGD data: {column}')
 
     @staticmethod
-    def validate_input_dataset(input_data):
-        columns_must_be_present = ['SYMBOL', 'CHROM', 'ID', 'gnomAD_HN']
-        for column in columns_must_be_present:
+    def validate_input_dataset(input_data: pd.DataFrame, train_features: list):
+        required_features = ['SYMBOL', 'CHROM', 'ID', 'gnomAD_HN']
+        required_features.extend(train_features)
+        missing = []
+        for column in required_features:
             if column not in input_data.columns:
-                raise DataError(f'Missing required column in supplied dataset: {column}')
+                missing.append(column)
+        if len(missing) > 0:
+            raise KeyError(f'Missing required column in supplied dataset: {", ".join(missing)}')
 
 
 def load_and_correct_cgd(path, present_genes: typing.Iterable):
@@ -162,25 +185,18 @@ def load_and_correct_cgd(path, present_genes: typing.Iterable):
 def process_cli(validator):
     print('Obtaining CLA.')
     cli = CommandLineParser()
-    train_test_path = cli.get_argument('input_train')
-    validation_path = cli.get_argument('input_validation')
-    output = cli.get_argument('output')
+    train_test_path = validator.validate_cla_dataset(cli.get_argument('input_train'))
+    validation_path = validator.validate_cla_dataset(cli.get_argument('input_validation'))
+    cgd = validator.validate_cgd_path(cli.get_argument('genes'))
+    train_features = validator.validate_cla_json(cli.get_argument('train_features_json'))
+    output = validator.validate_output_cla(cli.get_argument('output'))
     grch38 = cli.get_argument('assembly')
-    cgd = cli.get_argument('genes')
-
-    print('Validating CLA.')
-    validator.validate_input_cla(train_test_path)
-    validator.validate_input_cla(validation_path)
-    validator.validate_cgd_path(cgd)
-    validator.validate_output_cla(output)
-    print('Input arguments passed.\n')
-    return train_test_path, validation_path, output, grch38, cgd
+    print('Input arguments passed.', end='\n\n')
+    return train_test_path, validation_path, output, grch38, cgd, train_features
 
 
-def print_stats_dataset(data: pd.DataFrame, validator, type_dataset: str):
-    print(f'Validating dataset: {type_dataset}.')
-    validator.validate_input_dataset(data)
-    print(f'{type_dataset} dataset passed.')
+def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 'validation']):
+    print(f'Statistics for dataset: {type_dataset}')
     n_samples = data.shape[0]
     print(f'Sample size: {n_samples}')
     print(f'Feature size: {data.shape[1]}')
@@ -263,8 +279,8 @@ def export_data(data: pd.DataFrame, output):
     data.to_csv(output, index=False, compression='gzip', na_rep='.', sep='\t')
 
 
-def drop_duplicates(data: pd.DataFrame) -> None:
-    pass
+def drop_duplicates(data: pd.DataFrame, features: list) -> None:
+    data.drop_duplicates(subset=features, inplace=True)
 
 
 def merge_data(train_test_data, validation_data):
@@ -273,17 +289,45 @@ def merge_data(train_test_data, validation_data):
     return pd.concat([train_test_data, validation_data], ignore_index=True, axis=0)
 
 
+def split_data(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    train_test = data.loc[data[data['dataset_source'] == 'train_test'].index, :]
+    train_test.reset_index(drop=True, inplace=True)
+    validation = data.loc[data[data['dataset_source'] == 'validation'].index, :]
+    validation.reset_index(drop=True, inplace=True)
+    return train_test, validation
+
+
+def read_dataset(
+        path: os.PathLike,
+        train_features: list,
+        type_dataset: Literal['train_test', 'validation']
+) -> pd.DataFrame:
+    data = pd.read_csv(path, sep='\t', na_values='.')
+    validator = Validator()
+    validator.validate_input_dataset(data, train_features)
+    print_stats_dataset(data, type_dataset)
+    return data
+
+
+def read_json(path: os.PathLike) -> list[str]:
+    with open(path, 'rt') as fh:
+        data = list(json.load(fh).keys())
+    return data
+
+
 def main():
     validator = Validator()
-    train_test_path, validation_path, output, grch38, cgd = process_cli(validator)
+    train_test_path, validation_path, output, grch38, cgd, features_path = process_cli(validator)
 
     print('Reading in dataset')
-    train_test_data = pd.read_csv(train_test_path, sep='\t', na_values='.')
-    print_stats_dataset(train_test_data, validator, 'train_test')
-    validation_data = pd.read_csv(validation_path, sep='\t', na_values='.')
-    print_stats_dataset(validation_data, validator, 'validation')
+
+    train_features = read_json(features_path)
+    train_test_data = read_dataset(train_test_path, train_features, 'train_test')
+    validation_data = read_dataset(validation_path, train_features, 'validation')
 
     data = merge_data(train_test_data, validation_data)
+
+    drop_duplicates(data, train_features)
 
     drop_genes_empty(data)
 
