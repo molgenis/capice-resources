@@ -12,15 +12,6 @@ import numpy as np
 import pandas as pd
 
 
-# Defining errors
-class IncorrectFileError(Exception):
-    pass
-
-
-class DataError(Exception):
-    pass
-
-
 SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
 # Must be equal to `train_data_creator/src/main/exporter.py` & files in `utility_scripts`
 ID_SEPARATOR = '!'
@@ -46,9 +37,8 @@ class ProgressPrinter:
             f'{dataset_source}.', end='\n\n')
         self.before_drop[dataset_source] = sample_size
 
-    def print_final_shape(self):
-        print(f'Final number of samples in train_test: {self.before_drop["train_test"]}')
-        print(f'Final number of samples in validation: {self.before_drop["validation"]}')
+    def print_final_shape(self, dataset_type: Literal['train_test', 'validation']):
+        print(f'Final number of samples in train_test: {self.before_drop[dataset_type]}')
 
 
 progress_printer = ProgressPrinter()
@@ -154,7 +144,7 @@ class Validator:
         required_columns = ['#GENE', 'INHERITANCE']
         for column in required_columns:
             if column not in cgd_data.columns:
-                raise DataError(f'Missing required column in CGD data: {column}')
+                raise KeyError(f'Missing required column in CGD data: {column}')
 
     @staticmethod
     def validate_input_dataset(input_data: pd.DataFrame, train_features: list):
@@ -200,7 +190,7 @@ def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 
     n_samples = data.shape[0]
     print(f'Sample size: {n_samples}')
     print(f'Feature size: {data.shape[1]}')
-    progress_printer.set_initial_size(n_samples)
+    progress_printer.set_initial_size(n_samples, type_dataset)
     print('Head:')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None,
                            'display.precision', 3):
@@ -218,13 +208,15 @@ def process_grch38(data: pd.DataFrame):
     data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
     y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
     data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_duplicate_entries(data: pd.DataFrame):
     print('Dropping duplicated variants.')
     data.drop_duplicates(inplace=True)
-    progress_printer.new_shape(data.shape[0])
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_mismatching_genes(data: pd.DataFrame):
@@ -233,7 +225,8 @@ def drop_mismatching_genes(data: pd.DataFrame):
         index=data[data['ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['SYMBOL']].index,
         inplace=True
     )
-    progress_printer.new_shape(data.shape[0])
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
@@ -246,8 +239,8 @@ def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
             (data['SYMBOL'].isin(ar_genes))
         ].index, inplace=True
     )
-    progress_printer.new_shape(data.shape[0])
-
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 def extract_label_and_weight(data: pd.DataFrame):
     print('Extracting binarized_label and sample_weight')
@@ -260,11 +253,13 @@ def drop_variants_incorrect_label_or_weight(data: pd.DataFrame):
     data.drop(index=data[data['binarized_label'].isnull()].index, columns=['ID'], inplace=True)
     data.drop(index=data[~data['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
     data.drop(index=data[~data['sample_weight'].isin(SAMPLE_WEIGHTS)].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
-def print_finalized_statistics(data: pd.DataFrame):
-    progress_printer.print_final_shape()
+def print_finalized_statistics(data: pd.DataFrame, dataset_type: Literal['train_test',
+                                                                         'validation']):
+    progress_printer.print_final_shape(dataset_type)
     print('Value counts of dataset:')
     print(data[['sample_weight', 'binarized_label']].value_counts())
     print(f'Number of benign variants: {data[data["binarized_label"] == 0].shape[0]}')
@@ -344,9 +339,13 @@ def main():
 
     drop_variants_incorrect_label_or_weight(data)
 
-    print_finalized_statistics(data)
+    train_test, validation = split_data(data)
 
-    export_data(data, output)
+    print_finalized_statistics(train_test, 'train_test')
+    print_finalized_statistics(validation, 'validation')
+
+    export_data(train_test, os.path.join(output, 'train_test.tsv.gz'))
+    export_data(validation, os.path.join(output, 'validation.tsv.gz'))
 
 
 if __name__ == '__main__':
