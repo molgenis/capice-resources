@@ -200,12 +200,13 @@ def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 
 def drop_genes_empty(data: pd.DataFrame):
     print('Dropping variants without a gene.')
     data.drop(index=data[data['SYMBOL'].isnull()].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
+    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
+    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def process_grch38(data: pd.DataFrame):
     print('Processing GRCh38.')
-    data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
+    data['CHROM'] = data['CHROM'].str.split('chr', expa2nd=True)[1]
     y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
     data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
     progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
