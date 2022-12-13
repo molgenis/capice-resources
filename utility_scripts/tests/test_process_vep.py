@@ -1,11 +1,15 @@
 import unittest
+from unittest.mock import patch
 import os
 from pathlib import Path
+from io import StringIO
 
 import pandas as pd
 
 from utility_scripts.process_vep_tsv import Validator, read_json, read_dataset, merge_data, \
-    drop_duplicates, drop_genes_empty
+    drop_duplicates, drop_genes_empty, ProgressPrinter, process_grch38, drop_duplicate_entries, \
+    drop_mismatching_genes, drop_heterozygous_variants_in_ar_genes, \
+    drop_variants_incorrect_label_or_weight, extract_label_and_weight, load_and_correct_cgd
 
 
 class TestProcessVEP(unittest.TestCase):
@@ -146,11 +150,6 @@ class TestProcessVEP(unittest.TestCase):
 
     def test_merge_data(self):
         observed = merge_data(self.train_test_dataset, self.validation_dataset)
-        # Similar to issues:
-        # https://github.com/pandas-dev/pandas/issues/18463
-        # https://github.com/pandas-dev/pandas/issues/25412
-        # chrom has to be reset in order to pass test
-        observed['CHROM'] = observed['CHROM'].astype(str)
         pd.testing.assert_frame_equal(observed, self.merged_test_dataset)
 
     def test_drop_duplicates(self):
@@ -180,6 +179,123 @@ class TestProcessVEP(unittest.TestCase):
         drop_genes_empty(test_case)
         self.assertNotIn('variant_2', test_case['variant'].values)
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_progress_printer(self, stdout):
+        printer = ProgressPrinter()
+        test_case = pd.DataFrame(
+            {
+                'variant': ['var1', 'var2', 'var3'],
+                'dataset_source': ['train_test', 'train_test', 'validation']
+            }
+        )
+        printer.set_initial_size(test_case)
+        test_case.drop(index=1, inplace=True)
+        printer.new_shape(test_case)
+        printer.print_final_shape()
+        self.assertIn('Dropped 1 variants from train_test', stdout.getvalue())
+        self.assertIn('Dropped 0 variants from validation', stdout.getvalue())
+        self.assertIn('Final number of samples in train_test: 1', stdout.getvalue())
+        self.assertIn('Final number of samples in validation: 1', stdout.getvalue())
+
+    def test_process_grch38(self):
+        test_case = pd.DataFrame(
+            {
+                'CHROM': ['chr1', 'chr2', 'chr3_foobar', 'chrX', 'chrY_fake'],
+                'variant': ['var1', 'var2', 'var3', 'var4', 'var5']
+            }
+        )
+        process_grch38(test_case)
+        self.assertNotIn('var3', test_case['variant'].values)
+        self.assertNotIn('var5', test_case['variant'].values)
+        expected = ['var1', 'var2', 'var4']
+        for e in expected:
+            self.assertIn(e, test_case['variant'].values)
+
+
+    def test_drop_duplicate_entries(self):
+        # Possible since VEP can output the same variant twice, or more
+        test_case = pd.DataFrame(
+            {
+                'variant': ['variant_1', 'variant_2', 'variant_2', 'variant_3', 'variant_3'],
+                'transcript': ['t1', 't2', 't1', 't1', 't1'],
+                'feature_1': [1, 2, 3, 5, 5]
+            }
+        )
+        expected = pd.DataFrame(
+            {
+                'variant': ['variant_1', 'variant_2', 'variant_2', 'variant_3'],
+                'transcript': ['t1', 't2', 't1', 't1'],
+                'feature_1': [1, 2, 3, 5]
+            }
+        )
+        drop_duplicate_entries(test_case)
+        pd.testing.assert_frame_equal(test_case, expected)
+
+
+    def test_mismatching_genes(self):
+        test_case = pd.DataFrame(
+            {
+                'ID': ['1!1!A!G!foo', '1!1!A!G!bar', '1!1!A!G!baz'],
+                'SYMBOL': ['foo', 'bar', 'foobaz'],
+                'variant': ['var1', 'var2', 'var3']
+            }
+        )
+        drop_mismatching_genes(test_case)
+        self.assertNotIn('var3', test_case['variant'].values)
+
+    def test_load_and_correct_cgd(self):
+        expected = {'foo', 'bar'}
+        # Fake CGD contains: foo, bar, baz and TENM1 (of which baz is XL)
+        observed = load_and_correct_cgd(
+            os.path.join(self.test_resources_directory, 'fake_CGD.txt.gz'), ['foo', 'bar']
+        )
+        self.assertSetEqual(set(observed), expected)
+
+    def test_drop_heterozygous_variants_in_ar_genes(self):
+        test_case = pd.DataFrame(
+            {
+                'variant': ['var1', 'var2', 'var3'],
+                'SYMBOL': ['foo', 'bar', 'baz'],
+                'gnomAD_HN': [None, 0, 0]
+            }
+        )
+        drop_heterozygous_variants_in_ar_genes(
+            test_case,
+            os.path.join(
+                self.test_resources_directory,
+                'fake_CGD.txt.gz'
+            )
+        )
+        self.assertNotIn('var2', test_case['variant'].values)
+        for variant in ['var1', 'var3']:
+            self.assertIn(variant, test_case['variant'].values)
+
+    def test_extract_label_and_weight(self):
+        test_case = pd.DataFrame(
+            {
+                'ID': ['1!1!A!G!foo!0!0.8', '1!1!A!G!foo!1!0.5']
+            }
+        )
+        extract_label_and_weight(test_case)
+        self.assertIn('binarized_label', test_case.columns)
+        self.assertIn('sample_weight', test_case.columns)
+        self.assertIn(0, test_case['binarized_label'].values)
+        self.assertIn(0.5, test_case['sample_weight'].values)
+
+    def test_drop_variants_incorrect_label_or_weight(self):
+        test_case = pd.DataFrame(
+            {
+                'ID': [None, 'foo', 'bar', 'baz'],
+                'binarized_label': [None, 0.1, 0, 1],
+                'sample_weight': [0.8, 0.9, 1.0, 0.7],
+                'variant': ['var1', 'var2', 'var3', 'var4']
+            }
+        )
+        drop_variants_incorrect_label_or_weight(test_case)
+        self.assertNotIn('ID', test_case.columns)
+        self.assertIn('var3', test_case['variant'].values)
+        for notin in ['var1', 'var2', 'var4']:
+            self.assertNotIn(notin, test_case['variant'].values)
 
 
 if __name__ == '__main__':

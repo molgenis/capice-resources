@@ -20,28 +20,21 @@ ID_SEPARATOR = '!'
 # Defining it here so the initial size can be set, removing duplicated printing code
 class ProgressPrinter:
     def __init__(self):
-        self.before_drop = {}
+        self.grouped_save = None
 
-    def set_initial_size(self,
-                         sample_size: int,
-                         dataset_source: Literal['train_test', 'validation']
-                         ):
-        self.before_drop[dataset_source] = sample_size
+    def set_initial_size(self, dataset: pd.DataFrame):
+        self.grouped_save = dataset.groupby('dataset_source').size()
 
-    def new_shape(self,
-                  sample_size: int,
-                  dataset_source: Literal['train_test', 'validation']
-                  ):
-        print(
-            f'Dropped {self.before_drop[dataset_source] - sample_size} variants from '
-            f'{dataset_source}.', end='\n\n')
-        self.before_drop[dataset_source] = sample_size
+    def new_shape(self, dataset: pd.DataFrame):
+        new_save = dataset.groupby('dataset_source').size()
+        dropped = self.grouped_save - new_save
+        for group, counts in zip(dropped.index, dropped.values):
+            print(f'Dropped {counts} variants from {group}')
+        self.grouped_save = new_save
 
-    def print_final_shape(self, dataset_type: Literal['train_test', 'validation']):
-        print(f'Final number of samples in train_test: {self.before_drop[dataset_type]}')
-
-
-progress_printer = ProgressPrinter()
+    def print_final_shape(self):
+        for group, counts in zip(self.grouped_save.index, self.grouped_save.values):
+            print(f'Final number of samples in {group}: {counts}')
 
 
 class CommandLineParser:
@@ -190,7 +183,6 @@ def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 
     n_samples = data.shape[0]
     print(f'Sample size: {n_samples}')
     print(f'Feature size: {data.shape[1]}')
-    progress_printer.set_initial_size(n_samples, type_dataset)
     print('Head:')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None,
                            'display.precision', 3):
@@ -200,24 +192,18 @@ def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 
 def drop_genes_empty(data: pd.DataFrame):
     print('Dropping variants without a gene.')
     data.drop(index=data[data['SYMBOL'].isnull()].index, inplace=True)
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def process_grch38(data: pd.DataFrame):
     print('Processing GRCh38.')
-    data['CHROM'] = data['CHROM'].str.split('chr', expa2nd=True)[1]
+    data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
     y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
     data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_duplicate_entries(data: pd.DataFrame):
     print('Dropping duplicated variants.')
     data.drop_duplicates(inplace=True)
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_mismatching_genes(data: pd.DataFrame):
@@ -226,8 +212,6 @@ def drop_mismatching_genes(data: pd.DataFrame):
         index=data[data['ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['SYMBOL']].index,
         inplace=True
     )
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
 def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
@@ -240,8 +224,6 @@ def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
             (data['SYMBOL'].isin(ar_genes))
         ].index, inplace=True
     )
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 def extract_label_and_weight(data: pd.DataFrame):
     print('Extracting binarized_label and sample_weight')
@@ -254,13 +236,9 @@ def drop_variants_incorrect_label_or_weight(data: pd.DataFrame):
     data.drop(index=data[data['binarized_label'].isnull()].index, columns=['ID'], inplace=True)
     data.drop(index=data[~data['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
     data.drop(index=data[~data['sample_weight'].isin(SAMPLE_WEIGHTS)].index, inplace=True)
-    progress_printer.new_shape(data[data['dataset_source'] == 'train_test'].shape[0], 'train_test')
-    progress_printer.new_shape(data[data['dataset_source'] == 'validation'].shape[0], 'validation')
 
 
-def print_finalized_statistics(data: pd.DataFrame, dataset_type: Literal['train_test',
-                                                                         'validation']):
-    progress_printer.print_final_shape(dataset_type)
+def print_finalized_statistics(data: pd.DataFrame):
     print('Value counts of dataset:')
     print(data[['sample_weight', 'binarized_label']].value_counts())
     print(f'Number of benign variants: {data[data["binarized_label"] == 0].shape[0]}')
@@ -276,13 +254,18 @@ def export_data(data: pd.DataFrame, output):
 
 
 def drop_duplicates(data: pd.DataFrame, features: list) -> None:
+    print('Dropping duplicates according to train features.')
     data.drop_duplicates(subset=features, inplace=True)
 
 
 def merge_data(train_test_data, validation_data):
     train_test_data['dataset_source'] = 'train_test'
     validation_data['dataset_source'] = 'validation'
-    return pd.concat([train_test_data, validation_data], ignore_index=True, axis=0)
+    concat = pd.concat([train_test_data, validation_data], ignore_index=True, axis=0)
+    # Has to be done in case train_test only has 1-23 in CHROM and validation has sex
+    # chromosomes, or vice versa.
+    concat['CHROM'] = concat['CHROM'].astype(str)
+    return concat
 
 
 def split_data(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -315,6 +298,8 @@ def main():
     validator = Validator()
     train_test_path, validation_path, output, grch38, cgd, features_path = process_cli(validator)
 
+    progress_printer = ProgressPrinter()
+
     print('Reading in dataset')
 
     train_features = read_json(features_path)
@@ -322,28 +307,38 @@ def main():
     validation_data = read_dataset(validation_path, train_features, 'validation')
 
     data = merge_data(train_test_data, validation_data)
+    progress_printer.set_initial_size(data)
 
     drop_duplicates(data, train_features)
+    progress_printer.new_shape(data)
 
     drop_genes_empty(data)
+    progress_printer.new_shape(data)
 
     if grch38:
         process_grch38(data)
+        progress_printer.new_shape(data)
 
     drop_duplicate_entries(data)
+    progress_printer.new_shape(data)
 
     drop_mismatching_genes(data)
+    progress_printer.new_shape(data)
 
     drop_heterozygous_variants_in_ar_genes(data, cgd)
+    progress_printer.new_shape(data)
 
     extract_label_and_weight(data)
+    progress_printer.new_shape(data)
 
     drop_variants_incorrect_label_or_weight(data)
+    progress_printer.new_shape(data)
+    progress_printer.print_final_shape()
 
     train_test, validation = split_data(data)
 
-    print_finalized_statistics(train_test, 'train_test')
-    print_finalized_statistics(validation, 'validation')
+    print_finalized_statistics(train_test)
+    print_finalized_statistics(validation)
 
     export_data(train_test, os.path.join(output, 'train_test.tsv.gz'))
     export_data(validation, os.path.join(output, 'validation.tsv.gz'))
