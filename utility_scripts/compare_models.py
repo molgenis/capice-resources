@@ -105,8 +105,8 @@ class CommandLineParser:
             '--labels-model-2',
             type=str,
             help='Optional input location of the file containing the labels for model 2. '
-                 'Must be supplied in either TSV or gzipped TSV format! (default: -l input '
-                 'argument)'
+                 'Must be supplied in either TSV or gzipped TSV format! '
+                 'If not defined, uses file given through -l/--labels/--labels-model-1 for model 2.'
         )
 
         required.add_argument(
