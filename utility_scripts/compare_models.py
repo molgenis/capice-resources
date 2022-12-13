@@ -60,8 +60,8 @@ class CommandLineParser:
         optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
-            '-s1',
-            '--score_file_model_1',
+            '-a',
+            '--scores-model-1',
             type=str,
             required=True,
             help='Input location of the file containing the scores for model 1. '
@@ -73,11 +73,14 @@ class CommandLineParser:
         )
 
         required.add_argument(
-            '-l1',
-            '--label_file_model_1',
+            '-l',
+            '--labels',
+            '--labels-model-1',
             type=str,
             required=True,
-            help='Input location of the file containing the labels for the model 1 score file. '
+            help='Input location of the validation file used to create the score files. '
+                 'If 2 seperate validation files are used, this argument is for the validation '
+                 'file used to generate -a/--scores-model-1. '
                  'Column `Consequence` is required to be present in either the score file or '
                  'the label file (or both). '
                  'Has to contain the `binarized_label` column and '
@@ -86,8 +89,8 @@ class CommandLineParser:
         )
 
         required.add_argument(
-            '-s2',
-            '--score_file_model_2',
+            '-b',
+            '--scores-model-2',
             type=str,
             required=True,
             help='Input location of the file containing the scores for model 2. '
@@ -97,16 +100,13 @@ class CommandLineParser:
                  'must be supplied in either TSV or gzipped TSV format!'
         )
 
-        required.add_argument(
-            '-l2',
-            '--label_file_model_2',
+        optional.add_argument(
+            '-m',
+            '--labels-model-2',
             type=str,
-            required=True,
-            help='Input location of the file containing the labels for model 2. '
-                 'Column `Consequence` is required to be present in either the score file or '
-                 'the label file (or both). '
-                 'Has to contain the `binarized_label` column and '
-                 'must be supplied in either TSV or gzipped TSV format!'
+            help='Optional input location of the file containing the labels for model 2. '
+                 'Must be supplied in either TSV or gzipped TSV format! '
+                 'If not defined, uses file given through -l/--labels/--labels-model-1 for model 2.'
         )
 
         required.add_argument(
@@ -119,7 +119,7 @@ class CommandLineParser:
 
         optional.add_argument(
             '-f',
-            '--force_merge',
+            '--force-merge',
             action='store_true',
             help='Add flag if there is a possibility of a mismatch in sample size between the '
                  'score and label file for any model.'
@@ -218,9 +218,30 @@ def split_consequences(consequences: pd.Series):
 
 
 def prepare_data_file(validator, scores, labels, model_number, force_merge):
-    scores_model = pd.read_csv(scores, sep='\t', na_values='.')
+    scores_model = pd.read_csv(
+        scores, sep='\t', na_values='.',
+        dtype={
+            'chr': 'str',
+            'pos': np.int64,
+            'ref': 'str',
+            'alt': 'str',
+            'gene_name': 'str',
+            SCORE: np.float64,
+        }
+    )
     validator.validate_score_column_present(scores_model, model_number)
-    labels_model = pd.read_csv(labels, sep='\t', na_values='.')
+    labels_model = pd.read_csv(
+        labels, sep='\t', na_values='.',
+        dtype={
+            'CHROM': 'str',
+            'POS': np.int64,
+            'REF': 'str',
+            'ALT': 'str',
+            'SYMBOL': 'str',
+            BINARIZED_LABEL: np.float64,
+            'gnomAD_AF': np.float64
+        }
+    )
     validator.validate_bl_column_present(labels_model, model_number)
     validator.validate_af_column_present(labels_model, model_number)
     m_cons = validator.validate_consequence_column_present(labels_model)
@@ -249,10 +270,12 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
 def process_cla(validator):
     print('Obtaining CLA.')
     cla = CommandLineParser()
-    m1_scores = cla.get_argument('score_file_model_1')
-    m1_labels = cla.get_argument('label_file_model_1')
-    m2_scores = cla.get_argument('score_file_model_2')
-    m2_labels = cla.get_argument('label_file_model_2')
+    m1_scores = cla.get_argument('scores_model_1')
+    m1_labels = cla.get_argument('labels')
+    m2_scores = cla.get_argument('scores_model_2')
+    m2_labels = cla.get_argument('labels_model_2')
+    if m2_labels is None:
+        m2_labels = m1_labels
     force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
 
