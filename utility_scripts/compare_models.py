@@ -75,6 +75,7 @@ class CommandLineParser:
         required.add_argument(
             '-l',
             '--labels',
+            '--labels-model-1',
             type=str,
             required=True,
             help='Input location of the validation file used to create the score files. '
