@@ -270,13 +270,13 @@ def prepare_data_file(validator, scores, labels, model_number, force_merge):
 def process_cla(validator):
     print('Obtaining CLA.')
     cla = CommandLineParser()
-    m1_scores = cla.get_argument('scores-model-1')
+    m1_scores = cla.get_argument('scores_model_1')
     m1_labels = cla.get_argument('labels')
-    m2_scores = cla.get_argument('scores-model-2')
-    m2_labels = cla.get_argument('labels-model-2')
+    m2_scores = cla.get_argument('scores_model_2')
+    m2_labels = cla.get_argument('labels_model_2')
     if m2_labels is None:
         m2_labels = m1_labels
-    force_merge = cla.get_argument('force-merge')
+    force_merge = cla.get_argument('force_merge')
     output = cla.get_argument('output')
 
     print('Validating CLA.')
