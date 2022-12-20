@@ -34,5 +34,10 @@ setup(
         'test': [
             'pytest',
         ]
+    },
+    entry_points={
+        'console_scripts': [
+            'process-vep = molgenis.process_vep.__main__:main'
+        ]
     }
 )
