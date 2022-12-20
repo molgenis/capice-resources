@@ -128,10 +128,29 @@ class Module(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def run_module(arguments: dict[str, object]) -> dict[object, object]:
+        """
+        Function to house all that is required in terms of arguments, variables and calls to
+        other functions to make a module function properly.
+
+        Args:
+            arguments:
+                Dictionary containing all input argument keys and their values.
+        Returns:
+            dict:
+                A dictionary containing all output objects that can be used in export.
+                Can be a dataframe, string, dict or other object.
+        """
         return {}
 
     @abstractmethod
-    def export(self, output: dict[object, object]):
+    def export(self, output: dict[object, object]) -> None:
+        """
+        Final destination of each module. Can be divided up into multiple export functions.
+
+        Args:
+            output:
+                Dictionary obtained from run_module()
+        """
         pass
 
 
