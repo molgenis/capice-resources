@@ -37,7 +37,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'process-vep = molgenis.capice_resources.process_vep.__main__:main'
+            'process-vep = molgenis.capice_resources.process_vep.__main__:main',
+            'compare-model-features = molgenis.capice_resources.compare_model_features.__main__'
+            ':main'
         ]
     }
 )

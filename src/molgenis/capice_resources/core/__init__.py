@@ -125,9 +125,8 @@ class Module(metaclass=ABCMeta):
             required_columns
         )
 
-    @staticmethod
     @abstractmethod
-    def run_module(arguments: dict[str, object]) -> dict[object, object]:
+    def run_module(self, arguments: dict[str, object | os.PathLike | Path]) -> dict[object, object]:
         """
         Function to house all that is required in terms of arguments, variables and calls to
         other functions to make a module function properly.
@@ -170,3 +169,4 @@ class GlobalEnums(ExtendedEnum):
     """
     SEPARATOR = '!'
     OUTPUT = 'output'
+    TSV_EXTENSIONS = ('.tsv.gz', '.tsv')

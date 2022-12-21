@@ -51,11 +51,43 @@ class InputValidator:
             extension: tuple[str] | None = None,
             force: bool = False
     ):
+        """
+        Validator for specifically the output argument.
+
+        Args:
+            path:
+                Dictionary of the argument parser output "output" flag.
+            extension:
+                Optional argument that, if given, checks if the output flag meets the required
+                supplied extension.
+            force:
+                Optional argument that can be enabled together with extension. Raises error (see
+                errors) if file already exists.
+
+        Returns:
+            dict:
+                Dictionary of the output argument key and a pathlib.Path object of the output
+                argument value.
+
+        Raises:
+            IOError:
+                IOError is raised when the output path does not contain the required extension.
+            FileExistsError:
+                FileExistsError is raised when the output file already exists and the force flag
+                is set to False.
+            OSError:
+                OSError is raised when the output directory can not be made.
+        """
         path_key, path = extract_key_value_dict_cli(path)
+        # Parent path is to prevent the making of output.tsv.gz directory instead of putting
+        # output.tsv.gz in the output directory.
         if extension is not None:
             self._validate_output_file(path, extension, force)
-        if not os.path.exists(path):
-            os.makedirs(path)
+            parent_path = path.parent
+        else:
+            parent_path = path
+        if not os.path.exists(parent_path):
+            os.makedirs(parent_path)
         return {path_key: path}
 
     @staticmethod

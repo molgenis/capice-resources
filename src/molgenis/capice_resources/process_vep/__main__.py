@@ -74,11 +74,11 @@ class ProcessVEP(Module):
     def _validate_module_specific_arguments(self, parser):
         train_test = self.input_validator.validate_icli_file(
             parser.get_argument('train_test'),
-            ('.tsv.gz', '.tsv')
+            GlobalEnums.TSV_EXTENSIONS.value
         )
         validation = self.input_validator.validate_icli_file(
             parser.get_argument('validation'),
-            ('.tsv.gz', '.tsv')
+            GlobalEnums.TSV_EXTENSIONS.value
         )
         train_features = self.input_validator.validate_icli_file(
             parser.get_argument('features'),
@@ -101,7 +101,7 @@ class ProcessVEP(Module):
             **assembly_flag
         }
 
-    def run_module(self, arguments: dict[str, object]):
+    def run_module(self, arguments):
         train_test = self._read_vep_data(arguments['train_test'])
         validation = self._read_vep_data(arguments['validation'])
         output = arguments['output']
