@@ -170,3 +170,6 @@ class GlobalEnums(ExtendedEnum):
     SEPARATOR = '!'
     OUTPUT = 'output'
     TSV_EXTENSIONS = ('.tsv.gz', '.tsv')
+    SYMBOL = 'SYMBOL'
+    CHROM = 'CHROM'
+    BINARIZED_LABEL = 'binarized_label'

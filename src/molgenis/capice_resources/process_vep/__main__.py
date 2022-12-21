@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-
 import json
 import os
-from pathlib import Path
-from argparse import ArgumentParser
 
 import pandas as pd
 
@@ -24,7 +20,7 @@ class ProcessVEP(Module):
         )
 
     @staticmethod
-    def _create_module_specific_arguments(parser: ArgumentParser):
+    def _create_module_specific_arguments(parser):
         required = parser.add_argument_group('Required arguments')
         optional = parser.add_argument_group('Optional arguments')
         required.add_argument(
@@ -181,7 +177,7 @@ class ProcessVEP(Module):
     @staticmethod
     def extract_label_and_weight(data: pd.DataFrame):
         print('Extracting binarized_label and sample_weight')
-        data[VEPProcessingEnum.BINARIZED_LABEL.value] = data[VEPFileEnum.ID.value].str.split(
+        data[GlobalEnums.BINARIZED_LABEL.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[5].astype(float)
         data[VEPProcessingEnum.SAMPLE_WEIGHT.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[6].astype(float)
@@ -202,7 +198,7 @@ class ProcessVEP(Module):
         validation.reset_index(drop=True, inplace=True)
         return train_test, validation
 
-    def export(self, output: dict[object, pd.DataFrame | Path | os.PathLike]):
+    def export(self, output):
         self._export_train_test(
             output[VEPProcessingEnum.TRAIN_TEST.value],
             output[GlobalEnums.OUTPUT.value]
@@ -212,10 +208,10 @@ class ProcessVEP(Module):
             output[GlobalEnums.OUTPUT.value]
         )
 
-    def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike | Path):
+    def _export_train_test(self, train_test, output_path):
         self.exporter.export_pandas_file(os.path.join(output_path, 'train_test.tsv.gz'), train_test)
 
-    def _export_validation(self, validation: pd.DataFrame, output_path: os.PathLike | Path):
+    def _export_validation(self, validation, output_path):
         self.exporter.export_pandas_file(os.path.join(output_path, 'validation.tsv.gz'), validation)
 
 

@@ -8,9 +8,12 @@ from molgenis.capice_resources.utilities import extract_key_value_dict_cli
 
 
 class InputValidator:
-    def validate_icli_file(self, path: dict[str, os.PathLike], extension: tuple[str] | str) -> dict[
-        str, Path
-    ]:
+    def validate_icli_file(
+            self,
+            path: dict[str, os.PathLike | None],
+            extension: tuple[str] | str,
+            can_be_optional: bool = False
+    ) -> dict[str, Path]:
         """
         Validator for an Input Command Line Interface (icli). Specific to files.
 
@@ -19,6 +22,8 @@ class InputValidator:
                 Argument containing the pathlike string to the input file.
             extension:
                 Required extension that the file should have
+            can_be_optional:
+                Optional boolean if the Input CLI can be default "None" or not. Default: False.
 
         Returns:
             Path:
@@ -29,21 +34,34 @@ class InputValidator:
                 FileNotFoundError is raised when "path" is not a file.
             IOError:
                 IOError is raised when "path" does not have the right "extension".
+
+                IOError is also raised when a non-optional argument is encountered as None.
         """
         path_key, path = extract_key_value_dict_cli(path)
-        self._validate_file(path, extension)
+        self._validate_file(path, extension, can_be_optional)
         return {path_key: path}
 
     @staticmethod
-    def _validate_file(path: Path, extension: tuple[str]):
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f'Input path: {path} does not exist!')
-
-        if not str(path).endswith(extension):
-            raise IOError(
-                f'Input {path} does not match the correct extension: '
-                f'{", ".join(extension)}'
-            )
+    def _validate_file(path: Path | None, extension: tuple[str], can_be_optional: bool =
+    False):
+        """
+        First check if the path is not None, since we can encounter optional arguments.
+        Since if path is not None in an optional argument, we can validate the argument.
+        But if we encounter a None path, we want to check if the argument is optional or not.
+        If it is not optional, but still None, then raise error. (should not happen, argparse
+        should stop it before this validator, but still good to check).
+        """
+        if path is not None:
+            if not os.path.isfile(path):
+                raise FileNotFoundError(f'Input path: {path} does not exist!')
+            if not str(path).endswith(extension):
+                raise IOError(
+                    f'Input {path} does not match the correct extension: '
+                    f'{", ".join(extension)}'
+                )
+        else:
+            if not can_be_optional:
+                raise IOError('Encountered a None argument for a non-optional flag.')
 
     def validate_ocli_directory(
             self,
