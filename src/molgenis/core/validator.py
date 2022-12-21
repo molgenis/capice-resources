@@ -4,6 +4,8 @@ from collections.abc import Iterable
 
 import pandas as pd
 
+from molgenis.utilities import extract_key_value_dict_cli
+
 
 class InputValidator:
     def validate_icli_file(self, path: dict[str, os.PathLike], extension: tuple[str] | str) -> dict[
@@ -28,8 +30,7 @@ class InputValidator:
             IOError:
                 IOError is raised when "path" does not have the right "extension".
         """
-        path_key = str(path.keys())
-        path = Path(str(path.values())).absolute()
+        path_key, path = extract_key_value_dict_cli(path)
         self._validate_file(path, extension)
         return {path_key: path}
 
@@ -46,23 +47,23 @@ class InputValidator:
 
     def validate_ocli_directory(
             self,
-            path: os.PathLike,
+            path: dict[str, os.PathLike],
             extension: tuple[str] | None = None,
             force: bool = False
     ):
-        path = Path(path).absolute()
+        path_key, path = extract_key_value_dict_cli(path)
         if extension is not None:
             self._validate_output_file(path, extension, force)
         if not os.path.exists(path):
             os.makedirs(path)
+        return {path_key: path}
 
     @staticmethod
     def _validate_output_file(path: Path, extension: tuple[str] | None, force: bool):
         if not str(path).endswith(extension):
             raise IOError(f'Output {path} does not end with required extension: {extension}')
-        if os.path.isfile(path):
-            if not force:
-                raise FileExistsError(f'Output {path} already exists and force is not enabled!')
+        if os.path.isfile(path) and not force:
+            raise FileExistsError(f'Output {path} already exists and force is not enabled!')
 
 
 class DataValidator:

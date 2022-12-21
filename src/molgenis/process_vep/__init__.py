@@ -1,14 +1,20 @@
 from molgenis.core import ExtendedEnum
 
 
-class VEPEnum(ExtendedEnum):
+class VEPFileEnum(ExtendedEnum):
+    """
+    Enum dedicated to columns that are already (should be) present in the VEP file.
+    """
     GNOMAD_HN = 'gnomAD_HN'
     SYMBOL = 'SYMBOL'
     ID = 'ID'
     CHROM = 'CHROM'
 
 
-class VEPProcessingEnum(VEPEnum):
+class VEPProcessingEnum(ExtendedEnum):
+    """
+    Enum dedicated to columns created during the processing of the VEP file.
+    """
     BINARIZED_LABEL = 'binarized_label'
     SAMPLE_WEIGHT = 'sample_weight'
     SOURCE = 'dataset_source'
@@ -18,5 +24,8 @@ class VEPProcessingEnum(VEPEnum):
 
 
 class CGDEnum(ExtendedEnum):
+    """
+    Enum dedicated to columns that are already (should be) present in the CGD file.
+    """
     GENE = '#GENE'
     INHERITANCE = 'INHERITANCE'

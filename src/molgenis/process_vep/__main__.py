@@ -11,7 +11,7 @@ from molgenis.core import Module, GlobalEnums
 from molgenis.utilities import merge_dataset_rows
 from molgenis.process_vep.vep_processer import VEPProcesser
 from molgenis.process_vep.progress_printer import ProgressPrinter
-from molgenis.process_vep import VEPEnum, CGDEnum, VEPProcessingEnum
+from molgenis.process_vep import VEPFileEnum, CGDEnum, VEPProcessingEnum
 
 
 class ProcessVEP(Module):
@@ -88,11 +88,8 @@ class ProcessVEP(Module):
             parser.get_argument('genes'),
             ('.tsv.gz', '.tsv', '.txt', '.txt.gz')
         )
-        force_flag = parser.get_argument('force')
         output_argument = self.input_validator.validate_ocli_directory(
-            parser.get_argument('output'),
-            ('.tsv.gz', '.tsv'),
-            force_flag
+            parser.get_argument('output')
         )
         assembly_flag = parser.get_argument('assembly')
         return {
@@ -107,9 +104,9 @@ class ProcessVEP(Module):
     def run_module(self, arguments: dict[str, object]):
         train_test = self._read_vep_data(arguments['train_test'])
         validation = self._read_vep_data(arguments['validation'])
-        output = self.input_validator.validate_ocli_directory(arguments['output'])
+        output = arguments['output']
         train_test[VEPProcessingEnum.SOURCE.value] = VEPProcessingEnum.TRAIN_TEST.value
-        train_test[VEPProcessingEnum.SOURCE.value] = VEPProcessingEnum.VALIDATION.value
+        validation[VEPProcessingEnum.SOURCE.value] = VEPProcessingEnum.VALIDATION.value
         merged_datasets = merge_dataset_rows(train_test, validation)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
@@ -134,7 +131,7 @@ class ProcessVEP(Module):
         return features
 
     def _read_vep_data(self, vep_file_argument):
-        return self._read_pandas_tsv(vep_file_argument, VEPEnum.list())
+        return self._read_pandas_tsv(vep_file_argument, VEPFileEnum.list())
 
     def _read_cgd_data(self, cgd_file_argument):
         data = self._read_pandas_tsv(cgd_file_argument, CGDEnum.list())
@@ -184,9 +181,9 @@ class ProcessVEP(Module):
     @staticmethod
     def extract_label_and_weight(data: pd.DataFrame):
         print('Extracting binarized_label and sample_weight')
-        data[VEPProcessingEnum.BINARIZED_LABEL.value] = data[VEPProcessingEnum.ID.value].str.split(
+        data[VEPProcessingEnum.BINARIZED_LABEL.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[5].astype(float)
-        data[VEPProcessingEnum.SAMPLE_WEIGHT.value] = data[VEPProcessingEnum.ID.value].str.split(
+        data[VEPProcessingEnum.SAMPLE_WEIGHT.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[6].astype(float)
 
     @staticmethod
@@ -200,7 +197,7 @@ class ProcessVEP(Module):
         validation = merged_data.loc[
             merged_data[
                 merged_data[VEPProcessingEnum.SOURCE.value] == VEPProcessingEnum.VALIDATION.value
-            ]
+            ].index, :
         ]
         validation.reset_index(drop=True, inplace=True)
         return train_test, validation
@@ -216,10 +213,10 @@ class ProcessVEP(Module):
         )
 
     def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike | Path):
-        self.exporter.export_pandas_file(train_test, os.path.join(output_path, 'train_test.tsv.gz'))
+        self.exporter.export_pandas_file(os.path.join(output_path, 'train_test.tsv.gz'), train_test)
 
     def _export_validation(self, validation: pd.DataFrame, output_path: os.PathLike | Path):
-        self.exporter.export_pandas_file(validation, os.path.join(output_path, 'validation.tsv.gz'))
+        self.exporter.export_pandas_file(os.path.join(output_path, 'validation.tsv.gz'), validation)
 
 
 def main():
