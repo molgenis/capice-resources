@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from molgenis.core import GlobalEnums
-from molgenis.process_vep import VEPProcessingEnum, VEPFileEnum
+from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.process_vep import VEPProcessingEnum, VEPFileEnum
 
 
 class VEPProcesser:

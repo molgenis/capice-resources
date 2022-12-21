@@ -37,7 +37,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'process-vep = molgenis.process_vep.__main__:main'
+            'process-vep = molgenis.capice_resources.process_vep.__main__:main'
         ]
     }
 )

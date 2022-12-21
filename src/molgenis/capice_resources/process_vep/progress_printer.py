@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.process_vep import VEPProcessingEnum
+from molgenis.capice_resources.process_vep import VEPProcessingEnum
 
 
 class ProgressPrinter:

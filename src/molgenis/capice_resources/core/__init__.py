@@ -6,9 +6,9 @@ from argparse import ArgumentParser
 
 import pandas as pd
 
-from molgenis.core.exporter import Exporter
-from molgenis.core.validator import InputValidator, DataValidator
-from molgenis.core.command_line_interface import CommandLineInterface
+from molgenis.capice_resources.core.exporter import Exporter
+from molgenis.capice_resources.core.validator import InputValidator, DataValidator
+from molgenis.capice_resources.core.command_line_interface import CommandLineInterface
 
 
 class Module(metaclass=ABCMeta):

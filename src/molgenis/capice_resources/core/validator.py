@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-from molgenis.utilities import extract_key_value_dict_cli
+from molgenis.capice_resources.utilities import extract_key_value_dict_cli
 
 
 class InputValidator:

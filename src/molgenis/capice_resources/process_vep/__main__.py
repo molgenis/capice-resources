@@ -7,11 +7,11 @@ from argparse import ArgumentParser
 
 import pandas as pd
 
-from molgenis.core import Module, GlobalEnums
-from molgenis.utilities import merge_dataset_rows
-from molgenis.process_vep.vep_processer import VEPProcesser
-from molgenis.process_vep.progress_printer import ProgressPrinter
-from molgenis.process_vep import VEPFileEnum, CGDEnum, VEPProcessingEnum
+from molgenis.capice_resources.core import Module, GlobalEnums
+from molgenis.capice_resources.utilities import merge_dataset_rows
+from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
+from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
+from molgenis.capice_resources.process_vep import VEPFileEnum, CGDEnum, VEPProcessingEnum
 
 
 class ProcessVEP(Module):
