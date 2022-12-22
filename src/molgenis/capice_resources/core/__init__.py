@@ -173,3 +173,5 @@ class GlobalEnums(ExtendedEnum):
     SYMBOL = 'SYMBOL'
     CHROM = 'CHROM'
     BINARIZED_LABEL = 'binarized_label'
+    SCORE = 'score'
+    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}

@@ -9,7 +9,7 @@ class Annotator:
     def add_score_difference(merged_model_frame: pd.DataFrame) -> None:
         merged_model_frame[CMPExtendedFeats.SCORE_DIFF.value] = abs(
             merged_model_frame[
-                CMPMinimalFeats.SCORE.value
+                GlobalEnums.SCORE.value
             ] - merged_model_frame[
                 GlobalEnums.BINARIZED_LABEL.value
             ]

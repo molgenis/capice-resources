@@ -1,4 +1,3 @@
-import os
 import math
 
 import numpy as np
@@ -115,7 +114,7 @@ class Plotter:
         figure.suptitle(
             f'Model 1 vs Model 2 {figure_supertitle}'
         )
-        figure.set_constrained_layout({'w_pad': 0.2, 'h_pad': 0.2})
+        figure.set_constrained_layout(GlobalEnums.CONSTRAINED_LAYOUT.value)  # type: ignore
 
     def prepare_subplots(self):
         if self.process_consequences:
@@ -395,7 +394,7 @@ class Plotter:
                          title):
         self._create_boxplot_for_column(
             self.fig_score_dist_box,
-            CMPMinimalFeats.SCORE.value,
+            GlobalEnums.SCORE.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,
@@ -404,7 +403,7 @@ class Plotter:
         )
         self._create_violinplot_for_column(
             self.fig_score_dist_vio,
-            CMPMinimalFeats.SCORE.value,
+            GlobalEnums.SCORE.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,

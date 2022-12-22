@@ -3,7 +3,6 @@ from molgenis.capice_resources.core import ExtendedEnum
 
 class CMPMinimalFeats(ExtendedEnum):
     GNOMAD_AF = 'gnomAD_AF'
-    SCORE = 'score'
 
 
 class CMPExtendedFeats(ExtendedEnum):

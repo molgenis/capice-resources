@@ -175,13 +175,13 @@ class CompareModelPerformance(Module):
         scores_model_1 = self._read_pandas_tsv(
             scores1_argument,
             [
-                CMPMinimalFeats.SCORE.value
+                GlobalEnums.SCORE.value
             ]
         )
         scores_model_2 = self._read_pandas_tsv(
             scores2_argument,
             [
-                CMPMinimalFeats.SCORE.value
+                GlobalEnums.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
