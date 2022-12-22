@@ -221,4 +221,6 @@ class GlobalEnums(ExtendedEnum):
     INFO = 'INFO'
     BINARIZED_LABEL = 'binarized_label'
     SCORE = 'score'
+    DATASET_SOURCE = 'dataset_source'
     CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+    GENE = 'gene'

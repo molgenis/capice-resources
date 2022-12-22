@@ -1,4 +1,4 @@
-from molgenis.capice_resources.core import ExtendedEnum
+from molgenis.capice_resources.core import ExtendedEnum, GlobalEnums
 
 
 class TrainDataCreatorEnums(ExtendedEnum):
@@ -7,3 +7,19 @@ class TrainDataCreatorEnums(ExtendedEnum):
     SUPPORT = 'support'
     START = 'start'
     CLASS = 'class'
+    VKGL = 'VKGL'
+    CLINVAR = 'CLINVAR'
+    REVIEW = 'review'
+
+    @classmethod
+    def columns_of_interest(cls):
+        return [
+            GlobalEnums.VCF_CHROM.value,
+            GlobalEnums.POS.value,
+            GlobalEnums.REF.value,
+            GlobalEnums.ALT.value,
+            GlobalEnums.GENE.value,
+            TrainDataCreatorEnums.CLASS.value,
+            TrainDataCreatorEnums.REVIEW.value,
+            GlobalEnums.DATASET_SOURCE.value
+        ]
