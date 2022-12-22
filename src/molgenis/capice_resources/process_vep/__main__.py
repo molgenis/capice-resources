@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from molgenis.capice_resources.core import Module, GlobalEnums
-from molgenis.capice_resources.utilities import merge_dataset_rows
+from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_source
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
 from molgenis.capice_resources.process_vep import VEPFileEnum, CGDEnum, VEPProcessingEnum
@@ -101,8 +101,8 @@ class ProcessVEP(Module):
         train_test = self._read_vep_data(arguments['train_test'])
         validation = self._read_vep_data(arguments['validation'])
         output = arguments['output']
-        train_test[GlobalEnums.DATASET_SOURCE.value] = VEPProcessingEnum.TRAIN_TEST.value
-        validation[GlobalEnums.DATASET_SOURCE.value] = VEPProcessingEnum.VALIDATION.value
+        add_dataset_source(train_test, VEPProcessingEnum.TRAIN_TEST.value)
+        add_dataset_source(validation, VEPProcessingEnum.VALIDATION.value)
         merged_datasets = merge_dataset_rows(train_test, validation)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])

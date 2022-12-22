@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
-from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
-    apply_binarized_label
+from molgenis.capice_resources.train_data_creator.utilities import apply_binarized_label
 
 
 class ClinVarParser:
@@ -14,7 +14,7 @@ class ClinVarParser:
         self._obtain_class(clinvar_frame)
         self._obtain_gene(clinvar_frame)
         self._obtain_review(clinvar_frame)
-        self._apply_clinvar_label(clinvar_frame)
+        add_dataset_source(clinvar_frame, TrainDataCreatorEnums.CLINVAR.value)
         clinvar_frame = clinvar_frame[TrainDataCreatorEnums.columns_of_interest()]
         self._correct_class(clinvar_frame)
         apply_binarized_label(clinvar_frame)
@@ -62,10 +62,6 @@ class ClinVarParser:
         clinvar_frame[column_to_add] = clinvar_frame[
             GlobalEnums.INFO.value
         ].str.split(split_identifier, expand=True)[1].str.split(';', expand=True)[0]
-
-    @staticmethod
-    def _apply_clinvar_label(clinvar_frame):
-        clinvar_frame[GlobalEnums.DATASET_SOURCE.value] = TrainDataCreatorEnums.CLINVAR.value
 
     @staticmethod
     def _correct_class(clinvar_frame):

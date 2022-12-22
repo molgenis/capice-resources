@@ -1,6 +1,7 @@
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
     apply_binarized_label
@@ -12,7 +13,7 @@ class VKGLParser:
         self._correct_support(vkgl_frame)
         correct_order_vcf_notation(vkgl_frame)
         self._apply_review_status(vkgl_frame)
-        self._apply_dataset_source(vkgl_frame)
+        add_dataset_source(vkgl_frame, TrainDataCreatorEnums.VKGL.value)
         vkgl_frame = vkgl_frame[TrainDataCreatorEnums.columns_of_interest()]
         apply_binarized_label(vkgl_frame)
         return vkgl_frame
@@ -42,7 +43,3 @@ class VKGLParser:
             vkgl_frame[vkgl_frame[TrainDataCreatorEnums.SUPPORT.value] == 1].index,
             TrainDataCreatorEnums.REVIEW.value
         ] = 1
-
-    @staticmethod
-    def _apply_dataset_source(vkgl_frame) -> None:
-        vkgl_frame[GlobalEnums.DATASET_SOURCE.value] = TrainDataCreatorEnums.VKGL.value
