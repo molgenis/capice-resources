@@ -42,7 +42,8 @@ setup(
             'molgenis.capice_resources.compare_model_features.__main__:main',
             'compare-model-performance = '
             'molgenis.capice_resources.compare_model_performance.__main__:main',
-            'threshold-calculator = molgenis.capice_resources.threshold_calculator.__main__:main'
+            'threshold-calculator = molgenis.capice_resources.threshold_calculator.__main__:main',
+            'train-data-creator = molgenis.capice_resources.train_data_creator.__main__:main'
         ]
     }
 )
