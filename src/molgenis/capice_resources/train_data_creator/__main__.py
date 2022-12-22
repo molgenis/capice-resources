@@ -1,4 +1,5 @@
 from molgenis.capice_resources.core import Module, GlobalEnums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
 class TrainDataCreator(Module):
@@ -53,7 +54,18 @@ class TrainDataCreator(Module):
         }
 
     def run_module(self, arguments):
-        pass
+        vkgl = self._read_pandas_tsv(
+            arguments['input_vkgl'],
+            [
+                TrainDataCreatorEnums.CHROMOSOME.value,
+                TrainDataCreatorEnums.START.value,
+                TrainDataCreatorEnums.SUPPORT.value,
+                TrainDataCreatorEnums.CLASSIFICATION.value
+            ]
+        )
+        clinvar = self._read_vcf_file(
+            arguments['input_clinvar']
+        )
 
     def export(self, output):
         pass

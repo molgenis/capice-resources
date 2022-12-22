@@ -1,4 +1,5 @@
 import os
+import gzip
 from enum import Enum
 from pathlib import Path
 from abc import abstractmethod, ABCMeta
@@ -125,6 +126,47 @@ class Module(metaclass=ABCMeta):
             required_columns
         )
 
+    def _read_vcf_file(self, path: os.PathLike | Path) -> pd.DataFrame:
+        """
+        Utilitary function to read a (gzipped) VCF file
+
+        Args:
+            path:
+                Path to the to be read (gzipped) VCF file.
+
+        Returns:
+            pandas.DataFrame:
+                Loaded VCF data as pandas Dataframe.
+
+        Raises:
+            IndexError:
+                IndexError is raised when there are no rows in the data.
+            KeyError:
+                KeyError is raised when #CHROM, POS, REF, ALT or INFO is not found in the
+                header of the VCF file.
+        """
+        if str(path).endswith('.gz'):
+            fh = gzip.open(path, 'rt')
+        else:
+            fh = open(path, 'rt')
+        skiprows = 0
+        for line in fh:
+            if line.strip().startswith("##"):
+                skiprows += 1
+            else:
+                break
+        fh.close()
+        return self.data_validator.validate_pandas_dataframe(
+            pd.read_csv(path, sep='\t', low_memory=False, na_values='.', skiprows=skiprows),
+            [
+                GlobalEnums.VCF_CHROM.value,
+                GlobalEnums.POS.value,
+                GlobalEnums.REF.value,
+                GlobalEnums.ALT.value,
+                GlobalEnums.INFO.value
+            ]
+        )
+
     @abstractmethod
     def run_module(self, arguments: dict[str, object | os.PathLike | Path]) -> dict[object, object]:
         """
@@ -172,6 +214,11 @@ class GlobalEnums(ExtendedEnum):
     TSV_EXTENSIONS = ('.tsv.gz', '.tsv')
     SYMBOL = 'SYMBOL'
     CHROM = 'CHROM'
+    VCF_CHROM = '#CHROM'
+    POS = 'POS'
+    REF = 'REF'
+    ALT = 'ALT'
+    INFO = 'INFO'
     BINARIZED_LABEL = 'binarized_label'
     SCORE = 'score'
     CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}

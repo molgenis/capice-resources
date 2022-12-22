@@ -7,9 +7,6 @@ class CMPMinimalFeats(ExtendedEnum):
 
 class CMPExtendedFeats(ExtendedEnum):
     CHR = 'chr'
-    POS = 'pos'
-    REF = 'ref'
-    ALT = 'alt'
     GENE_NAME = 'gene_name'
     MERGE_COLUMN = 'merge_column'
     CONSEQUENCE = 'Consequence'

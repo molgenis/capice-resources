@@ -237,9 +237,9 @@ class CompareModelPerformance(Module):
             raise SampleMismatchError('Sample sizes differ and -f/--force-merge is not supplied!')
         scores_merge_columns = [
             CMPExtendedFeats.CHR.value,
-            CMPExtendedFeats.POS.value,
-            CMPExtendedFeats.REF.value,
-            CMPExtendedFeats.ALT.value,
+            GlobalEnums.POS.value.lower(),
+            GlobalEnums.REF.value.lower(),
+            GlobalEnums.ALT.value.lower(),
             CMPExtendedFeats.GENE_NAME.value
         ]
         self.data_validator.validate_pandas_dataframe(
@@ -248,9 +248,9 @@ class CompareModelPerformance(Module):
         )
         labels_merge_columns = [
             GlobalEnums.CHROM.value,
-            CMPExtendedFeats.POS.value.upper(),
-            CMPExtendedFeats.REF.value.upper(),
-            CMPExtendedFeats.ALT.value.upper(),
+            GlobalEnums.POS.value,
+            GlobalEnums.REF.value,
+            GlobalEnums.ALT.value,
             GlobalEnums.SYMBOL.value
         ]
         self.data_validator.validate_pandas_dataframe(
