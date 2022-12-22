@@ -226,3 +226,4 @@ class GlobalEnums(ExtendedEnum):
     SAMPLE_WEIGHT = 'sample_weight'
     TRAIN_TEST = 'train_test'
     VALIDATION = 'validation'
+    ID = 'ID'

@@ -6,7 +6,6 @@ class VEPFileEnum(ExtendedEnum):
     Enum dedicated to columns that are already (should be) present in the VEP file.
     """
     GNOMAD_HN = 'gnomAD_HN'
-    ID = 'ID'
     # TODO: merge VEPProccessingEnum and VEPFileEnum
 
 

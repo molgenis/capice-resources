@@ -177,9 +177,9 @@ class ProcessVEP(Module):
     @staticmethod
     def extract_label_and_weight(data: pd.DataFrame):
         print('Extracting binarized_label and sample_weight')
-        data[GlobalEnums.BINARIZED_LABEL.value] = data[VEPFileEnum.ID.value].str.split(
+        data[GlobalEnums.BINARIZED_LABEL.value] = data[GlobalEnums.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[5].astype(float)
-        data[GlobalEnums.SAMPLE_WEIGHT.value] = data[VEPFileEnum.ID.value].str.split(
+        data[GlobalEnums.SAMPLE_WEIGHT.value] = data[GlobalEnums.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[6].astype(float)
 
     @staticmethod

@@ -28,7 +28,7 @@ class VEPProcesser:
     def drop_mismatching_genes(data: pd.DataFrame):
         print('Dropping variants with mismatching genes.')
         data.drop(
-            index=data[data[VEPFileEnum.ID.value].str.split(
+            index=data[data[GlobalEnums.ID.value].str.split(
                 GlobalEnums.SEPARATOR.value, expand=True
             )[4] != data[GlobalEnums.SYMBOL.value]].index,
             inplace=True
@@ -50,7 +50,7 @@ class VEPProcesser:
         print('Dropping variants with an incorrect label or weight')
         data.drop(
             index=data[data[GlobalEnums.BINARIZED_LABEL.value].isnull()].index,
-            columns=[VEPFileEnum.ID.value],
+            columns=[GlobalEnums.ID.value],
             inplace=True
         )
         data.drop(
