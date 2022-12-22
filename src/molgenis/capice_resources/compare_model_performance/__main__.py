@@ -1,8 +1,14 @@
+import os
+
 import pandas as pd
 
 from molgenis.capice_resources.core import Module, GlobalEnums
 from molgenis.capice_resources.core.errors import SampleMismatchError
+from molgenis.capice_resources.utilities import extract_key_value_dict_cli
+from molgenis.capice_resources.compare_model_performance.plotter import Plotter
+from molgenis.capice_resources.compare_model_performance.annotator import Annotator
 from molgenis.capice_resources.compare_model_performance import CMPMinimalFeats, CMPExtendedFeats
+from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 
 
 class CompareModelPerformance(Module):
@@ -125,28 +131,69 @@ class CompareModelPerformance(Module):
         }
 
     def run_module(self, arguments):
-        scores_model_1 = self._read_pandas_tsv(
+        model_1, model_2 = self._read_and_parse_input_data(
             arguments['scores_model_1'],
+            arguments['scores_model_2'],
+            arguments['labels_model_1'],
+            arguments['labels_model_2'],
+            arguments['force_merge']
+        )
+        consequence_tools = ConsequenceTools()
+        consequences = consequence_tools.has_consequence(model_1, model_2)
+        if consequences:
+            splitted_consequences = consequence_tools.split_consequences(consequences)
+            consequence_tools.validate_consequence_samples_equal(
+                model_1,
+                model_2,
+                splitted_consequences
+            )
+        else:
+            splitted_consequences = False
+
+        annotator = Annotator()
+        annotator.add_score_difference(model_1)
+        annotator.add_score_difference(model_2)
+
+        annotator.add_and_process_impute_af(model_1)
+        annotator.add_and_process_impute_af(model_2)
+
+        annotator.add_model_identifier(model_1, 'model_1')
+        annotator.add_model_identifier(model_2, 'model_2')
+
+        plotter = Plotter(splitted_consequences)
+        plots = plotter.plot(model_1, model_2)
+        return {**plots, GlobalEnums.OUTPUT.value: arguments['output']}
+
+    def _read_and_parse_input_data(
+            self,
+            scores1_argument,
+            labels1_argument,
+            scores2_argument,
+            labels2_argument,
+            force_merge_argument
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        scores_model_1 = self._read_pandas_tsv(
+            scores1_argument,
             [
                 CMPMinimalFeats.SCORE.value
             ]
         )
         scores_model_2 = self._read_pandas_tsv(
-            arguments['scores_model_2'],
+            scores2_argument,
             [
                 CMPMinimalFeats.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
-            arguments['labels_model_1'],
+            labels1_argument,
             [
                 GlobalEnums.BINARIZED_LABEL.value,
                 CMPMinimalFeats.GNOMAD_AF.value
             ]
         )
         # No _read_pandas_tsv yet, since it can be None
-        labels2 = arguments['labels_model_2']
-        force_merge = arguments['force_merge']
+        labels2 = labels2_argument
+        force_merge = force_merge_argument
         merge_model_1 = self._merge_scores_and_labes(
             scores_model_1,
             labels,
@@ -171,16 +218,19 @@ class CompareModelPerformance(Module):
                 labels_model_2,
                 force_merge  # type: ignore
             )
+        return merge_model_1, merge_model_2
 
-
-    def _merge_scores_and_labes(self, scores: pd.DataFrame, labels: pd.DataFrame, force_merge:
-    bool):
+    def _merge_scores_and_labes(
+            self,
+            scores: pd.DataFrame,
+            labels: pd.DataFrame,
+            force_merge: bool
+    ):
         if scores.shape[0] == labels.shape[0]:
             merge = pd.concat([scores, labels], axis=1)
         else:
             merge = self._attempt_mismatch_merge(scores, labels, force_merge)
         return merge
-
 
     def _attempt_mismatch_merge(self, scores, labels, force_merge) -> pd.DataFrame:
         if not force_merge:
@@ -214,7 +264,11 @@ class CompareModelPerformance(Module):
         return scores.merge(labels, on=CMPExtendedFeats.MERGE_COLUMN.value, how='left')
 
     def export(self, output) -> None:
-        pass
+        output_path = output[GlobalEnums.OUTPUT.value]
+        for filename, figure in output.items():
+            if filename == GlobalEnums.OUTPUT.value:
+                continue
+            figure.savefig(os.path.join(output_path, filename + '.png'))  # type: ignore
 
 
 def main():

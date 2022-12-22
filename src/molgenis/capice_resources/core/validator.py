@@ -38,6 +38,8 @@ class InputValidator:
                 IOError is also raised when a non-optional argument is encountered as None.
         """
         path_key, path = extract_key_value_dict_cli(path)
+        if path is not None:
+            path = Path(path)
         self._validate_file(path, extension, can_be_optional)
         return {path_key: path}
 

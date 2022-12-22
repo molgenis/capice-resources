@@ -20,7 +20,7 @@ def merge_dataset_rows(*args: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([*args], axis=0, ignore_index=True)
 
 
-def extract_key_value_dict_cli(cli_dict: dict[str, os.PathLike | None]) -> tuple[str, Path]:
+def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, str]:
     """
     Function to extract the CLI argument key and its value from an CLI dictionary
 
@@ -36,8 +36,8 @@ def extract_key_value_dict_cli(cli_dict: dict[str, os.PathLike | None]) -> tuple
     # dict_keys()
     key = list(cli_dict.keys())[0]
     # Check for None in case we meet an optional argument
-    if  cli_dict[key] is not None:
-        path = Path(str(cli_dict[key])).absolute()
+    if cli_dict[key] is not None:
+        value = str(cli_dict[key])
     else:
-        path = None
-    return key, path
+        value = None
+    return key, value
