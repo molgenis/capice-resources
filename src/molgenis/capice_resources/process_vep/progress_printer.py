@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.process_vep import VEPProcessingEnum
+from molgenis.capice_resources.core import GlobalEnums
 
 
 class ProgressPrinter:
@@ -8,10 +8,10 @@ class ProgressPrinter:
         self.grouped_save = None
 
     def set_initial_size(self, dataset: pd.DataFrame):
-        self.grouped_save = dataset.groupby(VEPProcessingEnum.SOURCE.value).size()
+        self.grouped_save = dataset.groupby(GlobalEnums.DATASET_SOURCE.value).size()
 
     def new_shape(self, dataset: pd.DataFrame):
-        new_save = dataset.groupby(VEPProcessingEnum.SOURCE.value).size()
+        new_save = dataset.groupby(GlobalEnums.DATASET_SOURCE.value).size()
         dropped = self.grouped_save - new_save
         for group, counts in zip(dropped.index, dropped.values):
             print(f'Dropped {counts} variants from {group}')

@@ -101,8 +101,8 @@ class ProcessVEP(Module):
         train_test = self._read_vep_data(arguments['train_test'])
         validation = self._read_vep_data(arguments['validation'])
         output = arguments['output']
-        train_test[VEPProcessingEnum.SOURCE.value] = VEPProcessingEnum.TRAIN_TEST.value
-        validation[VEPProcessingEnum.SOURCE.value] = VEPProcessingEnum.VALIDATION.value
+        train_test[GlobalEnums.DATASET_SOURCE.value] = VEPProcessingEnum.TRAIN_TEST.value
+        validation[GlobalEnums.DATASET_SOURCE.value] = VEPProcessingEnum.VALIDATION.value
         merged_datasets = merge_dataset_rows(train_test, validation)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
@@ -186,13 +186,13 @@ class ProcessVEP(Module):
     def _split_data(merged_data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         train_test = merged_data.loc[
             merged_data[
-                merged_data[VEPProcessingEnum.SOURCE.value] == VEPProcessingEnum.TRAIN_TEST.value
+                merged_data[GlobalEnums.DATASET_SOURCE.value] == VEPProcessingEnum.TRAIN_TEST.value
             ].index, :
         ]
         train_test.reset_index(drop=True, inplace=True)
         validation = merged_data.loc[
             merged_data[
-                merged_data[VEPProcessingEnum.SOURCE.value] == VEPProcessingEnum.VALIDATION.value
+                merged_data[GlobalEnums.DATASET_SOURCE.value] == VEPProcessingEnum.VALIDATION.value
             ].index, :
         ]
         validation.reset_index(drop=True, inplace=True)

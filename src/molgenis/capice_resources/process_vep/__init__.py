@@ -14,7 +14,6 @@ class VEPProcessingEnum(ExtendedEnum):
     Enum dedicated to columns created during the processing of the VEP file.
     """
     SAMPLE_WEIGHT = 'sample_weight'
-    SOURCE = 'dataset_source'
     SAMPLE_WEIGHTS = [0.0, 1.0]
     TRAIN_TEST = 'train_test'
     VALIDATION = 'validation'
