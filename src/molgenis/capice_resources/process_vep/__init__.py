@@ -7,16 +7,14 @@ class VEPFileEnum(ExtendedEnum):
     """
     GNOMAD_HN = 'gnomAD_HN'
     ID = 'ID'
+    # TODO: merge VEPProccessingEnum and VEPFileEnum
 
 
 class VEPProcessingEnum(ExtendedEnum):
     """
     Enum dedicated to columns created during the processing of the VEP file.
     """
-    SAMPLE_WEIGHT = 'sample_weight'
     SAMPLE_WEIGHTS = [0.0, 1.0]
-    TRAIN_TEST = 'train_test'
-    VALIDATION = 'validation'
 
 
 class CGDEnum(ExtendedEnum):

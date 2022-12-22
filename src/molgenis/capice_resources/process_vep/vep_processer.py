@@ -58,7 +58,7 @@ class VEPProcesser:
             inplace=True
         )
         data.drop(
-            index=data[~data[VEPProcessingEnum.SAMPLE_WEIGHT.value].isin(
+            index=data[~data[GlobalEnums.SAMPLE_WEIGHT.value].isin(
                 VEPProcessingEnum.SAMPLE_WEIGHTS.value)].index,
             inplace=True
         )

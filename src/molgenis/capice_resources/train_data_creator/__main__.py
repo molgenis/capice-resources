@@ -1,7 +1,14 @@
+import gc
+
 from molgenis.capice_resources.core import Module, GlobalEnums
+from molgenis.capice_resources.utilities import merge_dataset_rows
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
+from molgenis.capice_resources.train_data_creator.sample_weighter import SampleWeighter
+from molgenis.capice_resources.train_data_creator.dataset_splitter import SplitDatasets
 from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
+from molgenis.capice_resources.train_data_creator.consensus_checker import ConsensusChecker
+from molgenis.capice_resources.train_data_creator.duplicate_processor import DuplicateProcessor
 
 
 class TrainDataCreator(Module):
@@ -70,6 +77,26 @@ class TrainDataCreator(Module):
             arguments['input_clinvar']
         )
         parsed_clinvar = ClinVarParser().parse(clinvar)
+        merge = merge_dataset_rows(parsed_clinvar, parsed_vkgl)
+        del clinvar, parsed_clinvar, vkgl, parsed_vkgl
+        gc.collect()
+
+        ConsensusChecker().check_consensus_clinvar_vkgl_match(merge)
+
+        DuplicateProcessor().process(merge)
+
+        SampleWeighter().apply_sample_weight(merge)
+
+        train_test, validation = SplitDatasets().split(merge)
+
+        del merge
+        gc.collect()
+
+        return {
+            GlobalEnums.OUTPUT.value: arguments['output'],
+            GlobalEnums.TRAIN_TEST.value: train_test,
+            GlobalEnums.VALIDATION.value: validation
+        }
 
     def export(self, output):
         pass

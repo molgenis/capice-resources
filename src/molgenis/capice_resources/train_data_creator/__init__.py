@@ -24,3 +24,13 @@ class TrainDataCreatorEnums(ExtendedEnum):
             TrainDataCreatorEnums.REVIEW.value,
             GlobalEnums.DATASET_SOURCE.value
         ]
+
+    @classmethod
+    def further_processing_columns(cls):
+        return [
+            GlobalEnums.VCF_CHROM.value,
+            GlobalEnums.POS.value,
+            GlobalEnums.REF.value,
+            GlobalEnums.ALT.value,
+            TrainDataCreatorEnums.GENE.value
+        ]

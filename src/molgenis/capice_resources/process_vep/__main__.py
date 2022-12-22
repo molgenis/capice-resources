@@ -7,7 +7,7 @@ from molgenis.capice_resources.core import Module, GlobalEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_source
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
-from molgenis.capice_resources.process_vep import VEPFileEnum, CGDEnum, VEPProcessingEnum
+from molgenis.capice_resources.process_vep import VEPFileEnum, CGDEnum
 
 
 class ProcessVEP(Module):
@@ -101,8 +101,8 @@ class ProcessVEP(Module):
         train_test = self._read_vep_data(arguments['train_test'])
         validation = self._read_vep_data(arguments['validation'])
         output = arguments['output']
-        add_dataset_source(train_test, VEPProcessingEnum.TRAIN_TEST.value)
-        add_dataset_source(validation, VEPProcessingEnum.VALIDATION.value)
+        add_dataset_source(train_test, GlobalEnums.TRAIN_TEST.value)
+        add_dataset_source(validation, GlobalEnums.VALIDATION.value)
         merged_datasets = merge_dataset_rows(train_test, validation)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
@@ -115,8 +115,8 @@ class ProcessVEP(Module):
         )
         train_test, validation = self._split_data(merged_datasets)
         return {
-            VEPProcessingEnum.TRAIN_TEST.value: train_test,
-            VEPProcessingEnum.VALIDATION.value: validation,
+            GlobalEnums.TRAIN_TEST.value: train_test,
+            GlobalEnums.VALIDATION.value: validation,
             GlobalEnums.OUTPUT.value: output
         }
 
@@ -179,20 +179,20 @@ class ProcessVEP(Module):
         print('Extracting binarized_label and sample_weight')
         data[GlobalEnums.BINARIZED_LABEL.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[5].astype(float)
-        data[VEPProcessingEnum.SAMPLE_WEIGHT.value] = data[VEPFileEnum.ID.value].str.split(
+        data[GlobalEnums.SAMPLE_WEIGHT.value] = data[VEPFileEnum.ID.value].str.split(
             GlobalEnums.SEPARATOR.value, expand=True)[6].astype(float)
 
     @staticmethod
     def _split_data(merged_data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         train_test = merged_data.loc[
             merged_data[
-                merged_data[GlobalEnums.DATASET_SOURCE.value] == VEPProcessingEnum.TRAIN_TEST.value
+                merged_data[GlobalEnums.DATASET_SOURCE.value] == GlobalEnums.TRAIN_TEST.value
             ].index, :
         ]
         train_test.reset_index(drop=True, inplace=True)
         validation = merged_data.loc[
             merged_data[
-                merged_data[GlobalEnums.DATASET_SOURCE.value] == VEPProcessingEnum.VALIDATION.value
+                merged_data[GlobalEnums.DATASET_SOURCE.value] == GlobalEnums.VALIDATION.value
             ].index, :
         ]
         validation.reset_index(drop=True, inplace=True)
@@ -200,11 +200,11 @@ class ProcessVEP(Module):
 
     def export(self, output):
         self._export_train_test(
-            output[VEPProcessingEnum.TRAIN_TEST.value],
+            output[GlobalEnums.TRAIN_TEST.value],
             output[GlobalEnums.OUTPUT.value]
         )
         self._export_validation(
-            output[VEPProcessingEnum.VALIDATION.value],
+            output[GlobalEnums.VALIDATION.value],
             output[GlobalEnums.OUTPUT.value]
         )
 
