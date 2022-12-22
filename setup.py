@@ -38,8 +38,11 @@ setup(
     entry_points={
         'console_scripts': [
             'process-vep = molgenis.capice_resources.process_vep.__main__:main',
-            'compare-model-features = molgenis.capice_resources.compare_model_features.__main__'
-            ':main'
+            'compare-model-features = '
+            'molgenis.capice_resources.compare_model_features.__main__:main',
+            'compare-model-performance = '
+            'molgenis.capice_resources.compare_model_performance.__main__:main',
+            'threshold-calculator = molgenis.capice_resources.threshold_calculator.__main__:main'
         ]
     }
 )
