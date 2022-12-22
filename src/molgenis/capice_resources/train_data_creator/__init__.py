@@ -10,6 +10,7 @@ class TrainDataCreatorEnums(ExtendedEnum):
     VKGL = 'VKGL'
     CLINVAR = 'CLINVAR'
     REVIEW = 'review'
+    GENE = 'gene'
 
     @classmethod
     def columns_of_interest(cls):
@@ -18,7 +19,7 @@ class TrainDataCreatorEnums(ExtendedEnum):
             GlobalEnums.POS.value,
             GlobalEnums.REF.value,
             GlobalEnums.ALT.value,
-            GlobalEnums.GENE.value,
+            TrainDataCreatorEnums.GENE.value,
             TrainDataCreatorEnums.CLASS.value,
             TrainDataCreatorEnums.REVIEW.value,
             GlobalEnums.DATASET_SOURCE.value

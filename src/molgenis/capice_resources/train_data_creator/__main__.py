@@ -1,6 +1,7 @@
 from molgenis.capice_resources.core import Module, GlobalEnums
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
+from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
 
 
 class TrainDataCreator(Module):
@@ -68,6 +69,7 @@ class TrainDataCreator(Module):
         clinvar = self._read_vcf_file(
             arguments['input_clinvar']
         )
+        parsed_clinvar = ClinVarParser().parse(clinvar)
 
     def export(self, output):
         pass
