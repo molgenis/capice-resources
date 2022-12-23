@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnum
+from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnums as Menums
 
 
 class Orderer:
@@ -14,7 +14,7 @@ class Orderer:
                 and ranked. Please note that ordering is performed inplace.
 
         """
-        start_column = CompareModelFeaturesEnum.FEATURE.value
+        start_column = Menums.FEATURE.value
         col_names = merged_dataframe.columns
         front_columns = []
         other_columns = []

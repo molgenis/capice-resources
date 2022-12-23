@@ -1,7 +1,7 @@
 from molgenis.capice_resources.core import ExtendedEnum
 
 
-class CompareModelFeaturesEnum(ExtendedEnum):
+class CompareModelFeaturesEnums(ExtendedEnum):
     """
     Enum specific to Compare Model Features
     """
