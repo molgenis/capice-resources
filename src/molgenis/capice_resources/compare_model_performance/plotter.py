@@ -204,16 +204,33 @@ class Plotter:
         else:
             print('Creating single plot per figure.\n')
 
-    def plot(self, merged_model_1_data, merged_model_2_data):
+    def plot(
+            self,
+            merged_model_1_data: pd.DataFrame,
+            merged_model_2_data: pd.DataFrame
+    ) -> dict[str, plt.Figure]:
+        """
+        Main function of the plotter class.
+
+        Args:
+            merged_model_1_data:
+                Merged frame of the model 1 data. Contains both the score and labels frames.
+            merged_model_2_data:
+                Merged frame of the model 2 data. Contains both the score and labels frames.
+
+        Returns:
+            dict:
+                Dictionary containing [key] figure name and [value] the figure itself.
+        """
         m1_samples = merged_model_1_data.shape[0]
         m2_samples = merged_model_2_data.shape[0]
 
         print('Plotting global ROC, AUC, AF Bins, Score distributions and Score differences.')
         self._plot_roc_auc_afbins(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples)
         self._plot_score_dist(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
-                              PlottingEnums.GLOBAL.value)
+                              Penums.GLOBAL.value)
         self._plot_score_diff(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
-                              PlottingEnums.GLOBAL.value)
+                              Penums.GLOBAL.value)
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
@@ -222,23 +239,58 @@ class Plotter:
             print('Plotting per consequence done.\n')
 
         return {
-            PlottingEnums.FIG_ROC.value: self.fig_roc,
-            PlottingEnums.FIG_AUC.value: self.fig_auc,
-            PlottingEnums.FIG_AF.value: self.fig_afb,
-            PlottingEnums.FIG_B_DIST.value: self.fig_score_dist_box,
-            PlottingEnums.FIG_V_DIST.value: self.fig_score_dist_vio,
-            PlottingEnums.FIG_B_DIFF.value: self.fig_score_diff_box,
-            PlottingEnums.FIG_V_DIFF.value: self.fig_score_diff_vio
+            Penums.FIG_ROC.value: self.fig_roc,
+            Penums.FIG_AUC.value: self.fig_auc,
+            Penums.FIG_AF.value: self.fig_afb,
+            Penums.FIG_B_DIST.value: self.fig_score_dist_box,
+            Penums.FIG_V_DIST.value: self.fig_score_dist_vio,
+            Penums.FIG_B_DIFF.value: self.fig_score_diff_box,
+            Penums.FIG_V_DIFF.value: self.fig_score_diff_vio
         }
 
-    def _plot_roc_auc_afbins(self, model_1_data, model_1_samples, model_2_data, model_2_samples):
+    def _plot_roc_auc_afbins(
+            self,
+            model_1_data: pd.DataFrame,
+            model_1_samples: int,
+            model_2_data: pd.DataFrame,
+            model_2_samples: int
+    ) -> None:
+        """
+        Function to house the calls to the ROC, AUC and Allele Frequency bin plotters for global
+        performance.
+
+        Args:
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_samples:
+                The amount of samples in model_1_data.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_samples:
+                The amount of samples in model_2_data.
+
+        """
         fpr_m1, tpr_m1, auc_m1 = self.calculator.calculate_roc(model_1_data)
         fpr_m2, tpr_m2, auc_m2 = self.calculator.calculate_roc(model_2_data)
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
-        self._plot_auc(auc_m1, model_1_samples, auc_m2, model_2_samples, PlottingEnums.GLOBAL.value)
+        self._plot_auc(auc_m1, model_1_samples, auc_m2, model_2_samples, Penums.GLOBAL.value)
         self._plot_af_bins(model_1_data, model_2_data)
 
-    def _plot_consequences(self, merged_model_1_data, merged_model_2_data):
+    def _plot_consequences(
+            self,
+            merged_model_1_data: pd.DataFrame,
+            merged_model_2_data: pd.DataFrame
+    ) -> None:
+        """
+        Function to call each of the plotters on a per consequence base.
+
+        Args:
+            merged_model_1_data:
+                Merged frame of the data of model 1, containing the score and labels.
+            merged_model_2_data:
+                Merged frame of the data of model 2, containing the score and labels.
+
+        """
         consequence_tools = ConsequenceTools()
         for consequence in self.process_consequences:
             subset_m1 = consequence_tools.subset_consequence(merged_model_1_data, consequence)
@@ -257,8 +309,32 @@ class Plotter:
             self._plot_score_diff(subset_m1, m1_samples, subset_m2, m2_samples, consequence)
             self.index += 1
 
-    def _plot_roc(self, fpr_model_1, tpr_model_1, auc_model_1, fpr_model_2, tpr_model_2,
-                  auc_model_2):
+    def _plot_roc(
+            self,
+            fpr_model_1: float,
+            tpr_model_1: float,
+            auc_model_1: float,
+            fpr_model_2: float,
+            tpr_model_2: float,
+            auc_model_2: float
+    ) -> None:
+        """
+        Plotter method for specifically the Receiver Operator Curve plot.
+
+        Args:
+            fpr_model_1:
+                Float of the False Positive Rate of model 1.
+            tpr_model_1:
+                Float of the True Positive Rate of model 1.
+            auc_model_1:
+                Float of the Area Under Curve of model 1.
+            fpr_model_2:
+                Float of the False Positive Rate of model 2.
+            tpr_model_2:
+                Float of the True Positive Rate of model 2.
+            auc_model_2:
+                Float of the False Positive Rate of model 2.
+        """
         # Plotting ROCs
         ax_roc = self.fig_roc.add_subplot(1, 1, 1)
         ax_roc.plot(fpr_model_1, tpr_model_1, color='red', label=f'Model 1 (AUC={auc_model_1})')
@@ -271,9 +347,13 @@ class Plotter:
         ax_roc.legend(loc='lower right')
 
     @staticmethod
-    def _create_af_bins_plotlabels(bin_label, model_1_size: int, model_1_auc: float,
-                                   model_2_size: int,
-                                   model_2_auc: float):
+    def _create_af_bins_plotlabels(
+            bin_label: str,
+            model_1_size: int,
+            model_1_auc: float,
+            model_2_size: int,
+            model_2_auc: float
+    ) -> str:
         """
         Creates a label specifically for the allele frequency bins
 
@@ -298,21 +378,74 @@ class Plotter:
                    f'Model 2: {model_2_auc} (n: {model_2_size})'
 
     @staticmethod
-    def _subset_af_bin(dataset, upper_bound, lower_bound, last_iter=False):
+    def _subset_af_bin(
+            dataset: pd.DataFrame,
+            upper_bound: float | int,
+            lower_bound: float | int,
+            last_iter: bool=False
+    ) -> pd.DataFrame:
+        """
+        Function to subset "dataset" based upon the upper_bound and lower_bound.
+        Last_iter is to prevent that the last iteration includes the upper bound.
+
+        Args:
+            dataset:
+                The dataframe that should be subset upon.
+            upper_bound:
+                The lower bound that the subset should start from (and include).
+            lower_bound:
+                The lower bound that the subset should start from (and include, except when
+                last_iter is set to True).
+            last_iter:
+                Boolean True if the last iteration on the allele frequency bins has been reached.
+        Returns:
+            subset:
+                Subset of "dataset" that only contains samples between upper bound and lower
+                bound allele frequencies.
+        """
         if last_iter:
             return dataset[
-                (dataset[CMPMinimalFeats.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[CMPMinimalFeats.GNOMAD_AF.value] <= upper_bound) &
-                (~dataset[CMPExtendedFeats.IMPUTED.value])
+                (dataset[Menums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[Menums.GNOMAD_AF.value] <= upper_bound) &
+                (~dataset[Menums.IMPUTED.value])
                 ]
         else:
             return dataset[
-                (dataset[CMPMinimalFeats.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[CMPMinimalFeats.GNOMAD_AF.value] < upper_bound) &
-                (~dataset[CMPExtendedFeats.IMPUTED.value])
+                (dataset[Menums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[Menums.GNOMAD_AF.value] < upper_bound) &
+                (~dataset[Menums.IMPUTED.value])
                 ]
 
-    def _plot_bin(self, ax, x_index, label, auc_m1, m1_ss, auc_m2, m2_ss):
+    def _plot_bin(
+            self,
+            ax: plt.Axes,
+            x_index: int,
+            label: str,
+            auc_m1: float,
+            m1_ss: int,
+            auc_m2: float,
+            m2_ss: int
+    ) -> None:
+        """
+        Plotter function of the plot allele frequencies function.
+
+        Args:
+            ax:
+                The matplotlib Axes object to plot the plot on.
+            x_index:
+                The x-index on which the bars should be placed.
+            label:
+                The label the bars should get.
+            auc_m1:
+                The AUC of model 1.
+            m1_ss:
+                The sample size of model 1.
+            auc_m2:
+                The AUC of model 2.
+            m2_ss:
+                The sample size of model 2.
+
+        """
         width = 0.3
         ax.bar(
             x_index - width,
@@ -341,7 +474,23 @@ class Plotter:
             )
         )
 
-    def _plot_af_bins(self, model_1_data, model_2_data):
+    def _plot_af_bins(
+            self,
+            model_1_data: pd.DataFrame,
+            model_2_data: pd.DataFrame
+    ) -> None:
+        """
+        Main function of the Allele Frequency plotting capability.
+        Loops through the AF bins and calls the plotter function for each bin.
+        Adds the plots to the AF bins figure.
+
+        Args:
+            model_1_data:
+                Merged frame of the data of model 1, containing the score and labels.
+            model_2_data:
+                Merged frame of the data of model 2, containing the score and labels.
+
+        """
         ax_afb = self.fig_afb.add_subplot(1, 1, 1)
         bin_labels = []
 
@@ -349,10 +498,10 @@ class Plotter:
         # Including imputed and non-imputed 0
         try:
             f_auc_m1 = self.calculator.calculate_auc(
-                model_1_data[model_1_data[CMPMinimalFeats.GNOMAD_AF.value] == 0]
+                model_1_data[model_1_data[Menums.GNOMAD_AF.value] == 0]
             )
             f_auc_m2 = self.calculator.calculate_auc(
-                model_2_data[model_2_data[CMPMinimalFeats.GNOMAD_AF.value] == 0]
+                model_2_data[model_2_data[Menums.GNOMAD_AF.value] == 0]
             )
         except ValueError:
             print('Could not calculate an AUC for possible singleton variants.')
@@ -365,9 +514,9 @@ class Plotter:
             0,
             '"0"',
             f_auc_m1,
-            model_1_data[model_1_data[CMPMinimalFeats.GNOMAD_AF.value] == 0].shape[0],
+            model_1_data[model_1_data[Menums.GNOMAD_AF.value] == 0].shape[0],
             f_auc_m2,
-            model_2_data[model_2_data[CMPMinimalFeats.GNOMAD_AF.value] == 0].shape[0]
+            model_2_data[model_2_data[Menums.GNOMAD_AF.value] == 0].shape[0]
         )
 
         bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin
@@ -423,10 +572,15 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc=PlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.01), labelspacing=2)
+        ax_afb.legend(loc=Penums.LOC.value, bbox_to_anchor=(1.0, 1.01), labelspacing=2)
 
     @staticmethod
-    def _create_auc_label(model_1_auc, model_1_ss, model_2_auc, model_2_ss):
+    def _create_auc_label(
+            model_1_auc: float,
+            model_1_ss: int,
+            model_2_auc: float,
+            model_2_ss: int
+    ) -> tuple[str, str, str | None]:
         """
         Creates the label for specifically AUC (sub)plots
 
@@ -444,7 +598,31 @@ class Plotter:
                    f'Model 2: {model_2_auc}\nn: {model_2_ss}', \
                    None
 
-    def _plot_auc(self, auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples, title):
+    def _plot_auc(
+            self,
+            auc_model_1: float,
+            model_1_n_samples: int,
+            auc_model_2: float,
+            model_2_n_samples: int,
+            title: str
+    ) -> None:
+        """
+        Plotter function of the Area Under Curve figure.
+        Adds the plot to the AUC figure.
+
+        Args:
+            auc_model_1:
+                The AUC of model 1.
+            model_1_n_samples:
+                The sample size of model 1.
+            auc_model_2:
+                The AUC of model 2.
+            model_2_n_samples:
+                The sample size of model 2.
+            title:
+                String of what the subplot represents (a consequence or Global).
+
+        """
         # Plotting AUCs
         ax_auc = self.fig_auc.add_subplot(self.n_rows, self.n_cols, self.index)
         labels = self._create_auc_label(
@@ -466,13 +644,35 @@ class Plotter:
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
         ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc=PlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
+        ax_auc.legend(loc=Penums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
-    def _plot_score_dist(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
-                         title):
+    def _plot_score_dist(
+            self,
+            model_1_data: pd.DataFrame,
+            model_1_n_samples: int,
+            model_2_data: pd.DataFrame,
+            model_2_n_samples: int,
+            title: str
+    ) -> None:
+        """
+        Caller function for creating a boxplot and violinplot of the score distributions.
+
+        Args:
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_n_samples:
+                The amount of samples in model_1_data.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_n_samples:
+                The amount of samples in model_2_data.
+            title:
+                String of what the subplot represents (a consequence or Global).
+
+        """
         self._create_boxplot_for_column(
             self.fig_score_dist_box,
-            GlobalEnums.SCORE.value,
+            Genums.SCORE.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,
@@ -481,7 +681,7 @@ class Plotter:
         )
         self._create_violinplot_for_column(
             self.fig_score_dist_vio,
-            GlobalEnums.SCORE.value,
+            Genums.SCORE.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,
@@ -489,11 +689,33 @@ class Plotter:
             title
         )
 
-    def _plot_score_diff(self, model_1_data, model_1_n_samples, model_2_data, model_2_n_samples,
-                         title):
+    def _plot_score_diff(
+            self,
+            model_1_data: pd.DataFrame,
+            model_1_n_samples: int,
+            model_2_data: pd.DataFrame,
+            model_2_n_samples: int,
+            title: str
+    ) -> None:
+        """
+        Caller function for creating a boxplot and violinplot of the absolute score differences.
+
+        Args:
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_n_samples:
+                The amount of samples in model_1_data.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_n_samples:
+                The amount of samples in model_2_data.
+            title:
+                String of what the subplot represents (a consequence or Global).
+
+        """
         self._create_boxplot_for_column(
             self.fig_score_diff_box,
-            CMPExtendedFeats.SCORE_DIFF.value,
+            Menums.SCORE_DIFF.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,
@@ -502,7 +724,7 @@ class Plotter:
         )
         self._create_violinplot_for_column(
             self.fig_score_diff_vio,
-            CMPExtendedFeats.SCORE_DIFF.value,
+            Menums.SCORE_DIFF.value,
             model_1_data,
             model_1_n_samples,
             model_2_data,
@@ -511,12 +733,38 @@ class Plotter:
         )
 
     @staticmethod
-    def _create_boxplot_label(model_1_data, model_1_ss, model_2_data, model_2_ss,
-                              return_tuple=False):
-        n_benign_m1 = model_1_data[model_1_data[GlobalEnums.BINARIZED_LABEL.value] == 0].shape[0]
-        n_patho_m1 = model_1_data[model_1_data[GlobalEnums.BINARIZED_LABEL.value] == 1].shape[0]
-        n_benign_m2 = model_2_data[model_2_data[GlobalEnums.BINARIZED_LABEL.value] == 0].shape[0]
-        n_patho_m2 = model_2_data[model_2_data[GlobalEnums.BINARIZED_LABEL.value] == 1].shape[0]
+    def _create_boxplot_label(
+            model_1_data: pd.DataFrame,
+            model_1_ss: int,
+            model_2_data: pd.DataFrame,
+            model_2_ss: int,
+            return_tuple: bool=False
+    ) -> str | tuple[str, str]:
+        """
+        Generic function to create a boxplot label.
+
+        Args:
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_ss:
+                The amount of samples in model_1_data.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_ss:
+                The amount of samples in model_2_data.
+            return_tuple:
+                Whenever the result should be returned as tuple (True) or single string (False)
+        Returns:
+            out:
+                Tuple (in case return_tuple=True) containing [0] the label for model 1 and [1]
+                the label for model 2. If return_tuple=False,
+                returns both labels joined together in a single string.
+
+        """
+        n_benign_m1 = model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_patho_m1 = model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 1].shape[0]
+        n_benign_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_patho_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 1].shape[0]
         return_value = (
             f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}',
             f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
@@ -526,15 +774,44 @@ class Plotter:
         else:
             return '\n\n'.join(return_value)
 
-    def _create_boxplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                   model_1_n_samples, model_2_data, model_2_n_samples, title):
+    def _create_boxplot_for_column(
+            self,
+            plot_figure: plt.Figure,
+            column_to_plot: str,
+            model_1_data: pd.DataFrame,
+            model_1_n_samples: int,
+            model_2_data: pd.DataFrame,
+            model_2_n_samples: int,
+            title: str
+    ) -> None:
+        """
+        Plotter function to create a boxplot.
+        Adds the plot to the boxplot "plot_figure".
+
+        Args:
+            plot_figure:
+                The matplotlib.pyplot.Figure object to which the plot add to.
+            column_to_plot:
+                The column that should be used for plotting boxplot comparison on.
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_n_samples:
+                The amount of samples in the data of model 1.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_n_samples:
+                The amount of samples in the data of model 2.
+            title:
+                The string of what the subplot should have as title (consequence or Global)
+
+        """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         ax.boxplot(
             [
-                model_1_data[model_1_data[GlobalEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_2_data[model_2_data[GlobalEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_1_data[model_1_data[GlobalEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
-                model_2_data[model_2_data[GlobalEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
+                model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 0][column_to_plot],
+                model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 0][column_to_plot],
+                model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 1][column_to_plot],
+                model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 1][column_to_plot],
             ],
             labels=[
                 'Model 1\nBenign',
@@ -556,17 +833,46 @@ class Plotter:
         ax.set_ylim(0.0, 1.0)
         ax.set_title(title)
         ax.legend(
-            loc=PlottingEnums.LOC.value,
+            loc=Penums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             handlelength=0
         )
 
-    def _create_violinplot_for_column(self, plot_figure, column_to_plot, model_1_data,
-                                      model_1_n_samples, model_2_data, model_2_n_samples, title):
+    def _create_violinplot_for_column(
+            self,
+            plot_figure: plt.Figure,
+            column_to_plot: str,
+            model_1_data: pd.DataFrame,
+            model_1_n_samples: int,
+            model_2_data: pd.DataFrame,
+            model_2_n_samples: int,
+            title: str
+    ):
+        """
+        Plotter function to create a violin plot.
+        Adds the plot to the violin plot "plot_figure".
+
+        Args:
+            plot_figure:
+                The matplotlib.pyplot.Figure object to which the plot add to.
+            column_to_plot:
+                The column that should be used for plotting boxplot comparison on.
+            model_1_data:
+                The dataframe of the score and label data of model 1.
+            model_1_n_samples:
+                The amount of samples in the data of model 1.
+            model_2_data:
+                The dataframe of the score and label data of model 2.
+            model_2_n_samples:
+                The amount of samples in the data of model 2.
+            title:
+                The string of what the subplot should have as title (consequence or Global)
+
+        """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         sns.violinplot(
             data=pd.concat([model_1_data, model_2_data]),
-            x=GlobalEnums.BINARIZED_LABEL.value,
+            x=Genums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue='model',
             ax=ax,
@@ -588,7 +894,7 @@ class Plotter:
         ax.set_title(title)
         ax.legend(
             handles=[red_patch, blue_patch],
-            loc=PlottingEnums.LOC.value,
+            loc=Penums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             labelspacing=2
         )
