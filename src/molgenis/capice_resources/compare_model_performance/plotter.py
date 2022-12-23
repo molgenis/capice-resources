@@ -847,7 +847,7 @@ class Plotter:
             model_2_data: pd.DataFrame,
             model_2_n_samples: int,
             title: str
-    ):
+    ) -> None:
         """
         Plotter function to create a violin plot.
         Adds the plot to the violin plot "plot_figure".
