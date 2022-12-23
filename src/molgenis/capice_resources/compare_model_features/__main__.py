@@ -93,6 +93,15 @@ class CompareModelFeatures(Module):
         return {'dataframe': out, GlobalEnums.OUTPUT.value: arguments['output']}
 
     def _process_explain(self, explain: pd.DataFrame) -> None:
+        """
+        Function for both explain files to run the normalizer and ranker.
+
+        Args:
+            explain:
+                The pandas DataFrame of the loaded in CAPICE explain file.
+                Please note that this is performed inplace.
+
+        """
         normalizer = Normalizer()
         before_normalized_columns = explain.columns
         normalizer.normalize_column(explain, CompareModelFeaturesEnum.GAIN.value)
@@ -103,6 +112,16 @@ class CompareModelFeatures(Module):
 
     @staticmethod
     def _merge_explains(explain1: pd.DataFrame, explain2: pd.DataFrame) -> pd.DataFrame:
+        """
+        Function to merge both explain files. Can be expanded if we want to support more explains.
+
+        Args:
+            explain1:
+                The normalized and ranked explain dataframe of model 1.
+            explain2:
+                The normalized and ranked explain dataframe of model 2.
+
+        """
         return pd.merge(
             explain1,
             explain2,
@@ -128,11 +147,7 @@ class CompareModelFeatures(Module):
             list:
                 List of all the columns that do exist in columns1 but not in columns2.
         """
-        missing = []
-        for column in columns1:
-            if column not in columns2:
-                missing.append(column)
-        return missing
+        return list(columns1.difference(columns2))
 
     def export(self, output):
         self.exporter.export_pandas_file(output[GlobalEnums.OUTPUT.value], output['dataframe'])
