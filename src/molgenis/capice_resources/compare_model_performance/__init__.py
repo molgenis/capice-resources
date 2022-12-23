@@ -2,6 +2,10 @@ from molgenis.capice_resources.core import ExtendedEnum
 
 
 class CompareModelPerformanceEnums(ExtendedEnum):
+    """
+    Enums specific to CompareModelPerformance, not including the enums that are specific to
+    plotting the actual performance.
+    """
     GNOMAD_AF = 'gnomAD_AF'
     CHR = 'chr'
     GENE_NAME = 'gene_name'
@@ -13,6 +17,9 @@ class CompareModelPerformanceEnums(ExtendedEnum):
 
 
 class PlottingEnums(ExtendedEnum):
+    """
+    Enums specific to the plotting process of CompareModelPerformance.
+    """
     GLOBAL = 'Global'
     LOC = 'upper left'
     FIG_AUC = 'auc'
