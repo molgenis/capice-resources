@@ -1,4 +1,5 @@
 import math
+import os
 
 import numpy as np
 import pandas as pd
@@ -7,16 +8,39 @@ from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.compare_model_performance import PlottingEnums as Penums
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 from molgenis.capice_resources.compare_model_performance.performance_calculator import \
     PerformanceCalculator
-from molgenis.capice_resources.compare_model_performance import CMPMinimalFeats, \
-    CMPExtendedFeats, PlottingEnums
-
+from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
+    Menums
 
 class Plotter:
-    def __init__(self, process_consequences):
+    def __init__(
+            self,
+            process_consequences: list[str] | bool,
+            model_1_score_path: os.PathLike,
+            model_1_label_path: os.PathLike,
+            model_2_score_path: os.PathLike,
+            model_2_label_path: os.PathLike | None,
+    ):
+        """
+        Init of the Plotter class.
+        Sets all the figurines and globally accessible variables.
+
+        Args:
+            process_consequences:
+                The list (or False) of all the unique and split consequences.
+            model_1_score_path:
+                The path to the model 1 score file.
+            model_1_label_path:
+                The path to the model 1 label file.
+            model_2_score_path:
+                The path to the model 2 score file.
+            model_2_label_path:
+                (Optional) The path to the model 2 label file.
+        """
         self.calculator = PerformanceCalculator()
         self.process_consequences = process_consequences
         self.index = 1
@@ -27,63 +51,105 @@ class Plotter:
         self.fig_score_dist_vio = plt.figure()
         self.fig_score_diff_box = plt.figure()
         self.fig_score_diff_vio = plt.figure()
+        self._prepare_figure_supertitle_and_size(
+            model_1_score_path,
+            model_1_label_path,
+            model_2_score_path,
+            model_2_label_path
+        )
         self.n_rows = 1
         self.n_cols = 1
+        self._set_nrows_and_ncols()
 
     @staticmethod
-    def _set_figure_size(process_consequences):
+    def _set_figure_size(process_consequences: list[str] | bool) -> tuple[int, int]:
+        """
+        Depending on if process_consequences is true or not, set the figures to a greater size.
+
+        Args:
+            process_consequences:
+                List or False of all the unique and split consequences.
+
+        Returns:
+            tuple:
+                Tuple containing [0] the image width and [1] the image length. If
+                process_consequences is a list, will return (20, 40) (which means 2000 pixels
+                wide and 4000 pixels tall). If False: (10,15).
+        """
         if process_consequences:
             return 20, 40
         else:
             return 10, 15
 
-    def prepare_plots(self, model_1_score_path, model_1_label_path, model_2_score_path,
-                      model_2_label_path):
+    def _prepare_figure_supertitle_and_size(
+            self,
+            model_1_score_path,
+            model_1_label_path,
+            model_2_score_path,
+            model_2_label_path
+    ) -> None:
+        """
+        Preparatory function to set the super title and image size to each of the figures.
+
+        Args:
+            model_1_score_path:
+                The path to the model 1 score file.
+            model_1_label_path:
+                The path to the model 1 label file.
+            model_2_score_path:
+                The path to the model 2 score file.
+            model_2_label_path:
+                (Optional) The path to the model 2 label file.
+        """
         print('Preparing plot figures.')
         figsize = self._set_figure_size(self.process_consequences)
         print('Preparing plots.')
+
+        if model_2_label_path is None:
+            model_2_label_path = model_1_label_path
+
         figure_supertitle = f'Model 1 scores: {model_1_score_path}\n' \
                             f'Model 1 labels: {model_1_label_path}\n' \
                             f'Model 2 scores: {model_2_score_path}\n' \
                             f'Model 2 labels: {model_2_label_path}\n'
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_auc,
             f'Area Under Receiver Operator Curve\n{figure_supertitle}',
             figsize
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_roc,
             f'Receiver Operator Curves\n{figure_supertitle}',
             (10, 15)
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_afb,
             f'Allele Frequency bins performance comparison\n{figure_supertitle}',
             (11, 11)
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_score_dist_box,
             f'raw CAPICE score distribution box plots\n{figure_supertitle}',
             figsize
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_score_dist_vio,
             f'raw CAPICE score distribution violin plots\n{figure_supertitle}',
             figsize
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_score_diff_box,
             f'absolute score differences to the true label box plots\n{figure_supertitle}',
             figsize
         )
 
-        self._prepare_plots(
+        self._set_size_supertitle_layout(
             self.fig_score_diff_vio,
             f'absolute score differences to the true label violin plots\n{figure_supertitle}',
             figsize
@@ -92,31 +158,43 @@ class Plotter:
         print('Plot figures prepared.\n')
 
     @staticmethod
-    def _prepare_plots(
+    def _set_size_supertitle_layout(
             figure: plt.Figure,
             figure_supertitle: str,
-            figure_size: tuple
-    ):
+            figure_size: tuple[int, int]
+    ) -> None:
         """
         Prepares a matplotlib.pyplot.Figure supertitle, width, height and sets the constrained
         layout of "w_pad" and "h_pad" to 0.2.
 
         Args:
-            figure: the matplotlib.pyplot.Figure to be prepared.
-            figure_supertitle: single string of the complete figure supertitle, containing the
-                               type of the plot (AUC/ROC/score distributions etc.) followed by all
-                               the model paths and maybe a post_supertitle for the boxplots.
-                               Does NOT format the string!
-            figure_size: tuple containing the [0] figure width and [1] figure height.
+            figure:
+                the matplotlib.pyplot.Figure to be prepared.
+            figure_supertitle:
+                single string of the complete figure supertitle, containing the
+                type of the plot (AUC/ROC/score distributions etc.) followed by all
+                the model paths and maybe a post_supertitle for the boxplots.
+                Does NOT format the string!
+            figure_size:
+                tuple containing the [0] figure width and [1] figure height.
         """
         figure.set_figwidth(figure_size[0])
         figure.set_figheight(figure_size[1])
         figure.suptitle(
             f'Model 1 vs Model 2 {figure_supertitle}'
         )
-        figure.set_constrained_layout(GlobalEnums.CONSTRAINED_LAYOUT.value)  # type: ignore
+        figure.set_constrained_layout(Genums.CONSTRAINED_LAYOUT.value)
 
-    def prepare_subplots(self):
+    def _set_nrows_and_ncols(self) -> None:
+        """
+        Preparatory function to set the amount of rows and columns in a multi plot figure.
+
+        If consequences are present sets the amount of columns to 3 and the amount of rows to
+        the amount of consequences divided by the amount of columns (3). To prevent that rows
+        is going to be a float, it is rounded up to prevent consequences not ending up on
+        the figure.
+
+        """
         if self.process_consequences:
             print(
                 'Creating required amount of rows and columns according to present Consequences.\n'

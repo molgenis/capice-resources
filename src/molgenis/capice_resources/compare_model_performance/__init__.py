@@ -1,11 +1,8 @@
 from molgenis.capice_resources.core import ExtendedEnum
 
 
-class CMPMinimalFeats(ExtendedEnum):
+class CompareModelPerformanceEnums(ExtendedEnum):
     GNOMAD_AF = 'gnomAD_AF'
-
-
-class CMPExtendedFeats(ExtendedEnum):
     CHR = 'chr'
     GENE_NAME = 'gene_name'
     MERGE_COLUMN = 'merge_column'

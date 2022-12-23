@@ -1,13 +1,15 @@
 import os
+from pathlib import Path
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module, GlobalEnums
+from molgenis.capice_resources.core import Module
+from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.core.errors import SampleMismatchError
-from molgenis.capice_resources.utilities import extract_key_value_dict_cli
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
-from molgenis.capice_resources.compare_model_performance import CMPMinimalFeats, CMPExtendedFeats
+from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
+    Menums
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 
 
@@ -102,19 +104,19 @@ class CompareModelPerformance(Module):
     def _validate_module_specific_arguments(self, parser):
         scores1 = self.input_validator.validate_icli_file(
             parser.get_argument('scores_model_1'),
-            GlobalEnums.TSV_EXTENSIONS.value
+            Genums.TSV_EXTENSIONS.value
         )
         scores2 = self.input_validator.validate_icli_file(
             parser.get_argument('scores_model_2'),
-            GlobalEnums.TSV_EXTENSIONS.value
+            Genums.TSV_EXTENSIONS.value
         )
         labels = self.input_validator.validate_icli_file(
             parser.get_argument('labels_model_1'),
-            GlobalEnums.TSV_EXTENSIONS.value
+            Genums.TSV_EXTENSIONS.value
         )
         labels_2 = self.input_validator.validate_icli_file(
             parser.get_argument('labels_model_2'),
-            GlobalEnums.TSV_EXTENSIONS.value,
+            Genums.TSV_EXTENSIONS.value,
             can_be_optional=True
         )
         output = self.input_validator.validate_ocli_directory(
@@ -131,24 +133,26 @@ class CompareModelPerformance(Module):
         }
 
     def run_module(self, arguments):
+        path_scores_model_1 = arguments['scores_model_1']
+        path_labels_model_1 = arguments['scores_model_2']
+        path_scores_model_2 = arguments['labels_model_1']
+        path_labels_model_2 = arguments['labels_model_2']
+
         model_1, model_2 = self._read_and_parse_input_data(
-            arguments['scores_model_1'],
-            arguments['scores_model_2'],
-            arguments['labels_model_1'],
-            arguments['labels_model_2'],
+            path_scores_model_1,
+            path_labels_model_1,
+            path_scores_model_2,
+            path_labels_model_2,
             arguments['force_merge']
         )
         consequence_tools = ConsequenceTools()
         consequences = consequence_tools.has_consequence(model_1, model_2)
         if consequences:
-            splitted_consequences = consequence_tools.split_consequences(consequences)
             consequence_tools.validate_consequence_samples_equal(
                 model_1,
                 model_2,
-                splitted_consequences
+                consequences
             )
-        else:
-            splitted_consequences = False
 
         annotator = Annotator()
         annotator.add_score_difference(model_1)
@@ -160,35 +164,61 @@ class CompareModelPerformance(Module):
         annotator.add_model_identifier(model_1, 'model_1')
         annotator.add_model_identifier(model_2, 'model_2')
 
-        plotter = Plotter(splitted_consequences)
+        plotter = Plotter(
+            consequences,
+            path_scores_model_1,
+            path_labels_model_1,
+            path_scores_model_2,
+            path_labels_model_2
+        )
         plots = plotter.plot(model_1, model_2)
-        return {**plots, GlobalEnums.OUTPUT.value: arguments['output']}
+        return {**plots, Genums.OUTPUT.value: arguments['output']}
 
     def _read_and_parse_input_data(
             self,
-            scores1_argument,
-            labels1_argument,
-            scores2_argument,
-            labels2_argument,
-            force_merge_argument
+            scores1_argument: os.PathLike | Path | str,
+            labels1_argument: os.PathLike | Path | str,
+            scores2_argument: os.PathLike | Path | str,
+            labels2_argument: os.PathLike | Path | str | None,
+            force_merge_argument: bool
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Function to read and parse the scores and labels arguments.
+
+        Args:
+            scores1_argument:
+                Path to the score file of model 1.
+            labels1_argument:
+                Path to the label file (of model 2).
+            scores2_argument:
+                Path to the score file of model 2.
+            labels2_argument:
+                Optional argument of the label file of model 2 if supplied through CLI.
+            force_merge_argument:
+                Boolean flag if scores and labels should be force merged if the sizes differ.
+
+        Returns:
+            tuple:
+                Tuple containing [0]: the merged frame for model 1 and [1] the merged frame for
+                model 2.
+        """
         scores_model_1 = self._read_pandas_tsv(
             scores1_argument,
             [
-                GlobalEnums.SCORE.value
+                Genums.SCORE.value
             ]
         )
         scores_model_2 = self._read_pandas_tsv(
             scores2_argument,
             [
-                GlobalEnums.SCORE.value
+                Genums.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
             labels1_argument,
             [
-                GlobalEnums.BINARIZED_LABEL.value,
-                CMPMinimalFeats.GNOMAD_AF.value
+                Genums.BINARIZED_LABEL.value,
+                Menums.GNOMAD_AF.value
             ]
         )
         # No _read_pandas_tsv yet, since it can be None
@@ -209,8 +239,8 @@ class CompareModelPerformance(Module):
             labels_model_2 = self._read_pandas_tsv(
                 labels2,
                 [
-                    GlobalEnums.BINARIZED_LABEL.value,
-                    CMPMinimalFeats.GNOMAD_AF.value
+                    Genums.BINARIZED_LABEL.value,
+                    Menums.GNOMAD_AF.value
                 ]
             )
             merge_model_2 = self._merge_scores_and_labes(
@@ -226,6 +256,27 @@ class CompareModelPerformance(Module):
             labels: pd.DataFrame,
             force_merge: bool
     ):
+        """
+        Function to perform the merge of scores and labels.
+
+        Args:
+            scores:
+                The pandas frame containing the CAPICE scores.
+            labels:
+                The pandas frame containing the labels / binarized_labels.
+            force_merge:
+                The boolean flag if a force merge should be attempted in case sample sizes mismatch.
+
+        Returns:
+            dataframe:
+                Merged frame between scores and labels. Please note that if force_merge is used,
+                the "scores" is leading in the merging.
+
+        Raises:
+            SampleMismatchError:
+                SampleMismatchError is raised when force_merge is set to False and the sample
+                sizes differ.
+        """
         if scores.shape[0] == labels.shape[0]:
             merge = pd.concat([scores, labels], axis=1)
         else:
@@ -233,40 +284,61 @@ class CompareModelPerformance(Module):
         return merge
 
     def _attempt_mismatch_merge(self, scores, labels, force_merge) -> pd.DataFrame:
+        """
+        Function to attempt the merge between scores and labels in case sample sizes differ.
+
+        Args:
+            scores:
+                The frame containing the CAPICE scores.
+            labels:
+                The frame containing the labels / binarized_labels.
+            force_merge:
+                Boolean if the merge should be attempted or an error should be raised.
+
+        Returns:
+            merge:
+                Merged frame of scores and labels that have different sample sizes. Scores is
+                leading in the merge.
+
+        Raises:
+            SampleMismatchError:
+                SampleMismatchError is raised when force_merge is set to False and the sample
+                sizes differ.
+        """
         if not force_merge:
             raise SampleMismatchError('Sample sizes differ and -f/--force-merge is not supplied!')
         scores_merge_columns = [
-            CMPExtendedFeats.CHR.value,
-            GlobalEnums.POS.value.lower(),
-            GlobalEnums.REF.value.lower(),
-            GlobalEnums.ALT.value.lower(),
-            CMPExtendedFeats.GENE_NAME.value
+            Menums.CHR.value,
+            Genums.POS.value.lower(),
+            Genums.REF.value.lower(),
+            Genums.ALT.value.lower(),
+            Menums.GENE_NAME.value
         ]
         self.data_validator.validate_pandas_dataframe(
             scores,
             scores_merge_columns
         )
         labels_merge_columns = [
-            GlobalEnums.CHROM.value,
-            GlobalEnums.POS.value,
-            GlobalEnums.REF.value,
-            GlobalEnums.ALT.value,
-            GlobalEnums.SYMBOL.value
+            Genums.CHROM.value,
+            Genums.POS.value,
+            Genums.REF.value,
+            Genums.ALT.value,
+            Genums.SYMBOL.value
         ]
         self.data_validator.validate_pandas_dataframe(
             labels,
             labels_merge_columns
         )
-        scores[CMPExtendedFeats.MERGE_COLUMN.value] = scores[scores_merge_columns].astype(
-            str).agg(GlobalEnums.SEPARATOR.value.join, axis=1)
-        labels[CMPExtendedFeats.MERGE_COLUMN.value] = labels[labels_merge_columns].astype(
-            str).agg(GlobalEnums.SEPARATOR.value.join, axis=1)
-        return scores.merge(labels, on=CMPExtendedFeats.MERGE_COLUMN.value, how='left')
+        scores[Menums.MERGE_COLUMN.value] = scores[scores_merge_columns].astype(
+            str).agg(Genums.SEPARATOR.value.join, axis=1)
+        labels[Menums.MERGE_COLUMN.value] = labels[labels_merge_columns].astype(
+            str).agg(Genums.SEPARATOR.value.join, axis=1)
+        return scores.merge(labels, on=Menums.MERGE_COLUMN.value, how='left')
 
     def export(self, output) -> None:
-        output_path = output[GlobalEnums.OUTPUT.value]
+        output_path = output[Genums.OUTPUT.value]
         for filename, figure in output.items():
-            if filename == GlobalEnums.OUTPUT.value:
+            if filename == Genums.OUTPUT.value:
                 continue
             figure.savefig(os.path.join(output_path, filename + '.png'))  # type: ignore
 

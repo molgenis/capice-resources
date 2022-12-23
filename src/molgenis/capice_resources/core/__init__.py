@@ -49,7 +49,7 @@ class Module(metaclass=ABCMeta):
         output = self.run_module(args)
         self.export(output)
 
-    def parse_and_validate_cli(self) -> dict[str, object]:
+    def parse_and_validate_cli(self) -> dict[str | object, object]:
         """
         Main function to initialize the command line parser with the program and description
         defined in the init.
@@ -79,7 +79,7 @@ class Module(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def _create_module_specific_arguments(parser: ArgumentParser):
+    def _create_module_specific_arguments(parser: ArgumentParser) -> ArgumentParser:
         """
         For each of the modules to fill in according to groups "Required arguments" and
         "Optional arguments".
@@ -87,7 +87,7 @@ class Module(metaclass=ABCMeta):
         return parser
 
     @abstractmethod
-    def _validate_module_specific_arguments(self, parser: CommandLineInterface):
+    def _validate_module_specific_arguments(self, parser: CommandLineInterface) -> dict:
         """
         Function to house all calls to input cli validators.
 
@@ -168,7 +168,8 @@ class Module(metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def run_module(self, arguments: dict[str, object | os.PathLike | Path]) -> dict[object, object]:
+    def run_module(self, arguments: dict[str, object | os.PathLike | Path | bool]) -> dict[
+        str | object, object]:
         """
         Function to house all that is required in terms of arguments, variables and calls to
         other functions to make a module function properly.
