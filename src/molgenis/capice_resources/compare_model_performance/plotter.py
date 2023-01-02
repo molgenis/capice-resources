@@ -251,9 +251,9 @@ class Plotter:
     def _plot_roc_auc_afbins(
             self,
             model_1_data: pd.DataFrame,
-            model_1_samples: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_samples: int
+            model_2_size: int
     ) -> None:
         """
         Function to house the calls to the ROC, AUC and Allele Frequency bin plotters for global
@@ -262,18 +262,18 @@ class Plotter:
         Args:
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_samples:
+            model_1_size:
                 The amount of samples in model_1_data.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_samples:
+            model_2_size:
                 The amount of samples in model_2_data.
 
         """
         fpr_m1, tpr_m1, auc_m1 = self.calculator.calculate_roc(model_1_data)
         fpr_m2, tpr_m2, auc_m2 = self.calculator.calculate_roc(model_2_data)
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
-        self._plot_auc(auc_m1, model_1_samples, auc_m2, model_2_samples, Penums.GLOBAL.value)
+        self._plot_auc(auc_m1, model_1_size, auc_m2, model_2_size, Penums.GLOBAL.value)
         self._plot_af_bins(model_1_data, model_2_data)
 
     def _plot_consequences(
@@ -577,9 +577,9 @@ class Plotter:
     @staticmethod
     def _create_auc_label(
             model_1_auc: float,
-            model_1_ss: int,
+            model_1_size: int,
             model_2_auc: float,
-            model_2_ss: int
+            model_2_size: int
     ) -> tuple[str, str, str | None]:
         """
         Creates the label for specifically AUC (sub)plots
@@ -591,19 +591,19 @@ class Plotter:
             Returns None (matplotlib legend title default) if sample
         sizes do not match.
         """
-        if model_1_ss == model_2_ss:
-            return f'Model 1: {model_1_auc}', f'Model 2: {model_2_auc}', f'n: {model_1_ss}'
+        if model_1_size == model_2_size:
+            return f'Model 1: {model_1_auc}', f'Model 2: {model_2_auc}', f'n: {model_1_size}'
         else:
-            return f'Model 1: {model_1_auc}\nn: {model_1_ss}', \
-                   f'Model 2: {model_2_auc}\nn: {model_2_ss}', \
+            return f'Model 1: {model_1_auc}\nn: {model_1_size}', \
+                   f'Model 2: {model_2_auc}\nn: {model_2_size}', \
                    None
 
     def _plot_auc(
             self,
-            auc_model_1: float,
-            model_1_n_samples: int,
-            auc_model_2: float,
-            model_2_n_samples: int,
+            model_1_auc: float,
+            model_1_size: int,
+            model_2_auc: float,
+            model_2_size: int,
             title: str
     ) -> None:
         """
@@ -611,13 +611,13 @@ class Plotter:
         Adds the plot to the AUC figure.
 
         Args:
-            auc_model_1:
+            model_1_auc:
                 The AUC of model 1.
-            model_1_n_samples:
+            model_1_size:
                 The sample size of model 1.
-            auc_model_2:
+            model_2_auc:
                 The AUC of model 2.
-            model_2_n_samples:
+            model_2_size:
                 The sample size of model 2.
             title:
                 String of what the subplot represents (a consequence or Global).
@@ -626,13 +626,13 @@ class Plotter:
         # Plotting AUCs
         ax_auc = self.fig_auc.add_subplot(self.n_rows, self.n_cols, self.index)
         labels = self._create_auc_label(
-            auc_model_1, model_1_n_samples, auc_model_2, model_2_n_samples
+            model_1_auc, model_1_size, model_2_auc, model_2_size
         )
 
-        ax_auc.bar(1, auc_model_1, color='red', label=labels[0])
-        ax_auc.bar(2, auc_model_2, color='blue', label=labels[1])
+        ax_auc.bar(1, model_1_auc, color='red', label=labels[0])
+        ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
 
-        if math.isnan(auc_model_1):
+        if math.isnan(model_1_auc):
             ax_auc.text(
                 1.5, 0.5, "Not available",
                 fontsize='x-large',
@@ -649,9 +649,9 @@ class Plotter:
     def _plot_score_dist(
             self,
             model_1_data: pd.DataFrame,
-            model_1_n_samples: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_n_samples: int,
+            model_2_size: int,
             title: str
     ) -> None:
         """
@@ -660,11 +660,11 @@ class Plotter:
         Args:
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_n_samples:
+            model_1_size:
                 The amount of samples in model_1_data.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_n_samples:
+            model_2_size:
                 The amount of samples in model_2_data.
             title:
                 String of what the subplot represents (a consequence or Global).
@@ -674,27 +674,27 @@ class Plotter:
             self.fig_score_dist_box,
             Genums.SCORE.value,
             model_1_data,
-            model_1_n_samples,
+            model_1_size,
             model_2_data,
-            model_2_n_samples,
+            model_2_size,
             title
         )
         self._create_violinplot_for_column(
             self.fig_score_dist_vio,
             Genums.SCORE.value,
             model_1_data,
-            model_1_n_samples,
+            model_1_size,
             model_2_data,
-            model_2_n_samples,
+            model_2_size,
             title
         )
 
     def _plot_score_diff(
             self,
             model_1_data: pd.DataFrame,
-            model_1_n_samples: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_n_samples: int,
+            model_2_size: int,
             title: str
     ) -> None:
         """
@@ -703,11 +703,11 @@ class Plotter:
         Args:
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_n_samples:
+            model_1_size:
                 The amount of samples in model_1_data.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_n_samples:
+            model_2_size:
                 The amount of samples in model_2_data.
             title:
                 String of what the subplot represents (a consequence or Global).
@@ -717,27 +717,27 @@ class Plotter:
             self.fig_score_diff_box,
             Menums.SCORE_DIFF.value,
             model_1_data,
-            model_1_n_samples,
+            model_1_size,
             model_2_data,
-            model_2_n_samples,
+            model_2_size,
             title
         )
         self._create_violinplot_for_column(
             self.fig_score_diff_vio,
             Menums.SCORE_DIFF.value,
             model_1_data,
-            model_1_n_samples,
+            model_1_size,
             model_2_data,
-            model_2_n_samples,
+            model_2_size,
             title
         )
 
     @staticmethod
     def _create_boxplot_label(
             model_1_data: pd.DataFrame,
-            model_1_ss: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_ss: int,
+            model_2_size: int,
             return_tuple: bool=False
     ) -> str | tuple[str, str]:
         """
@@ -746,11 +746,11 @@ class Plotter:
         Args:
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_ss:
+            model_1_size:
                 The amount of samples in model_1_data.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_ss:
+            model_2_size:
                 The amount of samples in model_2_data.
             return_tuple:
                 Whenever the result should be returned as tuple (True) or single string (False)
@@ -766,8 +766,8 @@ class Plotter:
         n_benign_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 1].shape[0]
         return_value = (
-            f'Model 1:\nT: {model_1_ss}\nB: {n_benign_m1}\nP: {n_patho_m1}',
-            f'Model 2:\nT: {model_2_ss}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+            f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}',
+            f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
         )
         if return_tuple:
             return return_value
@@ -779,9 +779,9 @@ class Plotter:
             plot_figure: plt.Figure,
             column_to_plot: str,
             model_1_data: pd.DataFrame,
-            model_1_n_samples: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_n_samples: int,
+            model_2_size: int,
             title: str
     ) -> None:
         """
@@ -795,11 +795,11 @@ class Plotter:
                 The column that should be used for plotting boxplot comparison on.
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_n_samples:
+            model_1_size:
                 The amount of samples in the data of model 1.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_n_samples:
+            model_2_size:
                 The amount of samples in the data of model 2.
             title:
                 The string of what the subplot should have as title (consequence or Global)
@@ -826,9 +826,9 @@ class Plotter:
             color='none',
             label=self._create_boxplot_label(
                 model_1_data,
-                model_1_n_samples,
+                model_1_size,
                 model_2_data,
-                model_2_n_samples)
+                model_2_size)
         )
         ax.set_ylim(0.0, 1.0)
         ax.set_title(title)
@@ -843,9 +843,9 @@ class Plotter:
             plot_figure: plt.Figure,
             column_to_plot: str,
             model_1_data: pd.DataFrame,
-            model_1_n_samples: int,
+            model_1_size: int,
             model_2_data: pd.DataFrame,
-            model_2_n_samples: int,
+            model_2_size: int,
             title: str
     ) -> None:
         """
@@ -859,11 +859,11 @@ class Plotter:
                 The column that should be used for plotting boxplot comparison on.
             model_1_data:
                 The dataframe of the score and label data of model 1.
-            model_1_n_samples:
+            model_1_size:
                 The amount of samples in the data of model 1.
             model_2_data:
                 The dataframe of the score and label data of model 2.
-            model_2_n_samples:
+            model_2_size:
                 The amount of samples in the data of model 2.
             title:
                 The string of what the subplot should have as title (consequence or Global)
@@ -882,7 +882,7 @@ class Plotter:
             legend=False
         )
         labels = self._create_boxplot_label(
-            model_1_data, model_1_n_samples, model_2_data, model_2_n_samples, return_tuple=True
+            model_1_data, model_1_size, model_2_data, model_2_size, return_tuple=True
         )
         red_patch = mpatches.Patch(color='red', label=labels[0])
         blue_patch = mpatches.Patch(color='blue', label=labels[1])
