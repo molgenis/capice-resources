@@ -2,6 +2,9 @@ from molgenis.capice_resources.core import ExtendedEnum
 
 
 class ThresholdEnums(ExtendedEnum):
+    """
+    Enums specific to the Threshold calculator.
+    """
     CALCULATED_THRESHOLD = 'calculated_threshold'
     RECALL = 'Recall_score'
     INRANGE = 'in_range'

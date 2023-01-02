@@ -7,6 +7,17 @@ from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 
 class ThresholdPlotter:
     def __init__(self, recall_data: pd.DataFrame):
+        """
+        Main plotter function of ThresholdCalculator.
+
+        Initializes the best scores according to the first threshold (from 0 to 1) that hits a
+        recall between 0.94 and 0.96.
+
+        Args:
+            recall_data:
+                Full output dataframe from the ThresholdCalculator, containing all the recall,
+                F1 and precision scores.
+        """
         self.best_threshold = recall_data.loc[0, ThresholdEnums.THRESHOLD.value]
         self.recall = recall_data.loc[0, ThresholdEnums.RECALL.value]
         self.precision = recall_data.loc[0, ThresholdEnums.F1.value]
@@ -14,7 +25,22 @@ class ThresholdPlotter:
         self.figure = plt.figure()
         self.figure.set_constrained_layout(GlobalEnums.CONSTRAINED_LAYOUT.value)
 
-    def plot_threshold(self, validation_score_data: pd.DataFrame):
+    def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:
+        """
+        Plotting function of the plotting class.
+
+        First plots the validation_score_data and then takes the xmin and xmax from that plot,
+        and uses those to plot a horizontal line of the threshold, with in the legend the scores.
+
+        Args:
+            validation_score_data:
+                Merged dataset between score and validation.
+
+        Returns:
+            figure:
+                matplotlib.pyplot.Figure object of the plot containing the validation_score_data
+                (scatter) and the optimal threshold (horizontal line).
+        """
         ax_plot = self.figure.add_subplot(1, 1, 1)
         subset_benign = validation_score_data[
             validation_score_data[GlobalEnums.BINARIZED_LABEL.value] == 0
