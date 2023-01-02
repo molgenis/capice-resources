@@ -20,7 +20,7 @@ def merge_dataset_rows(*args: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([*args], axis=0, ignore_index=True)
 
 
-def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, str]:
+def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, str | None]:
     """
     Function to extract the CLI argument key and its value from an CLI dictionary
 
