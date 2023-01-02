@@ -1,8 +1,8 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.core import GlobalEnums
-from molgenis.capice_resources.threshold_calculator import ThresholdEnums
+from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
 
 
 class ThresholdPlotter:
@@ -18,12 +18,12 @@ class ThresholdPlotter:
                 Full output dataframe from the ThresholdCalculator, containing all the recall,
                 F1 and precision scores.
         """
-        self.best_threshold = recall_data.loc[0, ThresholdEnums.THRESHOLD.value]
-        self.recall = recall_data.loc[0, ThresholdEnums.RECALL.value]
-        self.precision = recall_data.loc[0, ThresholdEnums.F1.value]
-        self.f1 = recall_data.loc[0, ThresholdEnums.RECALL.value]
+        self.best_threshold = recall_data.loc[0, Menums.THRESHOLD.value]
+        self.recall = recall_data.loc[0, Menums.RECALL.value]
+        self.precision = recall_data.loc[0, Menums.F1.value]
+        self.f1 = recall_data.loc[0, Menums.RECALL.value]
         self.figure = plt.figure()
-        self.figure.set_constrained_layout(GlobalEnums.CONSTRAINED_LAYOUT.value)
+        self.figure.set_constrained_layout(Genums.CONSTRAINED_LAYOUT.value)
 
     def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:
         """
@@ -43,21 +43,21 @@ class ThresholdPlotter:
         """
         ax_plot = self.figure.add_subplot(1, 1, 1)
         subset_benign = validation_score_data[
-            validation_score_data[GlobalEnums.BINARIZED_LABEL.value] == 0
+            validation_score_data[Genums.BINARIZED_LABEL.value] == 0
             ]
         subset_pathogenic = validation_score_data[
-            validation_score_data[GlobalEnums.BINARIZED_LABEL.value] == 1
+            validation_score_data[Genums.BINARIZED_LABEL.value] == 1
             ]
         ax_plot.scatter(
             subset_benign.index,
-            subset_benign[GlobalEnums.SCORE.value],
+            subset_benign[Genums.SCORE.value],
             s=0.5,
             color='green',
             label=f'N benign: {subset_benign.shape[0]}'
         )
         ax_plot.scatter(
             subset_pathogenic.index,
-            subset_pathogenic[GlobalEnums.SCORE.value],
+            subset_pathogenic[Genums.SCORE.value],
             s=0.5,
             color='red',
             label=f'N pathogenic: {subset_pathogenic.shape[0]}'
