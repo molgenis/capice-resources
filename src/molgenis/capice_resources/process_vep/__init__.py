@@ -1,18 +1,11 @@
 from molgenis.capice_resources.core import ExtendedEnum
 
 
-class VEPFileEnum(ExtendedEnum):
+class ProcessVEPEnums(ExtendedEnum):
     """
-    Enum dedicated to columns that are already (should be) present in the VEP file.
+    Enums dedicated to the module Process VEP.
     """
     GNOMAD_HN = 'gnomAD_HN'
-    # TODO: merge VEPProccessingEnum and VEPFileEnum
-
-
-class VEPProcessingEnum(ExtendedEnum):
-    """
-    Enum dedicated to columns created during the processing of the VEP file.
-    """
     SAMPLE_WEIGHTS = [0.0, 1.0]
 
 
