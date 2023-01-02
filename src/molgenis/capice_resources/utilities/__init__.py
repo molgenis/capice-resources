@@ -4,7 +4,7 @@ from enum import Enum
 from molgenis.capice_resources.core import GlobalEnums
 
 
-def merge_dataset_rows(*args: pd.DataFrame) -> pd.DataFrame:
+def merge_dataset_rows(*args: pd.DataFrame, ignore_index: bool = True) -> pd.DataFrame:
     """
     Function to merge one or more pandas Dataframe rows.
     Merges on axis 0 (which means all samples are merged, not columns).
@@ -13,11 +13,14 @@ def merge_dataset_rows(*args: pd.DataFrame) -> pd.DataFrame:
     Args:
         *args:
             All the pandas dataframes that need to be merged together.
+        ignore_index:
+            Boolean value if the Index should be reset to range(0, n) or not.
+
     Returns:
         pandas.DataFrame:
             Singular pandas dataframe that is merged on all rows.
     """
-    return pd.concat([*args], axis=0, ignore_index=True)
+    return pd.concat([*args], axis=0, ignore_index=ignore_index)
 
 
 def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, str | None]:

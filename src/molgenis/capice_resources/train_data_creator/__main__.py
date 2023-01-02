@@ -2,12 +2,13 @@ import gc
 import os
 import gzip
 
-from molgenis.capice_resources.core import Module, GlobalEnums
+from molgenis.capice_resources.core import Module
+from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.utilities import merge_dataset_rows
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
 from molgenis.capice_resources.train_data_creator.sample_weighter import SampleWeighter
 from molgenis.capice_resources.train_data_creator.dataset_splitter import SplitDatasets
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
 from molgenis.capice_resources.train_data_creator.consensus_checker import ConsensusChecker
 from molgenis.capice_resources.train_data_creator.duplicate_processor import DuplicateProcessor
@@ -49,7 +50,7 @@ class TrainDataCreator(Module):
     def _validate_module_specific_arguments(self, parser):
         vkgl = self.input_validator.validate_icli_file(
             parser.get_argument('input_vkgl'),
-            GlobalEnums.TSV_EXTENSIONS.value
+            Genums.TSV_EXTENSIONS.value
         )
         clinvar = self.input_validator.validate_icli_file(
             parser.get_argument('input_clinvar'),
@@ -68,10 +69,10 @@ class TrainDataCreator(Module):
         vkgl = self._read_pandas_tsv(
             arguments['input_vkgl'],
             [
-                TrainDataCreatorEnums.CHROMOSOME.value,
-                TrainDataCreatorEnums.START.value,
-                TrainDataCreatorEnums.SUPPORT.value,
-                TrainDataCreatorEnums.CLASSIFICATION.value
+                Menums.CHROMOSOME.value,
+                Menums.START.value,
+                Menums.SUPPORT.value,
+                Menums.CLASSIFICATION.value
             ]
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
@@ -95,9 +96,9 @@ class TrainDataCreator(Module):
         gc.collect()
 
         return {
-            GlobalEnums.OUTPUT.value: arguments['output'],
-            GlobalEnums.TRAIN_TEST.value: train_test,
-            GlobalEnums.VALIDATION.value: validation
+            Genums.OUTPUT.value: arguments['output'],
+            Genums.TRAIN_TEST.value: train_test,
+            Genums.VALIDATION.value: validation
         }
 
     def export(self, output):
@@ -130,9 +131,9 @@ class TrainDataCreator(Module):
             '##contig=<ID=MT,length=16569,assembly=b37>',
             '##fileDate=20200320'
         ]
-        for types in [GlobalEnums.TRAIN_TEST.value, GlobalEnums.VALIDATION.value]:
+        for types in [Genums.TRAIN_TEST.value, Genums.VALIDATION.value]:
             export_loc = os.path.join(
-                output[GlobalEnums.OUTPUT.value],
+                output[Genums.OUTPUT.value],
                 types + '.vcf.gz'
             )
             with gzip.open(export_loc, 'wt') as fh:
@@ -141,29 +142,29 @@ class TrainDataCreator(Module):
 
             frame = output[types]
 
-            frame['QUAL'] = TrainDataCreatorEnums.EMTPY_VALUE.value
+            frame['QUAL'] = Menums.EMTPY_VALUE.value
             frame['FILTER'] = 'PASS'
-            frame[GlobalEnums.INFO.value] = TrainDataCreatorEnums.EMTPY_VALUE.value
+            frame[Genums.INFO.value] = Menums.EMTPY_VALUE.value
 
-            frame[GlobalEnums.ID.value] = frame[
+            frame[Genums.ID.value] = frame[
                 [
-                    *TrainDataCreatorEnums.further_processing_columns(),
-                    GlobalEnums.BINARIZED_LABEL.value,
-                    GlobalEnums.SAMPLE_WEIGHT.value
+                    *Menums.further_processing_columns(),
+                    Genums.BINARIZED_LABEL.value,
+                    Genums.SAMPLE_WEIGHT.value
                 ]
-            ].astype(str).agg(GlobalEnums.SEPARATOR.value.join, axis=1)
+            ].astype(str).agg(Genums.SEPARATOR.value.join, axis=1)
 
             self.exporter.export_pandas_file(
                 export_loc,
                 frame[
-                    GlobalEnums.VCF_CHROM.value,
-                    GlobalEnums.POS.value,
-                    GlobalEnums.ID.value,
-                    GlobalEnums.REF.value,
-                    GlobalEnums.ALT.value,
+                    Genums.VCF_CHROM.value,
+                    Genums.POS.value,
+                    Genums.ID.value,
+                    Genums.REF.value,
+                    Genums.ALT.value,
                     'QUAL',
                     'FILTER',
-                    GlobalEnums.INFO.value
+                    Genums.INFO.value
                 ], mode='a', compression='gzip', na_rep='.'
             )
 
