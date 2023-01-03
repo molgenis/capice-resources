@@ -108,7 +108,7 @@ class ProcessVEP(Module):
         merged_datasets = merge_dataset_rows(train_test, validation)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
-        build38: bool = arguments['assembly']
+        build38 = arguments['assembly']
         self._process_vep(
             merged_datasets,
             train_features,
@@ -284,7 +284,7 @@ class ProcessVEP(Module):
         validation.reset_index(drop=True, inplace=True)
         return train_test, validation
 
-    def export(self, output: dict[str, str | pd.DataFrame | os.PathLike]):
+    def export(self, output: dict[str, str | pd.DataFrame | os.PathLike[str]]) -> None:
         """
         Main exporting function to call the separate exporters for train-test and validation.
 
@@ -296,14 +296,14 @@ class ProcessVEP(Module):
         """
         self._export_train_test(
             output[Genums.TRAIN_TEST.value],
-            output[Genums.OUTPUT.value]
+            output[Genums.OUTPUT.value]  # type: ignore
         )
         self._export_validation(
             output[Genums.VALIDATION.value],
-            output[Genums.OUTPUT.value]
+            output[Genums.OUTPUT.value]  # type: ignore
         )
 
-    def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike) -> None:
+    def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike[str]) -> None:
         """
         Exporter specific to train-test.
 

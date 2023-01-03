@@ -1,5 +1,4 @@
 import pandas as pd
-from enum import Enum
 
 from molgenis.capice_resources.core import GlobalEnums
 
@@ -46,7 +45,7 @@ def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, st
     return key, value
 
 
-def add_dataset_source(frame: pd.DataFrame, name: str | Enum.value) -> None:
+def add_dataset_source(frame: pd.DataFrame, name: str | object) -> None:
     """
     Function to add a dataset source to a dataset.
     Args:

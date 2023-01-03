@@ -37,14 +37,18 @@ class InputValidator:
 
                 IOError is also raised when a non-optional argument is encountered as None.
         """
-        path_key, path = extract_key_value_dict_cli(path)
-        if path is not None:
-            path = Path(path)
-        self._validate_file(path, extension, can_be_optional)
-        return {path_key: path}
+        path_key, path_value = extract_key_value_dict_cli(path)
+        if path_value is not None:
+            path_value = Path(path_value).absolute()
+        self._validate_file(path_value, extension, can_be_optional)
+        return {path_key: path_value}
 
-    def _validate_file(self, path: Path | None, extension: tuple[str], can_be_optional: bool =
-    False):
+    def _validate_file(
+            self,
+            path: Path | None,
+            extension: tuple[str] | str,
+            can_be_optional: bool = False
+    ) -> None:
         """
         First check if the path is not None, since we can encounter optional arguments.
         Since if path is not None in an optional argument, we can validate the argument.
@@ -67,7 +71,7 @@ class InputValidator:
             path: dict[str, str],
             extension: tuple[str] | None = None,
             force: bool = False
-    ):
+    ) -> dict[str, Path]:
         """
         Validator for specifically the output argument.
 
@@ -96,22 +100,22 @@ class InputValidator:
             OSError:
                 OSError is raised when the output directory can not be made.
         """
-        path_key, path = extract_key_value_dict_cli(path)
-        self._validate_path_is_none(path, False)
-        path = Path(path)
+        path_key, path_value = extract_key_value_dict_cli(path)
+        self._validate_path_is_none(path_value, False)
+        path_value = Path(path_value)
         # Parent path is to prevent the making of output.tsv.gz directory instead of putting
         # output.tsv.gz in the output directory.
         if extension is not None:
-            self._validate_output_file(path, extension, force)
-            parent_path = path.parent
+            self._validate_output_file(path_value, extension, force)
+            parent_path = path_value.parent
         else:
-            parent_path = path
+            parent_path = path_value
         if not os.path.exists(parent_path):
             os.makedirs(parent_path)
-        return {path_key: path}
+        return {path_key: parent_path}
 
     @staticmethod
-    def _validate_path_is_none(path: os.PathLike | None, can_be_optional: bool) -> None:
+    def _validate_path_is_none(path: os.PathLike[str] | str | None, can_be_optional: bool) -> None:
         """
         Staticmethod to check if path is None, raise IOError when can_be_optional is False.
 
@@ -129,9 +133,8 @@ class InputValidator:
         if path is None and not can_be_optional:
             raise IOError('Encountered None argument in non-optional flag.')
 
-
     @staticmethod
-    def _validate_output_file(path: Path, extension: tuple[str] | None, force: bool):
+    def _validate_output_file(path: Path, extension: tuple[str] | str, force: bool):
         if not str(path).endswith(extension):
             raise IOError(f'Output {path} does not end with required extension: {extension}')
         if os.path.isfile(path) and not force:
@@ -183,7 +186,7 @@ class DataValidator:
                 IndexError is raised when the input dataframe does not contain any samples.
         """
         if dataframe.shape[0] <= 0:
-            raise IndexError(f'Given dataframe does not contain samples')
+            raise IndexError('Given dataframe does not contain samples')
 
     @staticmethod
     def _validate_columns_present(dataframe: pd.DataFrame, columns: Iterable):

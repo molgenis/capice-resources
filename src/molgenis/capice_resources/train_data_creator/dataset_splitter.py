@@ -54,8 +54,8 @@ class SplitDatasets:
             benign_set[GlobalEnums.SAMPLE_WEIGHT.value] >= 0.9
         ].shape[0] < validation.shape[0]:
             raise ValueError(
-                f'Not enough benign variants to match pathogenic variants, unable to create '
-                f'validation set.'
+                'Not enough benign variants to match pathogenic variants, unable to create '
+                'validation set.'
             )
         validation = merge_dataset_rows(
             validation,

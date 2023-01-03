@@ -83,7 +83,7 @@ class CompareModelFeatures(Module):
             **output
         }
 
-    def run_module(self, arguments):
+    def run_module(self, arguments) -> dict[str, object]:
         explain_1 = self._read_pandas_tsv(arguments['explain_1'], Menums.list())
         self._process_explain(explain_1)
         explain_2 = self._read_pandas_tsv(arguments['explain_2'], Menums.list())

@@ -38,8 +38,7 @@ class VEPProcesser:
 
         """
         print('Processing GRCh38.')
-        data[Genums.CHROM.value] = \
-        data[Genums.CHROM.value].str.split('chr', expand=True)[1]
+        data[Genums.CHROM.value] = data[Genums.CHROM.value].str.split('chr', expand=True)[1]
         y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
         data.drop(data[~data[Genums.CHROM.value].isin(y)].index, inplace=True)
 

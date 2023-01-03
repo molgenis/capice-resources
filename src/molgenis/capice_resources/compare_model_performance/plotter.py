@@ -16,6 +16,7 @@ from molgenis.capice_resources.compare_model_performance.performance_calculator 
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
     Menums
 
+
 class Plotter:
     def __init__(
             self,
@@ -200,7 +201,9 @@ class Plotter:
                 'Creating required amount of rows and columns according to present Consequences.\n'
             )
             self.n_cols = 3
-            self.n_rows = math.ceil((len(self.process_consequences) / self.n_cols + 1))
+            self.n_rows = math.ceil(
+                (len(self.process_consequences) / self.n_cols + 1)  # type: ignore
+            )
         else:
             print('Creating single plot per figure.\n')
 
@@ -292,7 +295,7 @@ class Plotter:
 
         """
         consequence_tools = ConsequenceTools()
-        for consequence in self.process_consequences:
+        for consequence in self.process_consequences:  # type: ignore
             subset_m1 = consequence_tools.subset_consequence(merged_model_1_data, consequence)
             m1_samples = subset_m1.shape[0]
             subset_m2 = consequence_tools.subset_consequence(merged_model_2_data, consequence)
@@ -382,7 +385,7 @@ class Plotter:
             dataset: pd.DataFrame,
             upper_bound: float | int,
             lower_bound: float | int,
-            last_iter: bool=False
+            last_iter: bool = False
     ) -> pd.DataFrame:
         """
         Function to subset "dataset" based upon the upper_bound and lower_bound.
@@ -738,7 +741,7 @@ class Plotter:
             model_1_size: int,
             model_2_data: pd.DataFrame,
             model_2_size: int,
-            return_tuple: bool=False
+            return_tuple: bool = False
     ) -> str | tuple[str, str]:
         """
         Generic function to create a boxplot label.

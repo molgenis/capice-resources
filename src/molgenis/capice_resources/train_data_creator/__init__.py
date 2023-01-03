@@ -32,9 +32,9 @@ class TrainDataCreatorEnums(ExtendedEnum):
             GlobalEnums.POS.value,
             GlobalEnums.REF.value,
             GlobalEnums.ALT.value,
-            TrainDataCreatorEnums.GENE.value,
-            TrainDataCreatorEnums.CLASS.value,
-            TrainDataCreatorEnums.REVIEW.value,
+            TrainDataCreatorEnums.GENE.value,  # type: ignore
+            TrainDataCreatorEnums.CLASS.value,  # type: ignore
+            TrainDataCreatorEnums.REVIEW.value,  # type: ignore
             GlobalEnums.DATASET_SOURCE.value
         ]
 
@@ -54,5 +54,5 @@ class TrainDataCreatorEnums(ExtendedEnum):
             GlobalEnums.POS.value,
             GlobalEnums.REF.value,
             GlobalEnums.ALT.value,
-            TrainDataCreatorEnums.GENE.value
+            TrainDataCreatorEnums.GENE.value  # type: ignore
         ]
