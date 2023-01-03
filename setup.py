@@ -28,11 +28,15 @@ setup(
         'matplotlib==3.5.1',
         'scikit-learn==1.0.2',
         'graphviz==0.19.1',
-        'seaborn==0.12.1'
+        'seaborn==0.12.1',
     ],
     extras_require={
         'test': [
-            'pytest',
+            'pytest',  # pytest
+            'coverage',  # coverage run -m pytest --junitxml=results.xml && coverage html
+            'mypy',  # mypy --ignore-missing-imports src/
+            'flake8',  # flake8 src/ tests/
+            'flake8-import-order'
         ]
     },
     entry_points={
