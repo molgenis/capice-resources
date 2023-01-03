@@ -234,3 +234,17 @@ class GlobalEnums(ExtendedEnum):
     TRAIN_TEST = 'train_test'
     VALIDATION = 'validation'
     ID = 'ID'
+
+def add_dataset_source(frame: pd.DataFrame, name: str) -> None:
+    """
+    Function to add a dataset source to a dataset.
+    Created it here as creating it in utilities would create a circular import loop.
+
+    Args:
+        frame:
+            The dataframe to which apply the dataset source to.
+        name:
+            The name of the dataset source that needs to be applied.
+
+    """
+    frame[GlobalEnums.DATASET_SOURCE.value] = name

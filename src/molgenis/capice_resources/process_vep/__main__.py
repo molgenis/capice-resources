@@ -3,9 +3,9 @@ import os
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module
+from molgenis.capice_resources.core import Module, add_dataset_source
 from molgenis.capice_resources.core import GlobalEnums as Genums
-from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_source
+from molgenis.capice_resources.utilities import merge_dataset_rows
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
 from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums

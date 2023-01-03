@@ -1,7 +1,7 @@
 import pandas as pd
 
+from molgenis.capice_resources.core import add_dataset_source
 from molgenis.capice_resources.core import GlobalEnums as Genums
-from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
     apply_binarized_label

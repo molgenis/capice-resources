@@ -1,7 +1,5 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
-
 
 def merge_dataset_rows(*args: pd.DataFrame, ignore_index: bool = True) -> pd.DataFrame:
     """
@@ -43,16 +41,3 @@ def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, st
     else:
         value = None
     return key, value
-
-
-def add_dataset_source(frame: pd.DataFrame, name: str | object) -> None:
-    """
-    Function to add a dataset source to a dataset.
-    Args:
-        frame:
-            The dataframe to which apply the dataset source to.
-        name:
-            The name of the dataset source that needs to be applied.
-
-    """
-    frame[GlobalEnums.DATASET_SOURCE.value] = name
