@@ -18,10 +18,9 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: LGPL-3.0',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    python_requires='>=3.9.*',
+    python_requires='>=3.10.*',
     install_requires=[
         'pandas==1.5.2',
         'numpy==1.24.1',
