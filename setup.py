@@ -23,8 +23,8 @@ setup(
     ],
     python_requires='>=3.9.*',
     install_requires=[
-        'pandas==1.3.4',
-        'numpy==1.22.0',
+        'pandas==1.5.2',
+        'numpy==1.24.1',
         'matplotlib==3.5.1',
         'scikit-learn==1.0.2',
         'graphviz==0.19.1',

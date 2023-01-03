@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import argparse
 import typing
 import warnings
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-
-
-# Defining errors
-class IncorrectFileError(Exception):
-    pass
-
-
-class DataError(Exception):
-    pass
 
 
 SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
@@ -26,20 +20,21 @@ ID_SEPARATOR = '!'
 # Defining it here so the initial size can be set, removing duplicated printing code
 class ProgressPrinter:
     def __init__(self):
-        self.before_drop = 0
+        self.grouped_save = None
 
-    def set_initial_size(self, sample_size: int):
-        self.before_drop = sample_size
+    def set_initial_size(self, dataset: pd.DataFrame):
+        self.grouped_save = dataset.groupby('dataset_source').size()
 
-    def new_shape(self, sample_size: int):
-        print(f'Dropped {self.before_drop - sample_size} variants.\n')
-        self.before_drop = sample_size
+    def new_shape(self, dataset: pd.DataFrame):
+        new_save = dataset.groupby('dataset_source').size()
+        dropped = self.grouped_save - new_save
+        for group, counts in zip(dropped.index, dropped.values):
+            print(f'Dropped {counts} variants from {group}')
+        self.grouped_save = new_save
 
     def print_final_shape(self):
-        print(f'Final number of samples: {self.before_drop}')
-
-
-progress_printer = ProgressPrinter()
+        for group, counts in zip(self.grouped_save.index, self.grouped_save.values):
+            print(f'Final number of samples in {group}: {counts}')
 
 
 class CommandLineParser:
@@ -47,7 +42,8 @@ class CommandLineParser:
         parser = self._create_argument_parser()
         self.arguments = parser.parse_args()
 
-    def _create_argument_parser(self):
+    @staticmethod
+    def _create_argument_parser():
         parser = argparse.ArgumentParser(
             prog='Process VEP TSV',
             description='Processes an VEP output TSV (after running it through BCFTools). '
@@ -58,18 +54,32 @@ class CommandLineParser:
         optional = parser.add_argument_group('Optional arguments')
 
         required.add_argument(
-            '-i',
-            '--input',
+            '-it',
+            '--input_train',
             type=str,
             required=True,
-            help='Input location of the VEP TSV'
+            help='Input location of the train-test VEP TSV'
+        )
+        required.add_argument(
+            '-iv',
+            '--input_validation',
+            type=str,
+            required=True,
+            help='Input location of the validation VEP TSV'
         )
         required.add_argument(
             '-o',
             '--output',
             type=str,
             required=True,
-            help='Output path + filename'
+            help='Output path'
+        )
+        required.add_argument(
+            '-j',
+            '--train_features_json',
+            type=str,
+            required=True,
+            help='The train features json that is used in CAPICE training.'
         )
         required.add_argument(
             '-g',
@@ -95,39 +105,50 @@ class CommandLineParser:
 
 
 class Validator:
+    def validate_cla_dataset(self, input_path):
+        self._validate_input(input_path, ('.tsv.gz', '.tsv'))
+        return input_path
+
+    def validate_cla_json(self, input_path):
+        self._validate_input(input_path, ('.json', ))
+        return input_path
+
     @staticmethod
-    def validate_input_cla(input_path):
-        if not input_path.endswith(('.tsv.gz', '.tsv')):
-            raise IncorrectFileError('Input file is not a TSV!')
+    def _validate_input(input_path: os.PathLike, required_extension: tuple[str]):
+        if not os.path.isfile(input_path):
+            raise FileNotFoundError(f'{input_path} does not exist!')
+        if not input_path.endswith(required_extension):
+            raise IOError(f'{input_path} does not match the required extension: '
+                          f'{", ".join(required_extension)}')
 
     @staticmethod
     def validate_output_cla(output_path):
-        if not output_path.endswith('.tsv.gz'):
-            raise IncorrectFileError('Output file has to be defined as .tsv.gz!')
-        # This is intentional.
-        # You have more than enough time to prepare directories when VEP is running.
-        if not os.path.isdir(os.path.dirname(output_path)):
-            raise NotADirectoryError('Output file has to be placed in an directory that already '
-                                     'exists!')
+        output_path = Path(output_path).absolute()
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+        return output_path
 
-    @staticmethod
-    def validate_cgd_path(path):
-        if not path.endswith(('.txt.gz', '.tsv.gz')):
-            raise IncorrectFileError('Input CGD file is not either a gzipped txt or tsv file!')
+    def validate_cgd_path(self, path):
+        self._validate_input(path, ('.txt.gz', '.tsv.gz'))
+        return path
 
     @staticmethod
     def validate_cgd_content(cgd_data):
         required_columns = ['#GENE', 'INHERITANCE']
         for column in required_columns:
             if column not in cgd_data.columns:
-                raise DataError(f'Missing required column in CGD data: {column}')
+                raise KeyError(f'Missing required column in CGD data: {column}')
 
     @staticmethod
-    def validate_input_dataset(input_data):
-        columns_must_be_present = ['SYMBOL', 'CHROM', 'ID', 'gnomAD_HN']
-        for column in columns_must_be_present:
+    def validate_input_dataset(input_data: pd.DataFrame, train_features: list):
+        required_features = ['SYMBOL', 'CHROM', 'ID', 'gnomAD_HN']
+        required_features.extend(train_features)
+        missing = []
+        for column in required_features:
             if column not in input_data.columns:
-                raise DataError(f'Missing required column in supplied dataset: {column}')
+                missing.append(column)
+        if len(missing) > 0:
+            raise KeyError(f'Missing required column in supplied dataset: {", ".join(missing)}')
 
 
 def load_and_correct_cgd(path, present_genes: typing.Iterable):
@@ -147,37 +168,30 @@ def load_and_correct_cgd(path, present_genes: typing.Iterable):
 def process_cli(validator):
     print('Obtaining CLA.')
     cli = CommandLineParser()
-    data_path = cli.get_argument('input')
-    output = cli.get_argument('output')
+    train_test_path = validator.validate_cla_dataset(cli.get_argument('input_train'))
+    validation_path = validator.validate_cla_dataset(cli.get_argument('input_validation'))
+    cgd = validator.validate_cgd_path(cli.get_argument('genes'))
+    train_features = validator.validate_cla_json(cli.get_argument('train_features_json'))
+    output = validator.validate_output_cla(cli.get_argument('output'))
     grch38 = cli.get_argument('assembly')
-    cgd = cli.get_argument('genes')
-
-    print('Validating CLA.')
-    validator.validate_input_cla(data_path)
-    validator.validate_cgd_path(cgd)
-    validator.validate_output_cla(output)
-    print('Input arguments passed.\n')
-    return data_path, output, grch38, cgd
+    print('Input arguments passed.', end='\n\n')
+    return train_test_path, validation_path, output, grch38, cgd, train_features
 
 
-def print_stats_dataset(data: pd.DataFrame, validator):
-    print('Validating dataset.')
-    validator.validate_input_dataset(data)
-    print('Dataset passed.')
+def print_stats_dataset(data: pd.DataFrame, type_dataset: Literal['train_test', 'validation']):
+    print(f'Statistics for dataset: {type_dataset}')
     n_samples = data.shape[0]
     print(f'Sample size: {n_samples}')
     print(f'Feature size: {data.shape[1]}')
-    progress_printer.set_initial_size(n_samples)
     print('Head:')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None,
                            'display.precision', 3):
-        print(data.head())
+        print(data.head(), end='\n\n')
 
 
 def drop_genes_empty(data: pd.DataFrame):
     print('Dropping variants without a gene.')
     data.drop(index=data[data['SYMBOL'].isnull()].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
 
 
 def process_grch38(data: pd.DataFrame):
@@ -185,13 +199,11 @@ def process_grch38(data: pd.DataFrame):
     data['CHROM'] = data['CHROM'].str.split('chr', expand=True)[1]
     y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
     data.drop(data[~data["CHROM"].isin(y)].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
 
 
 def drop_duplicate_entries(data: pd.DataFrame):
     print('Dropping duplicated variants.')
     data.drop_duplicates(inplace=True)
-    progress_printer.new_shape(data.shape[0])
 
 
 def drop_mismatching_genes(data: pd.DataFrame):
@@ -200,7 +212,6 @@ def drop_mismatching_genes(data: pd.DataFrame):
         index=data[data['ID'].str.split(ID_SEPARATOR, expand=True)[4] != data['SYMBOL']].index,
         inplace=True
     )
-    progress_printer.new_shape(data.shape[0])
 
 
 def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
@@ -213,8 +224,6 @@ def drop_heterozygous_variants_in_ar_genes(data: pd.DataFrame, cgd):
             (data['SYMBOL'].isin(ar_genes))
         ].index, inplace=True
     )
-    progress_printer.new_shape(data.shape[0])
-
 
 def extract_label_and_weight(data: pd.DataFrame):
     print('Extracting binarized_label and sample_weight')
@@ -227,11 +236,9 @@ def drop_variants_incorrect_label_or_weight(data: pd.DataFrame):
     data.drop(index=data[data['binarized_label'].isnull()].index, columns=['ID'], inplace=True)
     data.drop(index=data[~data['binarized_label'].isin([0.0, 1.0])].index, inplace=True)
     data.drop(index=data[~data['sample_weight'].isin(SAMPLE_WEIGHTS)].index, inplace=True)
-    progress_printer.new_shape(data.shape[0])
 
 
 def print_finalized_statistics(data: pd.DataFrame):
-    progress_printer.print_final_shape()
     print('Value counts of dataset:')
     print(data[['sample_weight', 'binarized_label']].value_counts())
     print(f'Number of benign variants: {data[data["binarized_label"] == 0].shape[0]}')
@@ -246,32 +253,95 @@ def export_data(data: pd.DataFrame, output):
     data.to_csv(output, index=False, compression='gzip', na_rep='.', sep='\t')
 
 
+def drop_duplicates(data: pd.DataFrame, features: list) -> None:
+    print('Dropping duplicates according to train features.')
+    data.drop_duplicates(subset=features, inplace=True)
+
+
+def merge_data(train_test_data, validation_data):
+    train_test_data['dataset_source'] = 'train_test'
+    validation_data['dataset_source'] = 'validation'
+    concat = pd.concat([train_test_data, validation_data], ignore_index=True, axis=0)
+    # Has to be done in case train_test only has 1-23 in CHROM and validation has sex
+    # chromosomes, or vice versa.
+    concat['CHROM'] = concat['CHROM'].astype(str)
+    return concat
+
+
+def split_data(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    train_test = data.loc[data[data['dataset_source'] == 'train_test'].index, :]
+    train_test.reset_index(drop=True, inplace=True)
+    validation = data.loc[data[data['dataset_source'] == 'validation'].index, :]
+    validation.reset_index(drop=True, inplace=True)
+    return train_test, validation
+
+
+def read_dataset(
+        path: os.PathLike,
+        train_features: list,
+        type_dataset: Literal['train_test', 'validation']
+) -> pd.DataFrame:
+    data = pd.read_csv(path, sep='\t', na_values='.')
+    validator = Validator()
+    validator.validate_input_dataset(data, train_features)
+    print_stats_dataset(data, type_dataset)
+    return data
+
+
+def read_json(path: os.PathLike) -> list[str]:
+    with open(path, 'rt') as fh:
+        data = list(json.load(fh).keys())
+    return data
+
+
 def main():
     validator = Validator()
-    data_path, output, grch38, cgd = process_cli(validator)
+    train_test_path, validation_path, output, grch38, cgd, features_path = process_cli(validator)
+
+    progress_printer = ProgressPrinter()
 
     print('Reading in dataset')
-    data = pd.read_csv(data_path, sep='\t', na_values='.')
-    print_stats_dataset(data, validator)
+
+    train_features = read_json(features_path)
+    train_test_data = read_dataset(train_test_path, train_features, 'train_test')
+    validation_data = read_dataset(validation_path, train_features, 'validation')
+
+    data = merge_data(train_test_data, validation_data)
+    progress_printer.set_initial_size(data)
+
+    drop_duplicates(data, train_features)
+    progress_printer.new_shape(data)
 
     drop_genes_empty(data)
+    progress_printer.new_shape(data)
 
     if grch38:
         process_grch38(data)
+        progress_printer.new_shape(data)
 
     drop_duplicate_entries(data)
+    progress_printer.new_shape(data)
 
     drop_mismatching_genes(data)
+    progress_printer.new_shape(data)
 
     drop_heterozygous_variants_in_ar_genes(data, cgd)
+    progress_printer.new_shape(data)
 
     extract_label_and_weight(data)
+    progress_printer.new_shape(data)
 
     drop_variants_incorrect_label_or_weight(data)
+    progress_printer.new_shape(data)
+    progress_printer.print_final_shape()
 
-    print_finalized_statistics(data)
+    train_test, validation = split_data(data)
 
-    export_data(data, output)
+    print_finalized_statistics(train_test)
+    print_finalized_statistics(validation)
+
+    export_data(train_test, os.path.join(output, 'train_test.tsv.gz'))
+    export_data(validation, os.path.join(output, 'validation.tsv.gz'))
 
 
 if __name__ == '__main__':

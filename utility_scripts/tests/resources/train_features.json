@@ -1,0 +1,21 @@
+{
+    "PolyPhen": null,
+    "SIFT": null,
+    "cDNA_position": null,
+    "CDS_position": null,
+    "Protein_position": null,
+    "Amino_acids": null,
+    "REF": null,
+    "ALT": null,
+    "Consequence": null,
+    "SpliceAI_pred_DP_AG": null,
+    "SpliceAI_pred_DP_AL": null,
+    "SpliceAI_pred_DP_DG": null,
+    "SpliceAI_pred_DP_DL": null,
+    "SpliceAI_pred_DS_AG": null,
+    "SpliceAI_pred_DS_AL": null,
+    "SpliceAI_pred_DS_DG": null,
+    "SpliceAI_pred_DS_DL": null,
+    "Grantham": null,
+    "phyloP": null
+}
