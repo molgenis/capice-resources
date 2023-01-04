@@ -50,7 +50,6 @@ class ModuleMetaclassTest(Module):
     def _validate_module_specific_arguments(self, parser: CommandLineInterface) -> dict[
         str, str | object]:
         foobar = parser.get_argument('input')
-        print(foobar)
         if foobar != {"input": "foo bar"}:
             raise AssertionError('Incorrect implementation of mocking')
         # Adding a fake argument that should always return None
@@ -104,6 +103,7 @@ class TestModule(unittest.TestCase):
             }
         )
         observed = pd.read_csv(temp_output_file_path_and_name(), sep='\t')
+        check_and_remove_directory(temp_output_file_path_and_name())
         pd.testing.assert_frame_equal(observed, expected)
 
 

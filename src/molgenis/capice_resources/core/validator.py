@@ -68,7 +68,7 @@ class InputValidator:
 
     def validate_ocli_directory(
             self,
-            path: dict[str, str],
+            path: dict[str, str | os.PathLike[str]],
             extension: tuple[str] | None = None,
             force: bool = False
     ) -> dict[str, Path]:
@@ -134,9 +134,11 @@ class InputValidator:
             raise IOError('Encountered None argument in non-optional flag.')
 
     @staticmethod
-    def _validate_output_file(path: Path, extension: tuple[str] | str, force: bool):
+    def _validate_output_file(path: Path, extension: tuple[str], force: bool):
         if not str(path).endswith(extension):
-            raise IOError(f'Output {path} does not end with required extension: {extension}')
+            raise IOError(
+                f'Output {path} does not end with required extension: {", ".join(extension)}'
+            )
         if os.path.isfile(path) and not force:
             raise FileExistsError(f'Output {path} already exists and force is not enabled!')
 

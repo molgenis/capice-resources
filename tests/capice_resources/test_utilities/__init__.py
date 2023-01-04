@@ -30,4 +30,7 @@ def check_and_remove_directory(path: str | Path | os.PathLike) -> None:
     Utility function to check if a directory exists and if so, remove it.
     """
     if os.path.exists(path):
-        os.remove(path)
+        if os.path.isdir(path):
+            os.rmdir(path)
+        else:
+            os.remove(path)
