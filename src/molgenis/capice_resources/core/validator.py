@@ -10,7 +10,7 @@ from molgenis.capice_resources.utilities import extract_key_value_dict_cli
 class InputValidator:
     def validate_icli_file(
             self,
-            path: dict[str, os.PathLike | None],
+            path: dict[str, os.PathLike[str] | None | str],
             extension: tuple[str] | str,
             can_be_optional: bool = False
     ) -> dict[str, Path]:
