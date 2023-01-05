@@ -30,7 +30,7 @@ def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, st
 
     Returns:
         tuple:
-            Tuple containing [0] the argument key (str) and [1] its value (pathlib.Path).
+            Tuple containing [0] the argument key (str) and [1] its value (str or None).
     """
     # Done with list(path.keys())[0] so that the path_key is stored as string instead of
     # dict_keys()
