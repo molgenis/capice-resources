@@ -2,6 +2,8 @@ import os
 import unittest
 from pathlib import Path
 
+import pandas as pd
+
 from molgenis.capice_resources.core import GlobalEnums
 from tests.capice_resources.test_utilities import get_testing_resources_dir, \
     temp_output_file_path_and_name, check_and_remove_directory
@@ -90,7 +92,7 @@ class TestInputValidator(unittest.TestCase):
             extension=GlobalEnums.TSV_EXTENSIONS.value
         )
         self.assertNotIn(filename, os.listdir(get_testing_resources_dir()))
-        self.assertDictEqual(observed, {'output': get_testing_resources_dir()})
+        self.assertDictEqual(observed, {'output': Path(path)})
 
     def test_ocli_none_fail(self):
         with self.assertRaises(IOError) as e:
@@ -130,6 +132,54 @@ class TestInputValidator(unittest.TestCase):
             force=True
         )
         self.assertDictEqual(observed, {'output': Path(path)})
+
+
+class TestDataValidator(unittest.TestCase):
+    def setUp(self) -> None:
+        self.dataframe = pd.DataFrame(
+            {
+                'foo': [1, 2, 3],
+                'bar': ['a', 'b', 'c'],
+                'baz': [0.01, 0.02, 0.3]
+            }
+        )
+        self.validator = DataValidator()
+
+    def test_validator_pass(self):
+        self.validator.validate_pandas_dataframe(
+            self.dataframe,
+            required_columns=['foo', 'bar', 'baz']
+        )
+
+    def test_validator_pass_less_columns(self):
+        self.validator.validate_pandas_dataframe(
+            self.dataframe,
+            required_columns=['foo', 'bar']
+        )
+
+    def test_validator_fail_empty_frame(self):
+        with self.assertRaises(IndexError) as e:
+            self.validator.validate_pandas_dataframe(
+                pd.DataFrame(columns=self.dataframe.columns),
+                required_columns=['foo', 'bar']
+            )
+        self.assertEqual('Given dataframe does not contain samples', str(e.exception))
+
+    def test_validator_fail_missing_column(self):
+        with self.assertRaises(KeyError) as e:
+            self.validator.validate_pandas_dataframe(
+                self.dataframe.drop(columns=['foo']),
+                required_columns=['foo', 'bar']
+            )
+        self.assertEqual("'Missing required columns: foo'", str(e.exception))
+
+    def test_validator_fail_missing_columns(self):
+        with self.assertRaises(KeyError) as e:
+            self.validator.validate_pandas_dataframe(
+                self.dataframe.drop(columns=['foo', 'bar']),
+                required_columns=['foo', 'bar', 'baz']
+            )
+        self.assertEqual("'Missing required columns: foo, bar'", str(e.exception))
 
 
 if __name__ == '__main__':

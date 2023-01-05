@@ -107,12 +107,23 @@ class InputValidator:
         # output.tsv.gz in the output directory.
         if extension is not None:
             self._validate_output_file(path_value, extension, force)
-            parent_path = path_value.parent
+            self._check_path_exists(path_value.parent)
         else:
-            parent_path = path_value
-        if not os.path.exists(parent_path):
-            os.makedirs(parent_path)
-        return {path_key: parent_path}
+            self._check_path_exists(path_value)
+        return {path_key: path_value}
+
+    @staticmethod
+    def _check_path_exists(directory: str | os.PathLike[str] | Path) -> None:
+        """
+        Small function to reduce duplication of code to check if a director exists. If not, make it.
+
+        Args:
+            directory:
+                Path that should be checked if it exists or not. Makes directory if not exists.
+
+        """
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
     @staticmethod
     def _validate_path_is_none(path: os.PathLike[str] | str | None, can_be_optional: bool) -> None:
@@ -211,4 +222,4 @@ class DataValidator:
             if column not in dataframe.columns:
                 missing.append(column)
         if len(missing) > 0:
-            raise KeyError(f'Missing required columns: {",".join(missing)}')
+            raise KeyError(f'Missing required columns: {", ".join(missing)}')
