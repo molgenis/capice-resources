@@ -36,9 +36,9 @@ class ConsequenceTools:
             return False
         else:
             if Menums.CONSEQUENCE.value in merged_model_1:
-                return self._split_consequences(merged_model_1[Menums.CONSEQUENCE.value].values())
+                return self._split_consequences(merged_model_1[Menums.CONSEQUENCE.value].values)
             else:
-                return self._split_consequences(merged_model_2[Menums.CONSEQUENCE.value].values())
+                return self._split_consequences(merged_model_2[Menums.CONSEQUENCE.value].values)
 
     @staticmethod
     def _split_consequences(consequence_column: pd.Series | list[str] | np.ndarray) -> list[str]:
@@ -110,10 +110,10 @@ class ConsequenceTools:
             m2 = merged_model_2[
                 merged_model_2[Menums.CONSEQUENCE.value].str.contains(consequence)
             ]
-            if m1.shape[0] != m2.shape[0]:
+            if m1.shape[0] != m2.shape[0] and consequence not in nonequal:
                 nonequal.append(consequence)
-            if len(nonequal) > 0:
-                warnings.warn(
-                    f'Model files differ in sample size for consequence(s): '
-                    f'{", ".join(nonequal)}'
-                )
+        if len(nonequal) > 0:
+            warnings.warn(
+                f'Model files differ in sample size for consequence(s): '
+                f'{", ".join(nonequal)}'
+            )
