@@ -161,8 +161,8 @@ class CompareModelPerformance(Module):
         annotator.add_and_process_impute_af(model_1)
         annotator.add_and_process_impute_af(model_2)
 
-        annotator.add_model_identifier(model_1, 'model_1')
-        annotator.add_model_identifier(model_2, 'model_2')
+        annotator.add_model_identifier(model_1, Menums.MODEL_1.value)
+        annotator.add_model_identifier(model_2, Menums.MODEL_2.value)
 
         plotter = Plotter(
             consequences,

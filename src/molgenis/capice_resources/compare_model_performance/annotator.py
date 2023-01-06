@@ -44,7 +44,10 @@ class Annotator:
             Menus.IMPUTED.value
         ] = True
         merged_model_frame.loc[
-            Menus.IMPUTED.value,
+            merged_model_frame[
+                (merged_model_frame[Menus.IMPUTED.value]) &
+                (merged_model_frame[Menus.GNOMAD_AF.value].isnull())
+                ].index,
             Menus.GNOMAD_AF.value
         ] = 0
 

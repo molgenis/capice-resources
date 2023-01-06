@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_curve, roc_auc_score
 
@@ -27,7 +28,7 @@ class PerformanceCalculator:
             4
         )
 
-    def calculate_roc(self, dataset: pd.DataFrame) -> tuple[float, float, float]:
+    def calculate_roc(self, dataset: pd.DataFrame) -> tuple[np.array, np.array, float]:
         """
         Method to calculate the False Positive Rate (FPR), True Positive Rate (TPR) and Area
         Under Curve (AUC) for a given dataframe containing the SCORE and Binarized_label columns.
@@ -38,8 +39,8 @@ class PerformanceCalculator:
                 TPR and AUC should be calculated.
         Returns:
             tuple:
-                Tuple containing [0] False Positive Rate (float) [1] True Positive Rate (float)
-                and [2] Area Under Curve (float, rounded to 4 decimals).
+                Tuple containing [0] False Positive Rate (numpy.array) [1] True Positive Rate (
+                np.array) and [2] Area Under Curve (float, rounded to 4 decimals).
         """
         fpr, tpr, _ = roc_curve(
             y_true=dataset[Genums.BINARIZED_LABEL.value],

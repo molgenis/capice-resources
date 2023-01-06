@@ -202,7 +202,7 @@ class Plotter:
             )
             self.n_cols = 3
             self.n_rows = math.ceil(
-                (len(self.process_consequences) / self.n_cols + 1)  # type: ignore
+                (len(self.process_consequences) / self.n_cols)  # type: ignore
             )
         else:
             print('Creating single plot per figure.\n')
@@ -877,11 +877,11 @@ class Plotter:
             data=pd.concat([model_1_data, model_2_data]),
             x=Genums.BINARIZED_LABEL.value,
             y=column_to_plot,
-            hue='model',
+            hue=Menums.MODEL_IDENTIFIER.value,
             ax=ax,
             split=True,
             bw=0.1,
-            palette={'model_1': 'red', 'model_2': 'blue'},
+            palette={Menums.MODEL_1.value: 'red', Menums.MODEL_2.value: 'blue'},
             legend=False
         )
         labels = self._create_boxplot_label(

@@ -14,6 +14,8 @@ class CompareModelPerformanceEnums(ExtendedEnum):
     SCORE_DIFF = 'score_diff'
     IMPUTED = 'is_imputed'
     MODEL_IDENTIFIER = 'model_identifier'
+    MODEL_1 = 'model_1'
+    MODEL_2 = 'model_2'
 
 
 class PlottingEnums(ExtendedEnum):
