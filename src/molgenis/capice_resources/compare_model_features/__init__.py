@@ -11,3 +11,4 @@ class CompareModelFeaturesEnums(ExtendedEnum):
     WEIGHT = 'weight'
     COVER = 'cover'
     TOTAL_COVER = 'total_cover'
+    NORMALIZED = '_normalized'

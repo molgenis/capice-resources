@@ -104,12 +104,9 @@ class CompareModelFeatures(Module):
 
         """
         normalizer = Normalizer()
-        before_normalized_columns = explain.columns
         normalizer.normalize_column(explain, Menums.GAIN.value)
-        # new_columns should now have the normalized column, regardless if GAIN or other
-        new_columns = self._obtain_new_column(explain.columns, before_normalized_columns)
         ranker = Ranker()
-        ranker.add_rank(explain, new_columns)
+        ranker.add_rank(explain, Menums.GAIN.value + Menums.NORMALIZED.value)
 
     @staticmethod
     def _merge_explains(explain1: pd.DataFrame, explain2: pd.DataFrame) -> pd.DataFrame:
@@ -130,25 +127,6 @@ class CompareModelFeatures(Module):
             on=Menums.FEATURE.value,
             suffixes=('_model1', '_model2')
         )
-
-    @staticmethod
-    def _obtain_new_column(columns1: pd.DataFrame.columns, columns2: pd.DataFrame.columns) -> \
-            list[str]:
-        """
-        Function to check if a column exists in columns1 but not in columns2
-
-        Args:
-            columns1:
-                pandas.DataFrame.columns object of the first dataframe. Checks if a column does
-                not exist in columns2.
-            columns2:
-                pandas.DataFrame.columns object of the second dataframe. Is a reference for column1.
-
-        Returns:
-            list:
-                List of all the columns that do exist in columns1 but not in columns2.
-        """
-        return list(columns1.difference(columns2))
 
     def export(self, output):
         self.exporter.export_pandas_file(output[Genums.OUTPUT.value], output['dataframe'])
