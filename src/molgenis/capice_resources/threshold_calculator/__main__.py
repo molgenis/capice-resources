@@ -38,6 +38,7 @@ class ThresholdCalculator(Module):
         )
 
         required.add_argument(
+            '-o',
             '--output',
             type=str,
             required=True,
