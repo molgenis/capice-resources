@@ -1,9 +1,14 @@
 import unittest
 
+from matplotlib import pyplot as plt
+
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 
 
 class TestPlotter(unittest.TestCase):
+    def tearDown(self) -> None:
+        plt.close('all')
+
     def test_plotter_init_consequences_supplied(self):
         consequences = [
                     'frameshift_variant',

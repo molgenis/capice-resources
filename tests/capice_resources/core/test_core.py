@@ -9,16 +9,6 @@ from tests.capice_resources.testing_utilities import temp_output_file_path_and_n
 from molgenis.capice_resources.core import Module, GlobalEnums, ExtendedEnum, CommandLineInterface
 
 
-class TestMultipleEnum(ExtendedEnum):
-    FOO = 'foo'
-    BAR = 'bar'
-    BAZ = 'baz'
-
-
-class TestSingleEnum(ExtendedEnum):
-    FOO = 'foo'
-
-
 class ModuleMetaclassTest(Module):
     """
     Testing for the mocked input "foo bar" (_create_module_specific_arguments)
@@ -76,9 +66,17 @@ class ModuleMetaclassTest(Module):
 
 class TestExtendedEnum(unittest.TestCase):
     def test_multiple_enum_correct(self):
+        class TestMultipleEnum(ExtendedEnum):
+            FOO = 'foo'
+            BAR = 'bar'
+            BAZ = 'baz'
+
         self.assertListEqual(TestMultipleEnum.list(), ['foo', 'bar', 'baz'])
 
     def test_single_enum_correct(self):
+        class TestSingleEnum(ExtendedEnum):
+            FOO = 'foo'
+
         self.assertListEqual(TestSingleEnum.list(), ['foo'])
 
 

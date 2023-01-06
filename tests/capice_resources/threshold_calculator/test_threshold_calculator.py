@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
@@ -17,6 +18,9 @@ class TestCalculator(unittest.TestCase):
     def tearDownClass(cls) -> None:
         for file in os.listdir(cls.output_directory):
             check_and_remove_directory(os.path.join(cls.output_directory, file))
+
+    def tearDown(self) -> None:
+        plt.close('all')
 
     @patch(
         'sys.argv',

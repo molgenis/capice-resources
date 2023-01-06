@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.core.errors import SampleMismatchError
@@ -21,6 +22,9 @@ class TestComponentCompareModelPerformance(unittest.TestCase):
     def tearDownClass(cls) -> None:
         for file in os.listdir(cls.output_directory):
             check_and_remove_directory(os.path.join(cls.output_directory, file))
+
+    def tearDown(self) -> None:
+        plt.close('all')
 
     @patch(
         'sys.argv',
@@ -46,7 +50,11 @@ class TestComponentCompareModelPerformance(unittest.TestCase):
         """
         module = CompareModelPerformance()
         with self.assertRaises(SampleMismatchError) as e:
-            module._merge_scores_and_labes(pd.DataFrame(), pd.DataFrame(), force_merge=False)
+            module._merge_scores_and_labes(
+                pd.DataFrame({'foo': ['bar', 'baz']}),
+                pd.DataFrame({'bar': ['foo']}),
+                force_merge=False
+            )
         self.assertEqual(
             str(e.exception),
             'Sample sizes differ and -f/--force-merge is not supplied!'
