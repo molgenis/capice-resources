@@ -63,7 +63,8 @@ class TestCompareModelsExplain(unittest.TestCase):
             self.consequence_tools.validate_consequence_samples_equal(
                 self.df, df2, self.consequences
             )
-        msg = "The score files contain a different number of variants."
+        msg = "Model files differ in sample size for consequence(s): " \
+              "synonymous_variant, missense_variant, intron_variant"
         self.assertEqual(str(context.warning), msg)
 
     def test_has_consequence_df1_df2_equal(self):

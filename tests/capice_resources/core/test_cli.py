@@ -11,10 +11,12 @@ class TestCommandLineInterface(unittest.TestCase):
         self.cli = CommandLineInterface()
         self.parser = self.cli.create_initial('Testing', 'For testing purposes')
 
+    @patch('sys.argv', [__file__])  # Required for Pytest since that adds additional sys.argv
     def test_emtpy_cli(self):
         self.cli.parse_args(self.parser)
         self.assertEqual(self.cli.arguments, Namespace())
 
+    @patch('sys.argv', [__file__])  # Required for Pytest since that adds additional sys.argv
     def test_has_default_not_supplied(self):
         self.parser.add_argument('-i', '--input', default='foobar', help='foobar test')
         self.cli.parse_args(self.parser)
