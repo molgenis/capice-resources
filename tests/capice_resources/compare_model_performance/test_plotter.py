@@ -17,7 +17,7 @@ class TestPlotter(unittest.TestCase):
             'path_model_2_scores',
             'path_model_2_labels'
         )
-        self.assertEqual(1, plotter.n_rows)
+        self.assertEqual(2, plotter.n_rows)
         self.assertEqual(3, plotter.n_cols)
         self.assertTupleEqual((20, 40), plotter._set_figure_size(consequences))
         figure_size = list(plotter.fig_auc.get_size_inches()*plotter.fig_auc.dpi)

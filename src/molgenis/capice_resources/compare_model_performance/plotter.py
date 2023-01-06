@@ -202,7 +202,7 @@ class Plotter:
             )
             self.n_cols = 3
             self.n_rows = math.ceil(
-                (len(self.process_consequences) / self.n_cols)  # type: ignore
+                (len(self.process_consequences) / self.n_cols + 1)  # type: ignore
             )
         else:
             print('Creating single plot per figure.\n')

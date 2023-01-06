@@ -85,7 +85,10 @@ class ThresholdCalculator(Module):
 
     def export(self, output):
         self.exporter.export_pandas_file(
-            output[Genums.OUTPUT.value],
+            os.path.join(  # type: ignore
+                output[Genums.OUTPUT.value],
+                Menums.THRESHOLDS.value + '.tsv.gz'
+            ),
             output[Menums.THRESHOLDS.value]
         )
         output[Menums.FIGURE.value].savefig(  # type: ignore

@@ -111,7 +111,7 @@ class CompareModelPerformance(Module):
             Genums.TSV_EXTENSIONS.value
         )
         labels = self.input_validator.validate_icli_file(
-            parser.get_argument('labels_model_1'),
+            parser.get_argument('labels'),
             Genums.TSV_EXTENSIONS.value
         )
         labels_2 = self.input_validator.validate_icli_file(
@@ -134,8 +134,8 @@ class CompareModelPerformance(Module):
 
     def run_module(self, arguments):
         path_scores_model_1 = arguments['scores_model_1']
-        path_labels_model_1 = arguments['scores_model_2']
-        path_scores_model_2 = arguments['labels_model_1']
+        path_labels_model_1 = arguments['labels']
+        path_scores_model_2 = arguments['scores_model_2']
         path_labels_model_2 = arguments['labels_model_2']
 
         model_1, model_2 = self._read_and_parse_input_data(
@@ -255,7 +255,7 @@ class CompareModelPerformance(Module):
             scores: pd.DataFrame,
             labels: pd.DataFrame,
             force_merge: bool
-    ):
+    ) -> pd.DataFrame:
         """
         Function to perform the merge of scores and labels.
 
@@ -283,7 +283,12 @@ class CompareModelPerformance(Module):
             merge = self._attempt_mismatch_merge(scores, labels, force_merge)
         return merge
 
-    def _attempt_mismatch_merge(self, scores, labels, force_merge) -> pd.DataFrame:
+    def _attempt_mismatch_merge(
+            self,
+            scores: pd.DataFrame,
+            labels: pd.DataFrame,
+            force_merge:  bool
+    ) -> pd.DataFrame:
         """
         Function to attempt the merge between scores and labels in case sample sizes differ.
 

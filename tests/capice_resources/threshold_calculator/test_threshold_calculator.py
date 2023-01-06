@@ -19,13 +19,13 @@ class TestCalculator(unittest.TestCase):
         input_scores = {
             'score': os.path.join(
                 get_testing_resources_dir(),
-                'threshold_calculator', 'scores.tsv.gz'
+                'scores.tsv.gz'
             )
         }
         input_labels = {
             'validation': os.path.join(
                 get_testing_resources_dir(),
-                'threshold_calculator', 'labels.tsv.gz'
+                'labels.tsv.gz'
             )
         }
         output = {
