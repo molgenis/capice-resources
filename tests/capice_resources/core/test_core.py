@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 import pandas as pd
 
-from tests.capice_resources.test_utilities import temp_output_file_path_and_name, \
+from tests.capice_resources.testing_utilities import temp_output_file_path_and_name, \
     check_and_remove_directory
 from molgenis.capice_resources.core import Module, GlobalEnums, ExtendedEnum, CommandLineInterface
 

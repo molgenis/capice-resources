@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums
-from tests.capice_resources.test_utilities import get_testing_resources_dir, \
+from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     temp_output_file_path_and_name, check_and_remove_directory
 from molgenis.capice_resources.core.validator import InputValidator, DataValidator
 

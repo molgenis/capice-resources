@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums
-from tests.capice_resources.test_utilities import get_testing_resources_dir, \
+from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.threshold_calculator.__main__ import ThresholdCalculator
 

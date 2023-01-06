@@ -6,7 +6,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.core.errors import SampleMismatchError
-from tests.capice_resources.test_utilities import get_testing_resources_dir, \
+from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.compare_model_performance import PlottingEnums as Penums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
