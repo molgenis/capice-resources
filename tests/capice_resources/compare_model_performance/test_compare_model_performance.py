@@ -38,10 +38,16 @@ class TestComponentCompareModelPerformance(unittest.TestCase):
     )
     def test_component_full(self):
         CompareModelPerformance().run()
-        self.assertIn(
-            Penums.FIG_AUC.value + '.png',
-            os.listdir(self.output_directory)
-        )
+        for figure in [
+            Penums.FIG_AF.value,
+            Penums.FIG_ROC.value,
+            Penums.FIG_AUC.value,
+            Penums.FIG_B_DIFF.value,
+            Penums.FIG_V_DIFF.value,
+            Penums.FIG_B_DIST.value,
+            Penums.FIG_V_DIST.value
+        ]:
+            self.assertIn(figure + '.png', os.listdir(self.output_directory))
 
     def test_attempt_mismatch_merge_fail(self):
         """
