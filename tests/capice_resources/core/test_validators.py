@@ -32,6 +32,15 @@ class TestInputValidator(unittest.TestCase):
         expected = {'input': Path(correct_path)}
         self.assertDictEqual(observed, expected)
 
+    def test_icli_file_json_pass(self):
+        correct_path = os.path.join(get_testing_resources_dir(), 'features.json')
+        observed = self.validator.validate_icli_file(
+            {'json': correct_path},
+            extension='json'
+        )
+        expected = {'json': Path(correct_path)}
+        self.assertDictEqual(observed, expected)
+
     def test_icli_file_not_exist_fail(self):
         incorrect_path = os.path.join(
             get_testing_resources_dir(), 'nonexisting_tsv_file.tsv.gz'

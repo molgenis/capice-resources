@@ -123,7 +123,7 @@ class ProcessVEP(Module):
         }
 
     @staticmethod
-    def _read_train_features(train_features_argument: os.PathLike) -> list[str]:
+    def _read_train_features(train_features_argument: os.PathLike[str]) -> list[str]:
         """
         Method to load in the train features.
 
@@ -139,7 +139,7 @@ class ProcessVEP(Module):
             features = list(json.load(fh).keys())
         return features
 
-    def _read_vep_data(self, vep_file_argument: os.PathLike) -> pd.DataFrame:
+    def _read_vep_data(self, vep_file_argument: os.PathLike[str]) -> pd.DataFrame:
         """
         Small function to reduce duplication reading in the train-test and validation files.
 
@@ -153,7 +153,7 @@ class ProcessVEP(Module):
         """
         return self._read_pandas_tsv(vep_file_argument, [Menums.GNOMAD_HN.value])
 
-    def _read_cgd_data(self, cgd_file_argument: os.PathLike) -> list[str]:
+    def _read_cgd_data(self, cgd_file_argument: os.PathLike[str]) -> list[str]:
         """
         OO function to read in the CGD data and call the correction method.
 
@@ -185,8 +185,9 @@ class ProcessVEP(Module):
                 since that gene can not ever be AR (it lies on the X chromosome, outside of PAR
                 region).
         """
-        cgd_data.drop(index=cgd_data[cgd_data['#GENE'] == 'TENM1'].index, inplace=True)
-        return list(cgd_data[cgd_data['INHERITANCE'].str.contains('AR')]['#GENE'].values)
+        cgd_data.drop(index=cgd_data[cgd_data[CGDEnum.GENE.value] == 'TENM1'].index, inplace=True)
+        return list(cgd_data[cgd_data[CGDEnum.INHERITANCE.value].str.contains('AR')][
+                        CGDEnum.GENE.value].values)
 
     def _process_vep(
             self,
@@ -276,12 +277,14 @@ class ProcessVEP(Module):
             ].index, :
         ]
         train_test.reset_index(drop=True, inplace=True)
+        train_test.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
         validation = merged_data.loc[
             merged_data[
                 merged_data[Genums.DATASET_SOURCE.value] == Genums.VALIDATION.value
             ].index, :
         ]
         validation.reset_index(drop=True, inplace=True)
+        validation.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
         return train_test, validation
 
     def export(self, output: dict[str, str | pd.DataFrame | os.PathLike[str]]) -> None:
