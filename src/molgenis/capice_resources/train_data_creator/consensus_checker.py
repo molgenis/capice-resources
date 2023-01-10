@@ -18,19 +18,21 @@ class ConsensusChecker:
 
         """
         before_drop = merged_frame.shape[0]
-        vkgl_subset = merged_frame[
-            merged_frame[Genums.DATASET_SOURCE.value] == Menums.VKGL.value
-        ].copy(deep=True)
-        clinvar_subset = merged_frame[
-            merged_frame[Genums.DATASET_SOURCE.value] == Menums.CLINVAR.value
-        ].copy(deep=True)
+        vkgl_subset = merged_frame.loc[
+            merged_frame[merged_frame[Genums.DATASET_SOURCE.value] == Menums.VKGL.value].index,
+            :
+        ]
+        clinvar_subset = merged_frame.loc[
+            merged_frame[merged_frame[Genums.DATASET_SOURCE.value] == Menums.CLINVAR.value].index,
+            :
+        ]
         self._perform_check(merged_frame, vkgl_subset)
         self._perform_check(merged_frame, clinvar_subset)
         after_drop = merged_frame.shape[0]
         div = int((before_drop - after_drop) / 2)
         if div > 0:
             warnings.warn(
-                f'Removed {div} variant(s) due to mismatch consensus'
+                f'Removed {div} variant(s) due to mismatch in consensus'
             )
 
     @staticmethod

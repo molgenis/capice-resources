@@ -28,7 +28,7 @@ class PerformanceCalculator:
             4
         )
 
-    def calculate_roc(self, dataset: pd.DataFrame) -> tuple[np.array, np.array, float]:
+    def calculate_roc(self, dataset: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, float]:
         """
         Method to calculate the False Positive Rate (FPR), True Positive Rate (TPR) and Area
         Under Curve (AUC) for a given dataframe containing the SCORE and Binarized_label columns.

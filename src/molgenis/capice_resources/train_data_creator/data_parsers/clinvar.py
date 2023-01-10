@@ -26,11 +26,12 @@ class ClinVarParser:
         self._obtain_class(clinvar_frame)
         self._obtain_gene(clinvar_frame)
         self._obtain_review(clinvar_frame)
-        add_dataset_source(clinvar_frame, Menums.CLINVAR.value)
-        clinvar_frame = clinvar_frame[Menums.columns_of_interest()]
-        self._correct_class(clinvar_frame)
-        apply_binarized_label(clinvar_frame)
-        return clinvar_frame
+        add_dataset_source(clinvar_frame, Menums.CLINVAR.value)  # type: ignore
+        clinvar_frame_interest = clinvar_frame.loc[:, Menums.columns_of_interest()]
+        del clinvar_frame  # freeing up memory
+        self._correct_class(clinvar_frame_interest)
+        apply_binarized_label(clinvar_frame_interest)
+        return clinvar_frame_interest
 
     def _obtain_class(self, clinvar_frame: pd.DataFrame) -> None:
         """

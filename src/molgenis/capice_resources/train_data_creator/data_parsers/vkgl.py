@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import add_dataset_source
@@ -25,10 +26,11 @@ class VKGLParser:
         self._correct_support(vkgl_frame)
         correct_order_vcf_notation(vkgl_frame)
         self._apply_review_status(vkgl_frame)
-        add_dataset_source(vkgl_frame, Menums.VKGL.value)
-        vkgl_frame = vkgl_frame[Menums.columns_of_interest()]
-        apply_binarized_label(vkgl_frame)
-        return vkgl_frame
+        add_dataset_source(vkgl_frame, Menums.VKGL.value)  # type: ignore
+        vkgl_frame_interest = vkgl_frame.loc[:, Menums.columns_of_interest()]
+        del vkgl_frame  # freeing up memory
+        apply_binarized_label(vkgl_frame_interest)
+        return vkgl_frame_interest
 
     @staticmethod
     def _correct_column_names(vkgl_frame: pd.DataFrame) -> None:
@@ -41,7 +43,7 @@ class VKGLParser:
                 Performed inplace.
 
         """
-        vkgl_frame.rename(
+        vkgl_frame.rename(  # type: ignore
             columns={
                 Menums.CHROMOSOME.value: Genums.VCF_CHROM.value,
                 Menums.START.value: Genums.POS.value,
@@ -64,7 +66,7 @@ class VKGLParser:
         """
         vkgl_frame[Menums.SUPPORT.value] = vkgl_frame[
             Menums.SUPPORT.value
-        ].str.split(' ', expand=True)[0].astype(int)
+        ].str.split(' ', expand=True)[0].astype(np.int64)
 
     @staticmethod
     def _apply_review_status(vkgl_frame) -> None:

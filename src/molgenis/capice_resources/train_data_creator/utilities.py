@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+
 
 def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
     """
@@ -12,12 +15,12 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
             Please note that this ordering is performed inplace.
 
     """
-    pseudo_vcf['order'] = pseudo_vcf['#CHROM']
+    pseudo_vcf['order'] = pseudo_vcf[Genums.VCF_CHROM.value]
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'X'].index, 'order'] = 23
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'Y'].index, 'order'] = 24
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'MT'].index, 'order'] = 25
     pseudo_vcf['order'] = pseudo_vcf['order'].astype(int)
-    pseudo_vcf.sort_values(by=['order', 'POS'], inplace=True)
+    pseudo_vcf.sort_values(by=['order', Genums.POS.value], inplace=True)
     pseudo_vcf.drop(columns='order', inplace=True)
     pseudo_vcf.reset_index(drop=True, inplace=True)
 
@@ -33,7 +36,13 @@ def apply_binarized_label(data: pd.DataFrame) -> None:
             Please note that this performed inplace.
     """
     print('Applying binarized label.')
-    data['binarized_label'] = np.nan
-    data.loc[data[data['class'].isin(['LB', 'B'])].index, 'binarized_label'] = 0
-    data.loc[data[data['class'].isin(['LP', 'P'])].index, 'binarized_label'] = 1
-    data.drop(index=data[data['binarized_label'].isnull()].index, inplace=True)
+    data[Genums.BINARIZED_LABEL.value] = np.nan
+    data.loc[
+        data[data[Menums.CLASS.value].isin(['LB', 'B'])].index,
+        Genums.BINARIZED_LABEL.value
+    ] = 0
+    data.loc[
+        data[data[Menums.CLASS.value].isin(['LP', 'P'])].index,
+        Genums.BINARIZED_LABEL.value
+    ] = 1
+    data.drop(index=data[data[Genums.BINARIZED_LABEL.value].isnull()].index, inplace=True)
