@@ -1,3 +1,6 @@
+[![Build Status](https://app.travis-ci.com/molgenis/capice-resources.svg?branch=main)](https://app.travis-ci.com/molgenis/capice-resources)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=molgenis_capice-resources&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=molgenis_capice-resources)
+
 # capice-resources
 
 Repository for resource files for CAPICE and updating CAPICE model. It contains several modules listed below. Each
