@@ -16,8 +16,8 @@ script:
 - coverage run -m pytest --junitxml=results.xml
 - coverage xml
 - sonar-scanner
-- mypy --ignore-missing-imports train_data_creator/ utility_scripts/
-- flake8 train_data_creator/ utility_scripts/
+- mypy --ignore-missing-imports src/ tests/
+- flake8 src/ tests/
 addons:
   sonarcloud:
     organization: molgenis
