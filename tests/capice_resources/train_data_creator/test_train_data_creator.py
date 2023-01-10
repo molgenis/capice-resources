@@ -1,9 +1,9 @@
 import unittest
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, False)  # add assertion here
+class TestTrainDataCreator(unittest.TestCase):
+    def test_component(self):
+        pass
 
 
 if __name__ == '__main__':

@@ -26,7 +26,7 @@ class TestVKGLParser(unittest.TestCase):
             self.assertIn(col, observed.columns)
         self.assertIn(Genums.BINARIZED_LABEL.value, observed.columns)
         self.assertListEqual(
-            list(observed[Genums.DATASET_SOURCE.value].values),
+            list(observed[Genums.DATASET_SOURCE.value].unique()),
             [Menums.VKGL.value]
         )
 
