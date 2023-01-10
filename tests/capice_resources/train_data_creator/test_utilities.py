@@ -1,6 +1,5 @@
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums as Genums
