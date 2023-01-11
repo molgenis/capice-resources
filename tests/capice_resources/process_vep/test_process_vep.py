@@ -79,6 +79,23 @@ class TestProcessVEP(unittest.TestCase):
         self.assertGreaterEqual(observed.shape[0], 3000)
         self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)
 
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-t', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_test_vep.tsv.gz'),
+            '-v', os.path.join(get_testing_resources_dir(), 'process_vep', 'validation_vep.tsv.gz'),
+            '-f', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_features.json'),
+            '-o', os.path.join(get_testing_resources_dir(), 'process_vep', 'output'),
+            '-g', os.path.join(get_testing_resources_dir(), 'process_vep', 'CGD.txt.gz'),
+            '-a'
+        ]
+    )
+    def test_build38_flag(self):
+        observed = self.processor.parse_and_validate_cli()
+        self.assertIn('assembly', observed.keys())
+        self.assertTrue(observed['assembly'])
+
 
 if __name__ == '__main__':
     unittest.main()
