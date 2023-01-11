@@ -3,13 +3,12 @@
 
 # capice-resources
 
-Repository for resource files for CAPICE and updating CAPICE model. It contains several modules listed below. Each
-module contains their own README (if applicable) describing how to use them.
+Repository for resource files for CAPICE and updating CAPICE model. It contains several modules listed below. 
 
 ## Requirements
 - CAPICE (personal git branch for development)
-- [VIP](https://github.com/molgenis/vip) v4.8.0 (include both GRCh37 & GRCh38 during installation)
-- Python 3.9 or higher
+- [VIP](https://github.com/molgenis/vip) v4.12.2 (include both GRCh37 & GRCh38 during installation)
+- Python 3.10 or higher
 - [Singularity](https://sylabs.io/singularity/)
 
 ## Installation
@@ -17,53 +16,83 @@ module contains their own README (if applicable) describing how to use them.
 1. Download/git clone the source code.
 2. Run `pip --no-cache-dir install -e '.[test]'`
 
+_Please note that for each module to properly function, the installation has to be completed._
+
 To test the individual modules, change directory to the specific module and run `pytest`.
 
 ## Modules:
 
-### validation
+### compare_model_features
 
-Validation is not really a module, but more a folder to contain plots of supporting evidence of a model's performance
-per GitHub release.
+compare_model_features is a module dedicated to compare 2 `capice explain` outputs.
+
+Will output a file containing the normalized "gain" score and the feature ranking according to this normalized gain.
+
+For usage details, use: `compare-model-features -h` or `python3 ./src/molgenis/capice_resources/compare_model_features -h`
+
+### compare_model_performance
+
+The module `compare_model_performance` is a module dedicated to obtain the difference in performance between 2 CAPICE models.
+
+It takes the "validation" dataset (or benchmark dataset, containing "binarized labels") and the `capice predict` output files of 2 different models and measures the performance differences between them. 
+Output plots to show the user the differences in performance between "model 1" and "model 2".
+
+_Note that the filename of the score and "label" datasets will be displayed within the plots. It is up to the user to define easily distinguishable filenames._
+
+For usage details, use: `compare-model-performance -h` or `python3 ./src/molgenis/capice_resources/compare_model_performance -h`
+
+### process_vep
+
+The module `process_vep` is a module available to process the `train-test` and `validation` VEP output TSVs (VCF to TSV using BCFTools, see usage of BCFTools below) back to usable files for the CAPICE training process.
+The reason that this module requires both `train-test` and `validation` is so that duplicate entries between the supposed independently datasets are filtered out.
+Please note that the input supplied to VEP is created using module `train_data_creator`, as this module adds additional information required by this module.
+
+```commandline
+input=</path/to/input.vcf.gz>
+output=</path/to/output.tsv> # Please do not supply the output as gzip
+output_tmp="${output}.tmp"
+HEADER="CHROM\tPOS\tID\tREF\tALT\t"
+FORMAT="%CHROM\t%POS\t%ID\t%REF\t%ALT\t%CSQ\n"
+bcftools +split-vep -d -f "${FORMAT}" -A "tab" -o "${output_tmp}" "${input}"
+echo -e "${HEADER}$(bcftools +split-vep -l "${input}" | cut -f 2 | tr '\n' '\t' | sed 's/\t$//')" | cat - "${output_tmp}" > "${output}" && rm "${output_tmp}"
+gzip "${output}"
+```
+It is adviced to have this in a [script](https://github.com/molgenis/capice/blob/main/scripts/convert_vep_vcf_to_tsv_capice.sh).
+What this script does is it creates a temporary output file using `bcftools +split-vep`, duplicating each entry if more entries exist for that variant (for example due to transcripts) and separating by a tab.
+Then the `echo` call adds back the header to this temporary file and creates the final file.
+
+For usage details, use: `process_vep -h` or `python3 ./src/molgenis/capice_resources/process_vep -h`
+
+### threshold_calculator
+
+The module `threshold_calculator` is a module that uses the "validation" (or benchmark dataset, containing "binarized labels") and a `capice predict` output file to find an optimal threshold according to the [CAPICE publication](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00775-w#Sec2) (see: Methods: Threshold selection strategies).
+It outputs both a plot with an overview of the supplied variants and the optimal recall threshold and a TSV containing all attempted thresholds with their performance metrics.
+
+For usage details, use: `threshold-calculator -h` or `python3 ./src/molgenis/capice_resources/threshold_calculator -h`
 
 ### train_data_creator
 
-The module train_data_creator is here to create new CAPICE train-test and validation datasets. For more information,
-refer to the readme within the module.
+The module `train_data_creator` is a module dedicated to creating `train-test` and independent `validation` datasets to be used in creating a new CAPICE model.
+It uses as input the most recent [ClinVar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) and [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) to create these datasets.
+For the validation dataset, only "high-quality" samples are randomly obtained from both files. All other samples are put into `train-test`. 
 
-### utility_scripts
+For usage details, see: `train-data-creator -h` or `python3 ./src/molgenis/capice_resources/train_data_creator -h`
 
-utility_scripts contains a couple of bash scripts for ease of use, which include but are not limited to lifting over
-variants to GRCh38, running VEP105 and converting a VEP VCF output to TSV. It is advised to use these scripts as they
-maintain a level of consistency throughout the lifespan of CAPICE.
+## Additional scripts:
 
-#### compare_models.py
+### slurm_run_vep.sh
 
-...
+Template sbatch script to run VEP on a Slurm cluster. Ensure it is up-to-date and paths (and the `bind` argument within `args`) are adjusted accordingly before
+using!
 
-#### compare_to_legacy_model.py
-
-...
-
-#### liftover_variants.sh
+### liftover_variants.sh
 
 The script liftover_variants.sh converts a VCF containing GRCh37 variants to GRCh38 variants.
-
-#### process_vep_tsv.py
-
-...
-
-#### slurm_run_vep.sh
-
-Template sbatch script to run VEP on a Slurm cluster. Ensure it is up-to-date and values are adjusted accordingly before
-using!
+For this script the user must ensure paths and variables are set correctly!
 
 ## Usage
 
 ### TLDR
-
-_(For a more detailed explanation on creating the train-test and validation datasets, please see the README in
-[train_data_creator](./train_data_creator/README.md))_
 
 **IMPORTANT:** Unless mentioned otherwise, filenames refer to the same file. So if an output filename
 is described in 1 step and a step later mentions the same filename, they both refer to the same file.
@@ -80,22 +109,25 @@ is described in 1 step and a step later mentions the same filename, they both re
       * [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)
       * [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)
       * [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)
-   6. Update [utility_scripts/slurm_run_vep_step1.sh](utility_scripts/slurm_run_vep_step1.sh):
-      * Ensure all paths are correct.
-      * Ensure the VEP command is equal to that of the CAPICE readme, except: 
-        * `--per_gene` is included.
-        * `--buffer_size` is added (f.e. 500) to reduce memory usage if needed.
-   7. Run the slurm job:
-      ```shell
-      sbatch slurm_run_step1.sh
-      ```
-      This will generate the following files:
+   6. Annotate all downloaded files with VEP using the supplied [slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh):
+       * Supply a smaller `--time` argument to slurm (processing the files should take a maximum of 20 minutes each)
+       * Ensure `-g` is supplied.
+       * To reduce potential error, a for loop should be used to mark each file (this is assuming you have changed directory into the single directory):
+         * ```bash
+           for file in *.vcf.gz; do sbatch --time=00:20:00 slurm_run_vep.sh -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
+           ```
+       * Once all files have been processed, rename the following files:
+       * ```bash
+         mv ./train_input_raw_vep.vcf.gz ./train_input_annotated.vcf.gz
+         mv ./predict_input_raw_vep.vcf.gz ./predict_input.vcf.gz
+         ```
+       You should now have the following files:
       - train_input_annotated.vcf.gz
       - predict_input.vcf.gz
       - breakends_vep.vcf.gz
       - edge_cases_vep.vcf.gz
       - symbolic_alleles_vep.vcf.gz
-   8. Load BCF tools and run
+   7. Load BCF tools and run
       [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
       on the train input. (note: use `-t` when using the conversion tool)
       ```shell
@@ -103,42 +135,38 @@ is described in 1 step and a step later mentions the same filename, they both re
       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
       module purge
       ```
-   9. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
+   8. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
       ```shell
-      module load Python/3.9.1-GCCcore-7.3.0-bare
+      module load Python/3.10.4-GCCcore-11.3.0-bare
       python3 -m venv venv
       source venv/bin/activate
-      pip --no-cache-dir install -e .
+      pip --no-cache-dir install -e '.[test]'
       ```
-      (Note: To run capice-resources on the cluster, manually download the source code from [here](https://github.com/molgenis/capice-resources/archive/refs/heads/main.zip),
-      upload it to the cluster and unzip it there before running the code above.)  
-      ~~(Note: if you want to clone the repository on a cluster, the password asked by github is a generated personal access
-      token that can be set under developer settings on github. Grant all permissions on repository. This might not be necessary
-      anymore once the repository is public.)~~
-   10. Download/prepare CGD data if not yet locally available:
+   9. Download/prepare CGD data if not yet locally available:
+      ```shell
+      wget https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
+      # update_date can be found at the bottom of https://research.nhgri.nih.gov/CGD/download/
+      mv CGD.txt.gz CGD_<update_date>.txt.gz
+      ```
+   10. Run capice-resources `process_vep` module: 
        ```shell
-       wget https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
-       # update_date can be found at the bottom of https://research.nhgri.nih.gov/CGD/download/
-       mv CGD.txt.gz CGD_<update_date>.txt.gz
-       ```
-   11. Run capice-resources/utility_scripts/process_vep_tsv.py
-       ```shell
-       module load Python/3.9.1-GCCcore-7.3.0-bare
-       python3 ./utility_scripts/process_vep_tsv.py -g <path/to/CGD.txt.gz> -i </path/to/train_input_annotated.tsv.gz> -o </path/to/train_input.tsv.gz>
+       module load Python/3.10.4-GCCcore-11.3.0-bare
+       source ./venv/bin/activate
+       process-vep -g <path/to/CGD.txt.gz> -j </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
        deactivate
        module purge
        ```
-   12. Load & install capice:
+   11. Load & install capice:
        ```shell
        git clone https://github.com/molgenis/capice.git
        cd capice
        git checkout <branch_name>
-       module load Python/3.9.1-GCCcore-7.3.0-bare
+       module load Python/3.10.4-GCCcore-11.3.0-bare
        python3 -m venv venv
        source venv/bin/activate
        pip --no-cache-dir install -e '.[test]'
        ```
-   13. Create a script to run capice to generate a new model, like the following:
+   12. Create a script to run capice to generate a new model, like the following:
        ```shell
        #!/bin/bash
        #SBATCH --job-name=CAPICE_POC_train
@@ -150,12 +178,12 @@ is described in 1 step and a step later mentions the same filename, they both re
        #SBATCH --nodes=1
        #SBATCH --export=NONE
        #SBATCH --get-user-env=L60
-       module load Python/3.9.1-GCCcore-7.3.0-bare
+       module load Python/3.10.4-GCCcore-11.3.0-bare
        source </path/to/your/capice/venv/bin/activate>
-       capice -v train -t 8 -i </path/to/train_input.tsv.gz> -m </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.pickle.dat>
+       capice -v train -t 8 -i </path/to/train_input.tsv.gz> -m </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.ubj>
        ```
        And run it (`sbatch <scriptname>`).
-   14. Run BCF tools for the other files:
+   13. Run BCF tools for the other files:
        ```shell
        module load BCFtools/1.11-GCCcore-7.3.0
        bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i predict_input.vcf.gz -o predict_input.tsv.gz
@@ -164,31 +192,31 @@ is described in 1 step and a step later mentions the same filename, they both re
        bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
        module purge
        ```
-   15. Move the files to capice
+   14. Move the files to capice
        ```shell
        cp train_input.tsv.gz </path/to/capice/resources/>
        cp predict_input.tsv.gz </path/to/capice/resources/>
-       cp xgb_booster_poc.pickle.dat </path/to/capice/tests/resources/>
+       cp xgb_booster_poc.ubj </path/to/capice/tests/resources/>
        cp breakends_vep.tsv.gz </path/to/capice/tests/resources/>
        cp edge_cases_vep.tsv.gz </path/to/capice/tests/resources/>
        cp symbolic_alleles_vep.tsv.gz </path/to/capice/tests/resources/>
        ```
-   16. Install your current branch of capice in a virtual environment and run the tests.
+   15. Install your current branch of capice in a virtual environment and run the tests.
        ```shell
-       module load Python/3.9.1-GCCcore-7.3.0-bare
+       module load Python/3.10.4-GCCcore-11.3.0-bare
        python3 -m venv venv
        source venv/bin/activate
        pip --no-cache-dir install -e '.[test]'
        pytest
        deactivate
        ```
-   17. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
+   16. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
-   18. Create pull-request for review.
-   19. Once the pull-request is reviewed/merged by someone else, create a new release-candidate:
+   17. Create pull-request for review.
+   18. Once the pull-request is reviewed/merged by someone else, create a new release-candidate:
        1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
        2. Generate a pre-release draft on GitHub.
-   20. Create new Singularity image of the pre-release:
+   19. Create new Singularity image of the pre-release:
        1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/singularity/def/capice-4.0.0.def)
        2. Update the defined capice version & filename.
        3. Run `sudo singularity build sif/capice-4.0.0.sif def/capice-4.0.0.def` (where `sif/capice-4.0.0.sif` is the output path)
