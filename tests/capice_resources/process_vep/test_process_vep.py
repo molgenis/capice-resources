@@ -73,10 +73,39 @@ class TestProcessVEP(unittest.TestCase):
                 )
             )
         observed = pd.read_csv(
-            os.path.join(get_testing_resources_dir(), 'process_vep', 'output','validation.tsv.gz'),
+            os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'validation.tsv.gz'),
             sep='\t'
         )
         self.assertGreaterEqual(observed.shape[0], 3000)
+        self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-t', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_test_vep.tsv.gz'),
+            '-f', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_features.json'),
+            '-o', os.path.join(get_testing_resources_dir(), 'process_vep', 'output'),
+            '-g', os.path.join(get_testing_resources_dir(), 'process_vep', 'CGD.txt.gz')
+        ]
+    )
+    def test_component_process_vep_no_validation(self):
+        self.processor.run()
+        self.assertIn(
+            'train_test.tsv.gz',
+            os.listdir(
+                os.path.join(
+                    get_testing_resources_dir(),
+                    'process_vep',
+                    'output'
+                )
+            )
+        )
+        observed = pd.read_csv(
+            os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'train_test.tsv.gz'),
+            sep='\t'
+        )
+        self.assertGreaterEqual(observed.shape[0], 10000)
         self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)
 
     @patch(

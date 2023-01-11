@@ -36,8 +36,10 @@ class ProcessVEP(Module):
             '-v',
             '--validation',
             type=str,
-            required=True,
-            help='Input location of the validation VEP TSV'
+            default=None,
+            help='Input location of the validation VEP TSV (optional).'
+                 'When not supplied: will not perform duplicate checking between train-test and '
+                 'validation.'
         )
         required.add_argument(
             '-f',
@@ -76,7 +78,8 @@ class ProcessVEP(Module):
         )
         validation = self.input_validator.validate_icli_file(
             parser.get_argument('validation'),
-            Genums.TSV_EXTENSIONS.value
+            Genums.TSV_EXTENSIONS.value,
+            can_be_optional=True
         )
         train_features = self.input_validator.validate_icli_file(
             parser.get_argument('features'),
@@ -101,11 +104,15 @@ class ProcessVEP(Module):
 
     def run_module(self, arguments):
         train_test = self._read_vep_data(arguments['train_test'])
-        validation = self._read_vep_data(arguments['validation'])
+        validation_present = self._is_validation_present(arguments['validation'])
         output = arguments['output']
         add_dataset_source(train_test, Genums.TRAIN_TEST.value)
-        add_dataset_source(validation, Genums.VALIDATION.value)
-        merged_datasets = merge_dataset_rows(train_test, validation)
+        if validation_present:
+            validation = self._read_vep_data(arguments['validation'])
+            add_dataset_source(validation, Genums.VALIDATION.value)
+            merged_datasets = merge_dataset_rows(train_test, validation)
+        else:
+            merged_datasets = train_test.copy(deep=True)
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
         build38 = arguments['assembly']
@@ -115,12 +122,30 @@ class ProcessVEP(Module):
             cgd,
             build38
         )
-        train_test, validation = self._split_data(merged_datasets)
+        train_test, validation = self._split_data(merged_datasets, validation_present)
         return {
             Genums.TRAIN_TEST.value: train_test,
             Genums.VALIDATION.value: validation,
             Genums.OUTPUT.value: output
         }
+
+    @staticmethod
+    def _is_validation_present(validation_cli_argument: str | None) -> bool:
+        """
+        Function to check if the user supplied a validation dataset or just the train-test.
+
+        Args:
+            validation_cli_argument:
+                The CLI argument of "validation".
+
+        Returns:
+            bool:
+                True if the CLI of validation is supplied, else False.
+        """
+        if validation_cli_argument is None:
+            return False
+        else:
+            return True
 
     @staticmethod
     def _read_train_features(train_features_argument: os.PathLike[str]) -> list[str]:
@@ -259,17 +284,23 @@ class ProcessVEP(Module):
             Genums.SEPARATOR.value, expand=True)[6].astype(float)
 
     @staticmethod
-    def _split_data(merged_data: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def _split_data(
+            merged_data: pd.DataFrame,
+            validation_present: bool = True
+    ) -> tuple[pd.DataFrame, pd.DataFrame |  None]:
         """
         Method to split the merged train-test and validation back to the 2 separate datasets.
 
         Args:
             merged_data:
                 Merged pandas.DataFrame between train-test and validation.
+            validation_present:
+                Boolean argument to tell _split_data that validation is supplied in the CLI or not.
 
         Returns:
             tuple:
-                Tuple containing [0] the train-test dataframe and [1] the validation dataframe.
+                Tuple containing [0] the train-test dataframe and [1] the validation dataframe (
+                if validation_present is True, else None).
         """
         train_test = merged_data.loc[
             merged_data[
@@ -278,13 +309,16 @@ class ProcessVEP(Module):
         ]
         train_test.reset_index(drop=True, inplace=True)
         train_test.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
-        validation = merged_data.loc[
-            merged_data[
-                merged_data[Genums.DATASET_SOURCE.value] == Genums.VALIDATION.value
-            ].index, :
-        ]
-        validation.reset_index(drop=True, inplace=True)
-        validation.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
+        if validation_present:
+            validation = merged_data.loc[
+                merged_data[
+                    merged_data[Genums.DATASET_SOURCE.value] == Genums.VALIDATION.value
+                ].index, :
+            ]
+            validation.reset_index(drop=True, inplace=True)
+            validation.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
+        else:
+            validation = None
         return train_test, validation
 
     def export(self, output: dict[str, str | pd.DataFrame | os.PathLike[str]]) -> None:
@@ -301,10 +335,11 @@ class ProcessVEP(Module):
             output[Genums.TRAIN_TEST.value],
             output[Genums.OUTPUT.value]  # type: ignore
         )
-        self._export_validation(
-            output[Genums.VALIDATION.value],
-            output[Genums.OUTPUT.value]  # type: ignore
-        )
+        if output[Genums.VALIDATION.value] is not None:
+            self._export_validation(
+                output[Genums.VALIDATION.value],
+                output[Genums.OUTPUT.value]  # type: ignore
+            )
 
     def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike[str]) -> None:
         """
