@@ -32,7 +32,7 @@ class ProcessVEP(Module):
             required=True,
             help='Input location of train-test VEP TSV'
         )
-        required.add_argument(
+        optional.add_argument(
             '-v',
             '--validation',
             type=str,
