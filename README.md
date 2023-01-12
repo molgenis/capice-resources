@@ -114,7 +114,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        * Ensure `-g` is supplied.
        * To reduce potential error, a for loop should be used to mark each file (this is assuming you have changed directory into the single directory):
          * ```bash
-           for file in *.vcf.gz; do sbatch --time=00:20:00 slurm_run_vep.sh -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
+           for file in *.vcf.gz; do sbatch --time=00:20:00 slurm_run_vep.sh -p </path/to/vip_install_directory> -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
            ```
        * Once all files have been processed, rename the following files:
        * ```bash
