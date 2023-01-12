@@ -24,7 +24,11 @@ Example:
 bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
 
 Requirements:
-Picard singularity image
+- Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
+- Picard singularity image
+
+Notes:
+In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 main() {
@@ -128,7 +132,7 @@ runLiftover() {
   local args=()
 
   args+=("exec")
-  args+=("--bind" "/apps,/groups")
+  # args+=("--bind" "add your binds here")
   args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
@@ -138,7 +142,7 @@ runLiftover() {
   args+=("REJECT=${rejected}")
   args+=("R=${reference}")
 
-  singularity "${args[@]}"
+  apptainer "${args[@]}"
 
   gzip "${output}"
   gzip "${rejected}"

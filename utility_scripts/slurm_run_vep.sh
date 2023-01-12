@@ -27,7 +27,11 @@ Example:
 run_vep.sh -p /path/to/vip -i some_file.vcf.gz -o some_file_vep.vcf.gz
 
 Requirements:
-VIP installment (https://github.com/molgenis/vip)
+- Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
+- VIP installment (https://github.com/molgenis/vip)
+
+Notes:
+In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 FORCE=false
@@ -80,7 +84,7 @@ validateCommandLine() {
     if [ ! -f "${vep_image}" ]
     then
       valid=false
-      errcho "VEP 107.0 singularity image does not exist"
+      errcho "VEP 107.0 image does not exist"
     fi
   fi
 
@@ -135,7 +139,7 @@ validateCommandLine() {
 runVep() {
   local args=()
   args+=("exec")
-  args+=("--bind" "/apps,/groups")
+  # args+=("--bind" "add your binds here")
   args+=("${vep_image}")
   args+=("vep")
   args+=("--input_file" "${input}")
@@ -180,7 +184,7 @@ runVep() {
     args+=("--custom" "${resources_directory}GRCh38/gnomad.genomes.v3.1.2.sites.stripped.vcf.gz,gnomAD,vcf,exact,0,AF,HN")
     args+=("--custom" "${resources_directory}GRCh38/hg38.phyloP100way.bw,phyloP,bigwig,exact,0")
   fi
-  singularity "${args[@]}"
+  apptainer "${args[@]}"
 }
 
 main "$@"
