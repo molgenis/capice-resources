@@ -103,7 +103,8 @@ class TestProcessVEP(unittest.TestCase):
         )
         observed = pd.read_csv(
             os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'train_test.tsv.gz'),
-            sep='\t'
+            sep='\t',
+            low_memory=False
         )
         self.assertGreaterEqual(observed.shape[0], 10000)
         self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)

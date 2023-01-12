@@ -5,6 +5,7 @@ import gzip
 from molgenis.capice_resources.core import Module
 from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.utilities import merge_dataset_rows
+from molgenis.capice_resources.train_data_creator.filter import SVFilter
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
 from molgenis.capice_resources.train_data_creator.sample_weighter import SampleWeighter
 from molgenis.capice_resources.train_data_creator.dataset_splitter import SplitDatasets
@@ -89,6 +90,8 @@ class TrainDataCreator(Module):
         DuplicateProcessor().process(merge)
 
         SampleWeighter().apply_sample_weight(merge)
+
+        SVFilter().filter(merge)
 
         train_test, validation = SplitDatasets().split(merge)
 
