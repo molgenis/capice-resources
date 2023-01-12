@@ -18,13 +18,13 @@ Usage:
 run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
--o    required: The directory and output filename for the CAPICE .tsv.gz.
+-o    required: The directory and output filename.
 -a    optional: change the assembly from GRCh37 to GRCh38.
 -g    optional: enables the --per-gene flag for VEP.
 -f    optional: Force flag. Overwrites existing output.
 
 Example:
-run_vep.sh -p /path/to/vep_image.sif -i some_file.vcf.gz -o some_file_vep.tsv.gz
+run_vep.sh -p /path/to/vip -i some_file.vcf.gz -o some_file_vep.vcf.gz
 
 Requirements:
 VIP installment (https://github.com/molgenis/vip)
