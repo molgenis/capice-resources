@@ -13,20 +13,19 @@ errcho() { echo "$@" 1>&2; }
 
 readonly USAGE="Easy bash script to convert a GRCh37 VCF to GRCh38 VCF
 Usage:
-liftover_variants.sh -i <arg> -o <arg>
+liftover_variants.sh -p <arg> -i <arg> -o <arg> -c <arg> -r <arg>
+-p  required: The path to the Picard singularity image
 -i  required: the GRCh37 input VCF
 -o  required: the GRCh38 output VCF path+filename (except extension!)
 -c  required: the chain file
 -r  required: the reference sequence fasta for the TARGET build
 
 Example:
-bash liftover_variants.sh -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
+bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
 
 Requirements:
 Picard singularity image
 "
-
-PICARD_IMAGE=<"/path/to/picard.sif">
 
 main() {
   digestCommandLine "$@"
@@ -34,9 +33,10 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts i:o:c:r:h flag
+  while getopts p:i:o:c:r:h flag
   do
     case "${flag}" in
+      p) picard_path=${OPTARG};;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
       c) chain_file=${OPTARG};;
@@ -58,6 +58,18 @@ digestCommandLine() {
 
 validateCommandLine() {
   local valid_command_line=true
+  if [ -z "${picard_path}" ]
+  then
+    valid_command_line=false
+    errcho "picard singularity image not set"
+  else
+     if [ ! -f "${picard_path}" ]
+     then
+       valid_command_line=false
+       errcho "picard singularity image does not exist"
+     fi
+  fi
+
   if [ -z "${input}" ]
   then
     valid_command_line=false
@@ -117,6 +129,7 @@ runLiftover() {
 
   args+=("exec")
   args+=("--bind" "/apps,/groups")
+  args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
   args+=("I=${input}")
