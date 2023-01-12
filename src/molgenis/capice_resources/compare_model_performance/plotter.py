@@ -522,7 +522,7 @@ class Plotter:
             model_2_data[model_2_data[Menums.GNOMAD_AF.value] == 0].shape[0]
         )
 
-        bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin
+        bins = Genums.AF_BINS.value
         # Sadly bins*100 doesn't work for 1e-6, cause of rounding errors
         bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
         for i in range(1, len(bins)):

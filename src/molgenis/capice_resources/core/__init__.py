@@ -234,6 +234,7 @@ class GlobalEnums(ExtendedEnum):
     TRAIN_TEST = 'train_test'
     VALIDATION = 'validation'
     ID = 'ID'
+    AF_BINS = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin 100%
 
 
 def add_dataset_source(frame: pd.DataFrame, name: str) -> None:
