@@ -169,9 +169,9 @@ class InputDatasetValidator:
         Method to validate that at least one pathogenic and one benign sample is present
         """
         if dataset[dataset['binarized_label'] == 0].shape[0] == 0:
-            raise ValueError('Not enough benign samples to balance!')
+            raise ValueError('No benign samples found. Balancing not possible!')
         if dataset[dataset['binarized_label'] == 1].shape[0] == 0:
-            raise ValueError('Not enough pathogenic samples to balance!')
+            raise ValueError('No pathogenic samples found. Balancing not possible!')
 
 
 class Balancer:
@@ -200,7 +200,7 @@ class Balancer:
 
     @staticmethod
     def _reset_impute(dataset: pd.DataFrame):
-        dataset.loc[dataset['is_imputed'] == 1, 'gnomAD_AF'] = None
+        dataset.loc[dataset[dataset['is_imputed'] == 1].index, 'gnomAD_AF'] = None
         dataset.drop(columns=['is_imputed'], inplace=True)
 
     def _set_bins(self, gnomad_af: pd.Series):
@@ -216,9 +216,9 @@ class Balancer:
         self.columns = columns.append(pd.Index(['balanced_on']))
 
     def balance(self, dataset: pd.DataFrame):
-        self._set_columns(dataset.columns)
         self._mark_and_impute(dataset)
         self._set_bins(dataset['gnomAD_AF'])
+        self._set_columns(dataset.columns)
         pathogenic = dataset.loc[dataset[dataset['binarized_label'] == 1].index, :]
         benign = dataset.loc[dataset[dataset['binarized_label'] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)

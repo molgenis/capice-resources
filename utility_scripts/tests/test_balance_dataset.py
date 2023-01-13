@@ -383,6 +383,22 @@ class TestBalancer(unittest.TestCase):
                 expected_rows[consequence],
                 msg=f'Test failed on consequence: {consequence}'
             )
+            # _process_consequence() returns an empty dataframe, without columns,
+            # if expected_rows[consequence] equals 0.
+            if expected_rows[consequence] > 0:
+                n_benign = observed[observed['binarized_label'] == 0].shape[0]
+                n_patho = observed[observed['binarized_label'] == 1].shape[0]
+                self.assertEqual(
+                    n_benign,
+                    n_patho,
+                    msg=f'Test failed on consequence: {consequence} for n_benign: {n_benign} and '
+                        f'n_pathogenic: {n_patho}'
+                )
+            else:
+                self.assertListEqual(
+                    list(observed.columns),
+                    []
+                )
 
     def test_balancer_known_input(self):
         """
@@ -414,6 +430,12 @@ class TestBalancer(unittest.TestCase):
             self.assertIn(variant, expected_variants)
         self.assertFalse(balanced['variant'].duplicated().any())
 
+    def test_balancer_empty_input(self):
+        test_case = pd.DataFrame(columns=['variant', 'Consequence', 'gnomAD_AF', 'binarized_label'])
+        observed_balanced, observed_remainder = Balancer(VerbosityPrinter()).balance(test_case)
+        self.assertEqual(observed_balanced.shape[0], 0)
+        self.assertEqual(observed_remainder.shape[0], 0)
+
     def test_duplicate_processing_balancer(self):
         """
         Test to see if a sample with multiple consequences gets sampled only once
@@ -432,6 +454,32 @@ class TestBalancer(unittest.TestCase):
         )
         observed, _ = Balancer(VerbosityPrinter()).balance(test_dataset)
         self.assertFalse(observed.duplicated().any())
+        expected_rows = {'consequence_1': 2, 'consequence_2': 2}
+        self._test_consequence(test_dataset, expected_rows)
+
+    def test_duplicate_processing_balancer_consequence_missing(self):
+        """
+        Test to see if a sample with multiple consequences gets, even if it can balance another
+        consequence
+
+        No call to _test_consequence, since that method does not check if a consequence has been
+        sampled already, the balance() method does.
+        """
+        test_dataset = pd.DataFrame(
+            {
+                'Consequence': [
+                    'consequence_1&consequence_2',
+                    'consequence_1',
+                    'consequence_2'
+                ],
+                'binarized_label': [0, 1, 1],
+                'gnomAD_AF': [0.0, 0.0, 0.0]
+            }
+        )
+        observed, remainder = Balancer(VerbosityPrinter()).balance(test_dataset)
+        self.assertFalse(observed.duplicated().any())
+        self.assertFalse('consequence_2' in observed['Consequence'].values)
+        self.assertTrue('consequence_2' in remainder['Consequence'].values)
 
     def test_cla_validator(self):
         """
