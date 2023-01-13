@@ -10,6 +10,10 @@ class BalanceDataset(Module):
             program='Balance dataset',
             description='Balancing script to balance a CAPICE dataset on Consequence and allele '
                         'frequency.'
+                        'Please note that it balances assuming you have used train-data-creator, '
+                        'which add a "binarized_label" to the data. The GnomAD allele frequency '
+                        'annotation from VEP is also required (custom or VEP flag). '
+                        'Also requires the "consequence" column.'
         )
         self.random_state = 5
         self.bins = Genums.AF_BINS.value
