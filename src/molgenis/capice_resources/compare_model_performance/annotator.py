@@ -2,7 +2,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menus
+    Menums
 
 
 class Annotator:
@@ -18,7 +18,7 @@ class Annotator:
                 Is performed inplace.
 
         """
-        merged_model_frame[Menus.SCORE_DIFF.value] = abs(
+        merged_model_frame[Menums.SCORE_DIFF.value] = abs(
             merged_model_frame[
                 Genums.SCORE.value
             ] - merged_model_frame[
@@ -38,17 +38,17 @@ class Annotator:
                 imputed. Marks samples that have been imputed. Is performed inplace.
 
         """
-        merged_model_frame[Menus.IMPUTED.value] = False
+        merged_model_frame[Menums.IMPUTED.value] = False
         merged_model_frame.loc[
-            merged_model_frame[Menus.GNOMAD_AF.value].isnull(),
-            Menus.IMPUTED.value
+            merged_model_frame[Genums.GNOMAD_AF.value].isnull(),
+            Menums.IMPUTED.value
         ] = True
         merged_model_frame.loc[
             merged_model_frame[
-                (merged_model_frame[Menus.IMPUTED.value]) &
-                (merged_model_frame[Menus.GNOMAD_AF.value].isnull())
+                (merged_model_frame[Menums.IMPUTED.value]) &
+                (merged_model_frame[Genums.GNOMAD_AF.value].isnull())
                 ].index,
-            Menus.GNOMAD_AF.value
+            Genums.GNOMAD_AF.value
         ] = 0
 
     @staticmethod
@@ -65,4 +65,4 @@ class Annotator:
                 The string that will fill the column that marks the origin.
 
         """
-        merged_model_frame[Menus.MODEL_IDENTIFIER.value] = model
+        merged_model_frame[Menums.MODEL_IDENTIFIER.value] = model

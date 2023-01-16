@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -41,3 +42,26 @@ def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, st
     else:
         value = None
     return key, value
+
+def split_consequences(consequence_column: pd.Series | list[str] | np.ndarray) -> list[str]:
+    """
+    Function to obtain all unique consequences from the Consequences column, even if hidden
+    within a singular sample.
+
+    Args:
+        consequence_column:
+            The pandas series, list or numpy ndarray of the consequence column over which all
+            unique consequences should be obtained.
+    Returns:
+        list:
+            List of all unique consequences from consequence_column. Even the ones hidden
+            inside a singular sample.
+    """
+    if not isinstance(consequence_column, pd.Series):
+        consequence_column = pd.Series(consequence_column)
+    splitted_consequences = consequence_column.str.split('&', expand=True)
+    return list(
+        pd.Series(
+            splitted_consequences.values.ravel()
+        ).dropna().sort_values(ignore_index=True).unique()
+    )

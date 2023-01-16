@@ -15,7 +15,7 @@ class TestCMPAnnotator(unittest.TestCase):
             {
                 GlobalEnums.SCORE.value: [0.9, 0.8, 0.7, 0.6],
                 GlobalEnums.BINARIZED_LABEL.value: [1, 0, 1, 0],
-                Menums.GNOMAD_AF.value: [0.9, None, None, 0.0]
+                GlobalEnums.GNOMAD_AF.value: [0.9, None, None, 0.0]
             }
         )
 

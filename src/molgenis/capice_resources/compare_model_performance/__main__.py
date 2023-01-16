@@ -218,7 +218,7 @@ class CompareModelPerformance(Module):
             labels1_argument,
             [
                 Genums.BINARIZED_LABEL.value,
-                Menums.GNOMAD_AF.value
+                Genums.GNOMAD_AF.value
             ]
         )
         # No _read_pandas_tsv yet, since it can be None
@@ -240,7 +240,7 @@ class CompareModelPerformance(Module):
                 labels2,
                 [
                     Genums.BINARIZED_LABEL.value,
-                    Menums.GNOMAD_AF.value
+                    Genums.GNOMAD_AF.value
                 ]
             )
             merge_model_2 = self._merge_scores_and_labes(

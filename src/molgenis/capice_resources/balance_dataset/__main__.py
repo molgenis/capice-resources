@@ -2,6 +2,8 @@ import pandas as pd
 
 from molgenis.capice_resources.core import Module, CommandLineInterface
 from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
+from molgenis.capice_resources.balance_dataset.balancer import Balancer
 
 
 class BalanceDataset(Module):
@@ -63,8 +65,43 @@ class BalanceDataset(Module):
             **verbose
         }
 
-    def run_module(self, arguments: dict[str, str | object]) -> dict:
-        pass
+    def run_module(self, arguments):
+        dataset = self._read_pandas_tsv(
+            arguments['input'],
+            [Genums.GNOMAD_AF.value, Genums.CONSEQUENCE.value, Genums.BINARIZED_LABEL.value]
+        )
+        self._validate_benign_pathogenic_present(dataset)
+        balancer = Balancer(arguments['verbose'])
+        balanced, remainder = balancer.balance(dataset)
+        return {
+            Menums.BALANCED.value: balanced,
+            Menums.REMAINDER.value: remainder,
+            Genums.OUTPUT.value: arguments['output']
+        }
+
+    @staticmethod
+    def _validate_benign_pathogenic_present(dataset: pd.DataFrame) -> None:
+        """
+        Function to check if both pathogenic and benign samples are present.
+        Note: this is different from /core/validator/DataValidator since this specifically
+        checks benign and pathogenic. Expanding that validator would decrease its usability in
+        multiple modules.
+
+        Args:
+            dataset:
+                The loaded in pandas.DataFrame of the dataset over which should be balanced.
+
+        Raises:
+            ValueError:
+                ValueError is raised when either no benign or pathogenic samples are present.
+
+        """
+        n_benign = dataset[dataset[Genums.BINARIZED_LABEL.value] == 0]
+        n_pathogenic = dataset[dataset[Genums.BINARIZED_LABEL.value] == 1]
+        if n_benign == 0:
+            raise ValueError('No benign samples present. Balancing not possible.')
+        if n_pathogenic == 0:
+            raise ValueError('No pathogenic samples present. Balancing not possible.')
 
     def export(self, output: dict[object, object]) -> None:
         pass

@@ -1,10 +1,9 @@
 import warnings
 
-import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menums
+from molgenis.capice_resources.utilities import split_consequences
+from molgenis.capice_resources.core import GlobalEnums as Genums
 
 
 class ConsequenceTools:
@@ -27,42 +26,18 @@ class ConsequenceTools:
                 either model 1 merge frame or model 2 merge frame.
         """
         if (
-                Menums.CONSEQUENCE.value not in merged_model_1.columns or
-                Menums.CONSEQUENCE.value not in merged_model_2.columns
+                Genums.CONSEQUENCE.value not in merged_model_1.columns or
+                Genums.CONSEQUENCE.value not in merged_model_2.columns
         ):
             warnings.warn(
                 'Missing consequence column. Disabling per-consequence performance metrics.'
             )
             return False
         else:
-            if Menums.CONSEQUENCE.value in merged_model_1:
-                return self._split_consequences(merged_model_1[Menums.CONSEQUENCE.value].values)
+            if Genums.CONSEQUENCE.value in merged_model_1:
+                return split_consequences(merged_model_1[Genums.CONSEQUENCE.value].values)
             else:
-                return self._split_consequences(merged_model_2[Menums.CONSEQUENCE.value].values)
-
-    @staticmethod
-    def _split_consequences(consequence_column: pd.Series | list[str] | np.ndarray) -> list[str]:
-        """
-        Function to obtain all unique consequences from the Consequences column, even if hidden
-        within a singular sample.
-
-        Args:
-            consequence_column:
-                The pandas series, list or numpy ndarray of the consequence column over which all
-                unique consequences should be obtained.
-        Returns:
-            list:
-                List of all unique consequences from consequence_column. Even the ones hidden
-                inside a singular sample.
-        """
-        if not isinstance(consequence_column, pd.Series):
-            consequence_column = pd.Series(consequence_column)
-        splitted_consequences = consequence_column.str.split('&', expand=True)
-        return list(
-            pd.Series(
-                splitted_consequences.values.ravel()
-            ).dropna().sort_values(ignore_index=True).unique()
-        )
+                return split_consequences(merged_model_2[Genums.CONSEQUENCE.value].values)
 
     @staticmethod
     def subset_consequence(dataframe: pd.DataFrame, consequence: str) -> pd.DataFrame:
@@ -81,7 +56,7 @@ class ConsequenceTools:
                 The sub setted input dataframe in which all samples contain the consequence
                 "consequence".
         """
-        return dataframe[dataframe[Menums.CONSEQUENCE.value].str.contains(consequence)]
+        return dataframe[dataframe[Genums.CONSEQUENCE.value].str.contains(consequence)]
 
     @staticmethod
     def validate_consequence_samples_equal(
@@ -105,10 +80,10 @@ class ConsequenceTools:
         nonequal = []
         for consequence in splitted_consequences:
             m1 = merged_model_1[
-                merged_model_1[Menums.CONSEQUENCE.value].str.contains(consequence)
+                merged_model_1[Genums.CONSEQUENCE.value].str.contains(consequence)
             ]
             m2 = merged_model_2[
-                merged_model_2[Menums.CONSEQUENCE.value].str.contains(consequence)
+                merged_model_2[Genums.CONSEQUENCE.value].str.contains(consequence)
             ]
             if m1.shape[0] != m2.shape[0] and consequence not in nonequal:
                 nonequal.append(consequence)

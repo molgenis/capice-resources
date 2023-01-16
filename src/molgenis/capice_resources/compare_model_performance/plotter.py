@@ -408,14 +408,14 @@ class Plotter:
         """
         if last_iter:
             return dataset[
-                (dataset[Menums.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[Menums.GNOMAD_AF.value] <= upper_bound) &
+                (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[Genums.GNOMAD_AF.value] <= upper_bound) &
                 (~dataset[Menums.IMPUTED.value])
                 ]
         else:
             return dataset[
-                (dataset[Menums.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[Menums.GNOMAD_AF.value] < upper_bound) &
+                (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[Genums.GNOMAD_AF.value] < upper_bound) &
                 (~dataset[Menums.IMPUTED.value])
                 ]
 
@@ -501,10 +501,10 @@ class Plotter:
         # Including imputed and non-imputed 0
         try:
             f_auc_m1 = self.calculator.calculate_auc(
-                model_1_data[model_1_data[Menums.GNOMAD_AF.value] == 0]
+                model_1_data[model_1_data[Genums.GNOMAD_AF.value] == 0]
             )
             f_auc_m2 = self.calculator.calculate_auc(
-                model_2_data[model_2_data[Menums.GNOMAD_AF.value] == 0]
+                model_2_data[model_2_data[Genums.GNOMAD_AF.value] == 0]
             )
         except ValueError:
             print('Could not calculate an AUC for possible singleton variants.')
@@ -517,9 +517,9 @@ class Plotter:
             0,
             '"0"',
             f_auc_m1,
-            model_1_data[model_1_data[Menums.GNOMAD_AF.value] == 0].shape[0],
+            model_1_data[model_1_data[Genums.GNOMAD_AF.value] == 0].shape[0],
             f_auc_m2,
-            model_2_data[model_2_data[Menums.GNOMAD_AF.value] == 0].shape[0]
+            model_2_data[model_2_data[Genums.GNOMAD_AF.value] == 0].shape[0]
         )
 
         bins = Genums.AF_BINS.value

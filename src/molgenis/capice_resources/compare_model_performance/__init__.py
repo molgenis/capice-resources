@@ -6,11 +6,9 @@ class CompareModelPerformanceEnums(ExtendedEnum):
     Enums specific to CompareModelPerformance, not including the enums that are specific to
     plotting the actual performance.
     """
-    GNOMAD_AF = 'gnomAD_AF'
     CHR = 'chr'
     GENE_NAME = 'gene_name'
     MERGE_COLUMN = 'merge_column'
-    CONSEQUENCE = 'Consequence'
     SCORE_DIFF = 'score_diff'
     IMPUTED = 'is_imputed'
     MODEL_IDENTIFIER = 'model_identifier'
