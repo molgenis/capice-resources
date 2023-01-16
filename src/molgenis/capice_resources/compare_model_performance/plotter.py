@@ -410,13 +410,13 @@ class Plotter:
             return dataset[
                 (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
                 (dataset[Genums.GNOMAD_AF.value] <= upper_bound) &
-                (~dataset[Menums.IMPUTED.value])
+                (~dataset[Genums.IMPUTED.value])
                 ]
         else:
             return dataset[
                 (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
                 (dataset[Genums.GNOMAD_AF.value] < upper_bound) &
-                (~dataset[Menums.IMPUTED.value])
+                (~dataset[Genums.IMPUTED.value])
                 ]
 
     def _plot_bin(

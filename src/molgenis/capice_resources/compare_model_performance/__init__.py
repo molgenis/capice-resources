@@ -10,7 +10,6 @@ class CompareModelPerformanceEnums(ExtendedEnum):
     GENE_NAME = 'gene_name'
     MERGE_COLUMN = 'merge_column'
     SCORE_DIFF = 'score_diff'
-    IMPUTED = 'is_imputed'
     MODEL_IDENTIFIER = 'model_identifier'
     MODEL_1 = 'model_1'
     MODEL_2 = 'model_2'

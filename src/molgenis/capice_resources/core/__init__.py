@@ -237,6 +237,7 @@ class GlobalEnums(ExtendedEnum):
     AF_BINS = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin 100%
     GNOMAD_AF = 'gnomAD_AF'
     CONSEQUENCE = 'Consequence'
+    IMPUTED = 'is_imputed'
 
 
 def add_dataset_source(frame: pd.DataFrame, name: str) -> None:

@@ -38,14 +38,14 @@ class Annotator:
                 imputed. Marks samples that have been imputed. Is performed inplace.
 
         """
-        merged_model_frame[Menums.IMPUTED.value] = False
+        merged_model_frame[Genums.IMPUTED.value] = False
         merged_model_frame.loc[
             merged_model_frame[Genums.GNOMAD_AF.value].isnull(),
-            Menums.IMPUTED.value
+            Genums.IMPUTED.value
         ] = True
         merged_model_frame.loc[
             merged_model_frame[
-                (merged_model_frame[Menums.IMPUTED.value]) &
+                (merged_model_frame[Genums.IMPUTED.value]) &
                 (merged_model_frame[Genums.GNOMAD_AF.value].isnull())
                 ].index,
             Genums.GNOMAD_AF.value
