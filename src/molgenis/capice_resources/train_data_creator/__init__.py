@@ -14,7 +14,6 @@ class TrainDataCreatorEnums(ExtendedEnum):
     CLINVAR = 'CLINVAR'
     REVIEW = 'review'
     GENE = 'gene'
-    EMTPY_VALUE = '.'
 
     @classmethod
     def columns_of_interest(cls) -> list[str]:

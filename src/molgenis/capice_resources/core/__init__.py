@@ -129,7 +129,7 @@ class Module(metaclass=ABCMeta):
                 missing from the data.
         """
         return self.data_validator.validate_pandas_dataframe(
-            pd.read_csv(path, sep='\t', low_memory=False, na_values='.'),
+            pd.read_csv(path, sep='\t', low_memory=False, na_values=GlobalEnums.NA_VALUES.value),
             required_columns
         )
 
@@ -164,7 +164,13 @@ class Module(metaclass=ABCMeta):
                 break
         fh.close()
         return self.data_validator.validate_pandas_dataframe(
-            pd.read_csv(path, sep='\t', low_memory=False, na_values='.', skiprows=skiprows),
+            pd.read_csv(
+                path,
+                sep='\t',
+                low_memory=False,
+                na_values=GlobalEnums.NA_VALUES.value,
+                skiprows=skiprows
+            ),
             [
                 GlobalEnums.VCF_CHROM.value,
                 GlobalEnums.POS.value,
@@ -238,6 +244,7 @@ class GlobalEnums(ExtendedEnum):
     GNOMAD_AF = 'gnomAD_AF'
     CONSEQUENCE = 'Consequence'
     IMPUTED = 'is_imputed'
+    NA_VALUES = '.'
 
 
 def add_dataset_source(frame: pd.DataFrame, name: str) -> None:

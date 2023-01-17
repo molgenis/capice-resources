@@ -55,7 +55,7 @@ class TrainDataCreator(Module):
         )
         clinvar = self.input_validator.validate_icli_file(
             parser.get_argument('input_clinvar'),
-            ['.vcf.gz', '.vcf']
+            ('.vcf.gz', '.vcf')
         )
         output = self.input_validator.validate_ocli_directory(
             parser.get_argument('output')
@@ -145,9 +145,9 @@ class TrainDataCreator(Module):
 
             frame = output[types]
 
-            frame['QUAL'] = Menums.EMTPY_VALUE.value
+            frame['QUAL'] = Genums.NA_VALUES.value
             frame['FILTER'] = 'PASS'
-            frame[Genums.INFO.value] = Menums.EMTPY_VALUE.value
+            frame[Genums.INFO.value] = Genums.NA_VALUES.value
 
             frame[Genums.ID.value] = frame[
                 [
@@ -160,15 +160,17 @@ class TrainDataCreator(Module):
             self.exporter.export_pandas_file(
                 export_loc,
                 frame[
-                    Genums.VCF_CHROM.value,
-                    Genums.POS.value,
-                    Genums.ID.value,
-                    Genums.REF.value,
-                    Genums.ALT.value,
-                    'QUAL',
-                    'FILTER',
-                    Genums.INFO.value
-                ], mode='a', compression='gzip', na_rep='.'
+                    [
+                        Genums.VCF_CHROM.value,
+                        Genums.POS.value,
+                        Genums.ID.value,
+                        Genums.REF.value,
+                        Genums.ALT.value,
+                        'QUAL',
+                        'FILTER',
+                        Genums.INFO.value
+                    ]
+                ], mode='a', compression='gzip', na_rep=Genums.NA_VALUES.value
             )
 
 
