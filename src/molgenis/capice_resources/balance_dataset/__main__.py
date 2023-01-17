@@ -98,8 +98,8 @@ class BalanceDataset(Module):
                 ValueError is raised when either no benign or pathogenic samples are present.
 
         """
-        n_benign = dataset[dataset[Genums.BINARIZED_LABEL.value] == 0]
-        n_pathogenic = dataset[dataset[Genums.BINARIZED_LABEL.value] == 1]
+        n_benign = dataset[dataset[Genums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_pathogenic = dataset[dataset[Genums.BINARIZED_LABEL.value] == 1].shape[0]
         if n_benign == 0:
             raise ValueError('No benign samples present. Balancing not possible.')
         if n_pathogenic == 0:

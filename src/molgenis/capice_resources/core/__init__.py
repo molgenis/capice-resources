@@ -245,6 +245,7 @@ class GlobalEnums(ExtendedEnum):
     CONSEQUENCE = 'Consequence'
     IMPUTED = 'is_imputed'
     NA_VALUES = '.'
+    TSV_SEPARATOR = '\t'
 
 
 def add_dataset_source(frame: pd.DataFrame, name: str) -> None:
