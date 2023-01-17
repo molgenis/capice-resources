@@ -4,8 +4,11 @@ import pandas as pd
 
 
 class Exporter:
-    @staticmethod
-    def export_pandas_file(path: Path, pandas_object: pd.DataFrame, **kwars) -> None:
+    def __init__(self, pandas_sep_flag: str):
+        # Required this way otherwise it is going to be a circular import
+        self.sep = pandas_sep_flag
+
+    def export_pandas_file(self, path: Path, pandas_object: pd.DataFrame, **kwars) -> None:
         """
         Primary exporting function of capice-resources.
 
@@ -20,4 +23,4 @@ class Exporter:
                 include: path_or_buff, sep or index.
 
         """
-        pandas_object.to_csv(path, sep='\t', index=False, **kwars)
+        pandas_object.to_csv(path, sep=self.sep, index=False, **kwars)

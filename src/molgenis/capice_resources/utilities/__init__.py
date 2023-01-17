@@ -43,6 +43,7 @@ def extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, st
         value = None
     return key, value
 
+
 def split_consequences(consequence_column: pd.Series | list[str] | np.ndarray) -> list[str]:
     """
     Function to obtain all unique consequences from the Consequences column, even if hidden

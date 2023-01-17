@@ -33,7 +33,7 @@ class Module(metaclass=ABCMeta):
         self.data_validator = DataValidator()
         self.program = program
         self.description = description
-        self.exporter = Exporter()
+        self.exporter = Exporter(GlobalEnums.TSV_SEPARATOR.value)
 
     def run(self) -> None:
         """
@@ -129,7 +129,12 @@ class Module(metaclass=ABCMeta):
                 missing from the data.
         """
         return self.data_validator.validate_pandas_dataframe(
-            pd.read_csv(path, sep='\t', low_memory=False, na_values=GlobalEnums.NA_VALUES.value),
+            pd.read_csv(
+                path,
+                sep=GlobalEnums.TSV_SEPARATOR.value,
+                low_memory=False,
+                na_values=GlobalEnums.NA_VALUES.value
+            ),
             required_columns
         )
 
