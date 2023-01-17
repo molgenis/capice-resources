@@ -12,9 +12,9 @@ from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import Cl
 class TestClinvarParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.dataset = pd.read_csv(
+        cls.dataset = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_clinvar.vcf.gz'),
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             skiprows=27,
             low_memory=False
         )

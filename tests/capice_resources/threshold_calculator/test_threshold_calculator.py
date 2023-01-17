@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
@@ -43,11 +44,11 @@ class TestCalculator(unittest.TestCase):
         )
         expected = pd.read_csv(
             os.path.join(get_testing_resources_dir(), 'threshold_calculator', 'thresholds.tsv.gz'),
-            sep='\t'
+            sep=Genums.TSV_SEPARATOR.value
         )
         observed = pd.read_csv(
             os.path.join(self.output_directory, ThresholdEnums.THRESHOLDS.value + '.tsv.gz'),
-            sep='\t'
+            sep=Genums.TSV_SEPARATOR.value
         )
         pd.testing.assert_frame_equal(observed, expected)
 

@@ -13,9 +13,9 @@ from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums a
 class TestVKGLParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.dataset = pd.read_csv(
+        cls.dataset = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_vkgl.tsv.gz'),
-            sep='\t'
+            sep=Genums.TSV_SEPARATOR.value
         )
         cls.parser = VKGLParser()
 

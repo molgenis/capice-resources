@@ -13,13 +13,13 @@ from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Men
 class TestBalancer(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.loaded_dataset = pd.read_csv(
+        cls.loaded_dataset = pd.read_csv(  # type: ignore
             os.path.join(
                 get_testing_resources_dir(),
                 'labels.tsv.gz'
             ),
-            sep='\t',
-            na_values='.',
+            sep=Genums.TSV_SEPARATOR.value,
+            na_values=Genums.NA_VALUES.value,
             low_memory=False
         )
 

@@ -101,7 +101,10 @@ class TestModule(unittest.TestCase):
                 'mapper': [1, 2]
             }
         )
-        observed = pd.read_csv(temp_output_file_path_and_name(), sep='\t')
+        observed = pd.read_csv(  # type: ignore
+            temp_output_file_path_and_name(),
+            sep=GlobalEnums.TSV_SEPARATOR.value
+        )
         check_and_remove_directory(temp_output_file_path_and_name())
         pd.testing.assert_frame_equal(observed, expected)
 

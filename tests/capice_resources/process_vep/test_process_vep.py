@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.process_vep.__main__ import ProcessVEP
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
@@ -72,12 +72,12 @@ class TestProcessVEP(unittest.TestCase):
                     )
                 )
             )
-        observed = pd.read_csv(
+        observed = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'validation.tsv.gz'),
-            sep='\t'
+            sep=Genums.TSV_SEPARATOR.value
         )
         self.assertGreaterEqual(observed.shape[0], 3000)
-        self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)
+        self.assertNotIn(Genums.DATASET_SOURCE.value, observed.columns)
 
     @patch(
         'sys.argv',
@@ -101,13 +101,13 @@ class TestProcessVEP(unittest.TestCase):
                 )
             )
         )
-        observed = pd.read_csv(
+        observed = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'train_test.tsv.gz'),
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             low_memory=False
         )
         self.assertGreaterEqual(observed.shape[0], 10000)
-        self.assertNotIn(GlobalEnums.DATASET_SOURCE.value, observed.columns)
+        self.assertNotIn(Genums.DATASET_SOURCE.value, observed.columns)
 
     @patch(
         'sys.argv',

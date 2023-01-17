@@ -59,9 +59,9 @@ class TestTrainDataCreator(unittest.TestCase):
                     else:
                         break
             self.assertEqual(n_header_lines, 27)
-        tt = pd.read_csv(
+        tt = pd.read_csv(  # type: ignore
             filepath_train_test,
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             skiprows=27,
             na_values=Genums.NA_VALUES.value
         )
@@ -69,9 +69,9 @@ class TestTrainDataCreator(unittest.TestCase):
             tt.shape[0],
             99
         )
-        val = pd.read_csv(
+        val = pd.read_csv(  # type: ignore
             filepath_validation,
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             skiprows=27,
             na_values=Genums.NA_VALUES.value
         )

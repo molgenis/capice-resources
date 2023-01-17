@@ -40,18 +40,18 @@ class TestBalanceDataset(unittest.TestCase):
         filepath_remainder = os.path.join(self.output_directory, 'remainder.tsv.gz')
         for file in [filepath_balanced, filepath_remainder]:
             self.assertIn(os.path.basename(file), os.listdir(self.output_directory))
-        balanced = pd.read_csv(
+        balanced = pd.read_csv(  # type: ignore
             filepath_balanced,
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             na_values=Genums.NA_VALUES.value
         )
         self.assertGreaterEqual(
             balanced.shape[0],
             100
         )
-        remainder = pd.read_csv(
+        remainder = pd.read_csv(  # type: ignore
             filepath_remainder,
-            sep='\t',
+            sep=Genums.TSV_SEPARATOR.value,
             na_values=Genums.NA_VALUES.value
         )
         self.assertGreaterEqual(
