@@ -67,5 +67,6 @@ class TestUtilities(unittest.TestCase):
         observed = extract_key_value_dict_cli(test_case)  # type: ignore
         self.assertTupleEqual(observed, ('foo', '0.01'))
 
+
 if __name__ == '__main__':
     unittest.main()

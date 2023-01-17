@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 from molgenis.capice_resources.core import Module, CommandLineInterface
@@ -103,8 +105,21 @@ class BalanceDataset(Module):
         if n_pathogenic == 0:
             raise ValueError('No pathogenic samples present. Balancing not possible.')
 
-    def export(self, output: dict[object, object]) -> None:
-        pass
+    def export(self, output) -> None:
+        self.exporter.export_pandas_file(
+            os.path.join(
+                output[Genums.OUTPUT.value],
+                Menums.BALANCED.value
+            ) + Genums.TSV_EXTENSIONS.value[0],
+            output[Menums.BALANCED.value]
+        )
+        self.exporter.export_pandas_file(
+            os.path.join(
+                output[Genums.OUTPUT.value],
+                Menums.REMAINDER.value
+            ) + Genums.TSV_EXTENSIONS.value[0],
+            output[Menums.REMAINDER.value]
+        )
 
 
 def main():

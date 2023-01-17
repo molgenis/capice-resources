@@ -118,3 +118,7 @@ class TestCompareModelsExplain(unittest.TestCase):
             str(w.warning),
             'Missing consequence column. Disabling per-consequence performance metrics.'
         )
+
+
+if __name__ == '__main__':
+    unittest.main()

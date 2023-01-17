@@ -3,7 +3,6 @@ import unittest
 
 import pandas as pd
 
-from tests.capice_resources.testing_utilities import get_testing_resources_dir
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 
 
@@ -11,6 +10,7 @@ class MyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.processor = VEPProcesser()
+
     def test_drop_duplicates(self):
         test_case = pd.DataFrame(
             [
