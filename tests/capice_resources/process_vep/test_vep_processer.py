@@ -1,4 +1,3 @@
-import os
 import unittest
 
 import pandas as pd
@@ -6,7 +5,7 @@ import pandas as pd
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 
 
-class MyTestCase(unittest.TestCase):
+class TestVepProcesser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.processor = VEPProcesser()
@@ -16,7 +15,7 @@ class MyTestCase(unittest.TestCase):
             [
                 ['variant_1', 'value_1', 'value_2', 'value_3'],
                 ['variant_2', 'value_4', 'value_5', 'value_6'],
-                ['variant_3', 'value_1', 'value_2', 'value_9'], # Duplicate of 1
+                ['variant_3', 'value_1', 'value_2', 'value_9'],  # Duplicate of 1
                 ['variant_4', 'value_10', 'value_11', 'value_12'],
                 ['variant_5', 'value_13', 'value_14', 'value_15'],
                 ['variant_6', 'value_16', 'value_17', 'value_18']
@@ -52,7 +51,6 @@ class MyTestCase(unittest.TestCase):
         for e in expected:
             self.assertIn(e, test_case['variant'].values)
 
-
     def test_drop_duplicate_entries(self):
         # Possible since VEP can output the same variant twice, or more
         test_case = pd.DataFrame(
@@ -71,7 +69,6 @@ class MyTestCase(unittest.TestCase):
         )
         self.processor.drop_duplicate_entries(test_case)
         pd.testing.assert_frame_equal(test_case, expected)
-
 
     def test_mismatching_genes(self):
         test_case = pd.DataFrame(

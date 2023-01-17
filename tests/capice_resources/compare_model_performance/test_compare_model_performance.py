@@ -15,7 +15,7 @@ from molgenis.capice_resources.compare_model_performance import CompareModelPerf
 from molgenis.capice_resources.compare_model_performance.__main__ import CompareModelPerformance
 
 
-class TestComponentCompareModelPerformance(unittest.TestCase):
+class TestCompareModelPerformance(unittest.TestCase):
     output_directory = os.path.join(get_testing_resources_dir(), 'compare_model_performance')
 
     @classmethod

@@ -37,8 +37,10 @@ class ModuleMetaclassTest(Module):
         )
         return parser
 
-    def _validate_module_specific_arguments(self, parser: CommandLineInterface) -> dict[
-        str, str | object]:
+    def _validate_module_specific_arguments(
+            self,
+            parser: CommandLineInterface
+    ) -> dict[str, str | object]:
         foobar = parser.get_argument('input')
         if foobar != {"input": "foo bar"}:
             raise AssertionError('Incorrect implementation of mocking')
@@ -80,7 +82,6 @@ class TestExtendedEnum(unittest.TestCase):
         self.assertListEqual(TestSingleEnum.list(), ['foo'])
 
 
-
 class TestModule(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -109,10 +110,8 @@ class TestGlobalEnums(unittest.TestCase):
     def test_global_enum_present(self):
         self.assertIn('dataset_source', GlobalEnums.list())
 
-
     def test_global_enum_value(self):
         self.assertEqual('dataset_source', GlobalEnums.DATASET_SOURCE.value)
-
 
     def test_global_enum_tsv_extensions(self):
         self.assertTupleEqual(('.tsv.gz', '.tsv'), GlobalEnums.TSV_EXTENSIONS.value)

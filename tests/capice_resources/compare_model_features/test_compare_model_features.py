@@ -137,3 +137,7 @@ class TestCompareModelsExplain(unittest.TestCase):
         CompareModelFeatures()._process_explain(self.valid_input)
 
         pd.testing.assert_frame_equal(expected_output, self.valid_input)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -5,7 +5,7 @@ import pandas as pd
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 
 
-class TestCompareModelsExplain(unittest.TestCase):
+class TestConsequenceTools(unittest.TestCase):
     def setUp(self):
         self.consequences = ['synonymous_variant', 'missense_variant', 'synonymous_variant',
                             'intron_variant']

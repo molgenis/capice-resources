@@ -1,6 +1,5 @@
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums
@@ -26,8 +25,8 @@ class TestPerformanceCalculator(unittest.TestCase):
     def test_calculate_roc(self):
         observed = self.calculator.calculate_roc(self.dataset)
         self.assertTrue(isinstance(observed, tuple))
-        self.assertListEqual(list(observed[0]), [0.0 , 0.5, 1.0])
-        self.assertListEqual(list(observed[1]), [0.0 , 0.5, 1.0])
+        self.assertListEqual(list(observed[0]), [0.0, 0.5, 1.0])
+        self.assertListEqual(list(observed[1]), [0.0, 0.5, 1.0])
         self.assertEqual(observed[2], 0.5)
 
 

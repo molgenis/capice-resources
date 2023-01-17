@@ -2,20 +2,20 @@ import unittest
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import GlobalEnums as Genums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
     Menums
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
 
 
-class TestCMPAnnotator(unittest.TestCase):
+class TestAnnotator(unittest.TestCase):
     def setUp(self) -> None:
         self.annotator = Annotator()
         self.dataset = pd.DataFrame(
             {
-                GlobalEnums.SCORE.value: [0.9, 0.8, 0.7, 0.6],
-                GlobalEnums.BINARIZED_LABEL.value: [1, 0, 1, 0],
-                GlobalEnums.GNOMAD_AF.value: [0.9, None, None, 0.0]
+                Genums.SCORE.value: [0.9, 0.8, 0.7, 0.6],
+                Genums.BINARIZED_LABEL.value: [1, 0, 1, 0],
+                Genums.GNOMAD_AF.value: [0.9, None, None, 0.0]
             }
         )
 
@@ -34,9 +34,9 @@ class TestCMPAnnotator(unittest.TestCase):
 
     def test_add_and_process_impute_af(self):
         self.annotator.add_and_process_impute_af(self.dataset)
-        self.assertIn(Menums.IMPUTED.value, self.dataset.columns)
+        self.assertIn(Genums.IMPUTED.value, self.dataset.columns)
         self.assertListEqual(
-            list(self.dataset[Menums.IMPUTED.value].values),
+            list(self.dataset[Genums.IMPUTED.value].values),
             [False, True, True, False]
         )
 
