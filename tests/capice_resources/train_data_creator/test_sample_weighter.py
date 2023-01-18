@@ -14,6 +14,9 @@ class TestSampleWeighter(unittest.TestCase):
         cls.weighter = SampleWeighter()
 
     def test_sample_weighter(self):
+        """
+        Tests proper function of the SampleWeighter in a very simple condition.
+        """
         dataset = pd.DataFrame(
             {
                 Menums.REVIEW.value: [3, 4, 1, 2]
@@ -27,6 +30,9 @@ class TestSampleWeighter(unittest.TestCase):
         )
 
     def test_sample_weighter_unknown_score(self):
+        """
+        Tests proper function of the SampleWeighter when "unknown" review scores are present.
+        """
         dataset = pd.DataFrame(
             {
                 Menums.REVIEW.value: [3, 4, 5, 0]

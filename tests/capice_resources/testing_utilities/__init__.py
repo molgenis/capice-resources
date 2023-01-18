@@ -27,7 +27,7 @@ def temp_output_file_path_and_name() -> Path:
 
 def check_and_remove_directory(path: str | Path | os.PathLike) -> None:
     """
-    Utility function to check if a directory exists and if so, remove it.
+    Utility function to check if a directory (or file) exists and if so, remove it.
     """
     if os.path.exists(path):
         if os.path.isdir(path):

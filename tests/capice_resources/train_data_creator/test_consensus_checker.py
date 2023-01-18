@@ -19,12 +19,18 @@ class TestConsensusChecker(unittest.TestCase):
                 Menums.GENE.value: ['foo', 'foo', 'foo', 'foo', 'bar', 'bar'],
                 Menums.CLASS.value: ['LP', 'LP', 'LP', 'LP', 'LB', 'LB'],
                 Menums.REVIEW.value: [2, 3, 2, 3, 2, 2],
-                Genums.DATASET_SOURCE.value: ['CLINVAR', 'VKGL', 'CLINVAR', 'VKGL', 'CLINVAR', 'VKGL'],
+                Genums.DATASET_SOURCE.value: [
+                    'CLINVAR', 'VKGL', 'CLINVAR', 'VKGL', 'CLINVAR', 'VKGL'
+                ],
                 Genums.BINARIZED_LABEL.value: [1.0, 1.0, 0.0, 1.0, 0.0, 0.0],
             }
         )
 
     def test_3_mismatch(self):
+        """
+        Tests if 6 variants are filtered out that are the same between ClinVar and VKGL,
+        but have a different classification label. Shows up as 3, since it are 3 "unique" variants.
+        """
         dataset = pd.DataFrame(
             {
                 Genums.VCF_CHROM.value: [
@@ -72,6 +78,10 @@ class TestConsensusChecker(unittest.TestCase):
         pd.testing.assert_frame_equal(input_dataset, self.variants_passed)
 
     def test_no_mismatch(self):
+        """
+        Tests the situation when the consensus checker encounters a situation where no variants
+        have to be filtered out due to mismatching label.
+        """
         copy_variants_passed = self.variants_passed.copy(deep=True)
         self.consensus_checker.check_consensus_clinvar_vkgl_match(copy_variants_passed)
         pd.testing.assert_frame_equal(copy_variants_passed, self.variants_passed)

@@ -20,6 +20,11 @@ class TestVKGLParser(unittest.TestCase):
         cls.parser = VKGLParser()
 
     def test_component_parser(self):
+        """
+        Component test of the VKGL parser.
+        Tests if the ModuleEnums.columns_of_interest() are all present, binarized_label and if
+        the source is set correctly.
+        """
         observed = self.parser.parse(self.dataset)
         self.assertIsNone(observed._is_copy)
         for col in Menums.columns_of_interest():
@@ -31,6 +36,9 @@ class TestVKGLParser(unittest.TestCase):
         )
 
     def test_correct_columns_names(self):
+        """
+        Tests if the correction and equalizing of column names is performed correctly.
+        """
         test_case = pd.DataFrame(
             columns=['chromosome', 'start', 'ref', 'alt', 'classification', 'other_column']
         )
@@ -41,6 +49,9 @@ class TestVKGLParser(unittest.TestCase):
         )
 
     def test_correct_support(self):
+        """
+        Tests if splitting the object "X labs" is split correctly into numerical "X".
+        """
         test_case = pd.DataFrame(
             {
                 Menums.SUPPORT.value: ['5 labs', '1 lab', '3 labs']
@@ -57,6 +68,9 @@ class TestVKGLParser(unittest.TestCase):
         )
 
     def test_apply_review_status(self):
+        """
+        Tests if the support status is correctly converted to the review score.
+        """
         test_case = pd.DataFrame(
             {
                 Menums.SUPPORT.value: [

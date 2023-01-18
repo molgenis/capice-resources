@@ -10,6 +10,10 @@ from molgenis.capice_resources.process_vep.progress_printer import ProgressPrint
 class TestProgressPrinter(unittest.TestCase):
     @patch('sys.stdout', new_callable=StringIO)
     def test_progress_printer(self, stdout):
+        """
+        Test to check if progress_printer correctly tracks progression of a dataframe and prints
+        the expected messages.
+        """
         test_case = pd.DataFrame(
             {
                 'variant': ['var1', 'var2', 'var3'],

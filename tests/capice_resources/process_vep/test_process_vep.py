@@ -15,21 +15,28 @@ class TestProcessVEP(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.processor = ProcessVEP()
 
-    @classmethod
-    def tearDownClass(cls) -> None:
+    def tearDown(self) -> None:
         directory = os.path.join(get_testing_resources_dir(), 'process_vep', 'output')
         for file in os.listdir(directory):
             check_and_remove_directory(os.path.join(directory, file))
 
     def test_load_train_features(self):
+        """
+        Test to check if a json with train_features is properly loaded and returned as a list.
+        """
         observed = self.processor._read_train_features(
-            os.path.join(get_testing_resources_dir(), 'features.json'
-                         )
+            os.path.join(get_testing_resources_dir(), 'features.json')
         )
         expected = ['feature1', 'feature2', 'feature3', 'foobar']
         self.assertListEqual(observed, expected)
 
     def test_load_cgd(self):
+        """
+        Test to check if the CGD txt is properly loaded and processed.
+        CGD txt contains foo (AD), TENM1 (AR), bar (AR) and baz (AR/AD).
+        foo is filtered out since it is not AR and TENM1 is filtered out because it can not be AR.
+        TENM1: https://www.omim.org/entry/300588
+        """
         observed = self.processor._read_cgd_data(
             os.path.join(get_testing_resources_dir(), 'cgd.txt.gz')
         )
@@ -37,6 +44,10 @@ class TestProcessVEP(unittest.TestCase):
         self.assertListEqual(observed, expected)
 
     def test_extract_label_and_weight(self):
+        """
+        Test to check if the binarized_label and sample_weight are properly extracted from the ID
+        column.
+        """
         test_case = pd.DataFrame(
             {
                 'ID': ['1!1!A!G!foo!0!0.8', '1!1!A!G!foo!1!0.5']
@@ -60,6 +71,10 @@ class TestProcessVEP(unittest.TestCase):
         ]
     )
     def test_component_process_vep(self):
+        """
+        Full component test of process-vep from CLI to export. Also tests if the "smallest" of
+        the 2 output datasets contains at least a considerable amount of samples.
+        """
         self.processor.run()
         for expected_output_file in ['train_test.tsv.gz', 'validation.tsv.gz']:
             self.assertIn(
@@ -90,6 +105,11 @@ class TestProcessVEP(unittest.TestCase):
         ]
     )
     def test_component_process_vep_no_validation(self):
+        """
+        Full component test of process-vep from CLI to export, but without the optionally given
+        validation dataset. Checks if the validation.tsv.gz is not created and if the output
+        train_test.tsv.gz contains a considerable amount of samples.
+        """
         self.processor.run()
         self.assertIn(
             'train_test.tsv.gz',
@@ -101,11 +121,13 @@ class TestProcessVEP(unittest.TestCase):
                 )
             )
         )
+        output_directory = os.path.join(get_testing_resources_dir(), 'process_vep', 'output')
         observed = pd.read_csv(  # type: ignore
-            os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'train_test.tsv.gz'),
+            os.path.join(output_directory, 'train_test.tsv.gz'),
             sep=Genums.TSV_SEPARATOR.value,
             low_memory=False
         )
+        self.assertNotIn('validation.tsv.gz', os.listdir(output_directory))
         self.assertGreaterEqual(observed.shape[0], 10000)
         self.assertNotIn(Genums.DATASET_SOURCE.value, observed.columns)
 
@@ -122,6 +144,10 @@ class TestProcessVEP(unittest.TestCase):
         ]
     )
     def test_build38_flag(self):
+        """
+        CLI test of process-vep to see if the GRCh38 flag is set to True when the flag is
+        supplied on the command line.
+        """
         observed = self.processor.parse_and_validate_cli()
         self.assertIn('assembly', observed.keys())
         self.assertTrue(observed['assembly'])

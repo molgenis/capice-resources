@@ -41,6 +41,13 @@ class TestTrainDataCreator(unittest.TestCase):
         ]
     )
     def test_component(self):
+        """
+        Full component testing of the train-data-creator module. Tests from CLI to export,
+        including reading back in the train-test and validation datasets, assuming a hardcoded
+        amount of headers (if the amount of headers change, that is not intended behaviour).
+        Also checks if a considerable amount of samples is present within train-test and
+        validation, and that train-test sample size is greater than validation.
+        """
         TrainDataCreator().run()
         filepath_train_test = os.path.join(self.output_directory, 'train_test.vcf.gz')
         filepath_validation = os.path.join(self.output_directory, 'validation.vcf.gz')
@@ -78,6 +85,10 @@ class TestTrainDataCreator(unittest.TestCase):
         self.assertGreaterEqual(
             val.shape[0],
             6
+        )
+        self.assertGreater(
+            tt.shape[0],
+            val.shape[0]
         )
 
 

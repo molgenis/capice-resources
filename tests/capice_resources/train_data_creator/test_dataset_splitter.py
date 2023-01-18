@@ -9,6 +9,10 @@ from molgenis.capice_resources.train_data_creator.dataset_splitter import SplitD
 
 class TestSplitDatasets(unittest.TestCase):
     def test_split(self):
+        """
+        Tests if the train-test and validation splitter performs as expected. Unique IDentifiers
+        are added to ensure that samples are in 1 dataset but not the other.
+        """
         dataset = pd.DataFrame(
             {
                 Genums.VCF_CHROM.value: ['1', '2', '4', '5', '6', '7', '8', '10'],

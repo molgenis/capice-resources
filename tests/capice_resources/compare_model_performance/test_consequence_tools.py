@@ -18,7 +18,8 @@ class TestConsequenceTools(unittest.TestCase):
 
     def test_validator_validate_score_files_length_valid(self):
         """
-        df2 is equal in both total length & size per consequence, so should not cause any errors.
+        Test to see if 2 different (equally sized) frames, each containing an equal amount of
+        samples per consequence, does not raise any errors.
         """
         df2 = pd.DataFrame(data={
             'score': [0.000154, 0.086213, 0.008621, 0.006832],
@@ -30,8 +31,8 @@ class TestConsequenceTools(unittest.TestCase):
 
     def test_validator_validate_score_files_length_invalid(self):
         """
-        Per-consequence check is turned on & 1 of the synonymous_variant was changed into
-        missense_variant, so an error should be thrown that both these column counts are unequal.
+        Test to see if a warning is raised when 2 equally sized frames, but containing a
+        different amount of samples per consequence, is supplied.
         """
         df2 = pd.DataFrame(data={
             'score': [0.000154, 0.086213, 0.008621, 0.006832],
@@ -50,8 +51,10 @@ class TestConsequenceTools(unittest.TestCase):
 
     def test_validator_validate_score_files_length_invalid_total_length(self):
         """
-        Total length differs so should always throw a warning. If per consequence is True,
-        the total length error should take priority over any consequence-specific validation.
+        Test to see if a warning is thrown when 2 different sample size frames are supplied.
+        Since 2 different sample size frames are supplied, the "_merge_scores_and_labels" method
+        of compare-model-performance should have kicked in, but if a frame passes to
+        ConsequenceTools a warning should be raised anyway.
         """
         df2 = pd.DataFrame(data={
             'score': [0.000154, 0.086213, 0.008621],
@@ -68,6 +71,10 @@ class TestConsequenceTools(unittest.TestCase):
         self.assertEqual(str(context.warning), msg)
 
     def test_has_consequence_df1_df2_equal(self):
+        """
+        Test to see if an expected list of consequences is returned when both frame 1 and frame 2
+        contain the exact same consequences.
+        """
         df2 = pd.DataFrame(data={
             'Consequence': self.consequences
         })
@@ -76,7 +83,9 @@ class TestConsequenceTools(unittest.TestCase):
 
     def test_has_consequence_df1_df2_nonequal(self):
         """
-        Since df1 is leading, I do not expect frame_shift_variant to be returned
+        Test to see if an expected list of consequences is returned when frame 1 and frame 2
+        contain an equal amount of consequences, but the consequences are not exactly equal.
+        Since frame 1 is leading, frame_shift_variant is not expected to be returned.
         """
         df2 = pd.DataFrame(data={
             'Consequence': ['intron_variant', 'frame_shift_variant', 'synonymous_variant']
@@ -84,7 +93,12 @@ class TestConsequenceTools(unittest.TestCase):
         observed = self.consequence_tools.has_consequence(self.df, df2)
         self.assertListEqual(observed, ['intron_variant', 'missense_variant', 'synonymous_variant'])
 
-    def test_has_consequence_false(self):
+    def test_has_consequence_df1_only(self):
+        """
+        Test to see that "has_consequence" returns False if frame 2 does not contain the
+        Consequence column (but frame 1 does), as compare-model-performance can not map a variant
+        to a consequence for model 2.
+        """
         df2 = pd.DataFrame(data={
             'Some_other_column': self.consequences
         })
@@ -101,8 +115,9 @@ class TestConsequenceTools(unittest.TestCase):
 
     def test_has_consequence_df2_only(self):
         """
-        Since the comparison module requires Consequence for both models, I expect a user warning
-        and False to be returned
+        Test to see that "has_consequence" returns False if frame 1 does not contain the
+        Consequence column (but frame 2 does), as compare-model-performance can not map a variant
+        to a consequence for model 1.
         """
         df2 = pd.DataFrame(data={
             'Consequence': ['frameshift_variant', 'intron_variant', '3_prime_utr_variant',

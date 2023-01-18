@@ -68,6 +68,9 @@ class ModuleMetaclassTest(Module):
 
 class TestExtendedEnum(unittest.TestCase):
     def test_multiple_enum_correct(self):
+        """
+        Test to check proper function of the "list" classmethod with multiple Enums.
+        """
         class TestMultipleEnum(ExtendedEnum):
             FOO = 'foo'
             BAR = 'bar'
@@ -76,6 +79,9 @@ class TestExtendedEnum(unittest.TestCase):
         self.assertListEqual(TestMultipleEnum.list(), ['foo', 'bar', 'baz'])
 
     def test_single_enum_correct(self):
+        """
+        Test to check proper function of the "list" classmethod with a single Enum.
+        """
         class TestSingleEnum(ExtendedEnum):
             FOO = 'foo'
 
@@ -93,6 +99,9 @@ class TestModule(unittest.TestCase):
 
     @patch('sys.argv', [__file__, '-i', 'foo bar'])
     def test_module(self):
+        """
+        Component testing of proper function of the core "Module" metaclass.
+        """
         module = ModuleMetaclassTest()
         module.run()
         expected = pd.DataFrame(
@@ -111,12 +120,22 @@ class TestModule(unittest.TestCase):
 
 class TestGlobalEnums(unittest.TestCase):
     def test_global_enum_present(self):
+        """
+        Test to see if a random (present) variable is present within the GlobalEnums list
+        classmethod.
+        """
         self.assertIn('dataset_source', GlobalEnums.list())
 
     def test_global_enum_value(self):
+        """
+        Essentially a test to validate that Enum.VARIABLE.value functions properly with a string.
+        """
         self.assertEqual('dataset_source', GlobalEnums.DATASET_SOURCE.value)
 
     def test_global_enum_tsv_extensions(self):
+        """
+        Essentially a test to validate that Enum.VARIABLE.value functions properly with a tuple.
+        """
         self.assertTupleEqual(('.tsv.gz', '.tsv'), GlobalEnums.TSV_EXTENSIONS.value)
 
 

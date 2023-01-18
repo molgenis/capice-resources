@@ -21,6 +21,11 @@ class TestCalculator(unittest.TestCase):
             check_and_remove_directory(os.path.join(cls.output_directory, file))
 
     def tearDown(self) -> None:
+        """
+        plt.close('all') is required, as matplotlib keeps all figures loaded. With the amount of
+        matplotlib related tests in capice-resources, matplotlib does throw an warning that too
+        many figures are loaded unless this call is made.
+        """
         plt.close('all')
 
     @patch(
@@ -33,6 +38,12 @@ class TestCalculator(unittest.TestCase):
         ]
     )
     def test_component_calculator(self):
+        """
+        Expanded component test of threshold-calculator, since the statistics and metrics within
+        this module are complex, only a single test exists.
+
+        Does test if all files are output properly and if the output tsv is as expected.
+        """
         ThresholdCalculator().run()
         self.assertIn(
             ThresholdEnums.THRESHOLDS.value + '.tsv.gz',

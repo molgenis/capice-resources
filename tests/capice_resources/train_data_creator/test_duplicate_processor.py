@@ -9,6 +9,10 @@ from molgenis.capice_resources.train_data_creator.duplicate_processor import Dup
 
 class TestDuplicateProcessor(unittest.TestCase):
     def test_duplicate_processor(self):
+        """
+        Test that ensure proper function of the DuplicateProcessor that one of the duplicates
+        present remains.
+        """
         dataset = pd.DataFrame(
             {
                 Genums.VCF_CHROM.value: [1, 1, 2],

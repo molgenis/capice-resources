@@ -7,9 +7,18 @@ from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 
 class TestPlotter(unittest.TestCase):
     def tearDown(self) -> None:
+        """
+        plt.close('all') is required, as matplotlib keeps all figures loaded. With the amount of
+        matplotlib related tests in capice-resources, matplotlib does throw an warning that too
+        many figures are loaded unless this call is made.
+        """
         plt.close('all')
 
     def test_plotter_init_consequences_supplied(self):
+        """
+        Test to see if the __init__ of the Plotter class correctly sets the amount of rows,
+        columns, figure size and supertitles if supplied with a list of consequences.
+        """
         consequences = [
                     'frameshift_variant',
                     'intron_variant',
@@ -39,6 +48,11 @@ class TestPlotter(unittest.TestCase):
         )
 
     def test_plotter_init_consequences_not_supplied(self):
+        """
+        Test to see if the __init__ of the Plotter class correctly sets the amount of rows,
+        columns, figure size and supertitles if supplied with "False", meaning per-Consequence
+        plotting should not be possible.
+        """
         plotter = Plotter(
             False,
             'path_model_1_scores',

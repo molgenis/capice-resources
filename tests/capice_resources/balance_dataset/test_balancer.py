@@ -24,6 +24,11 @@ class TestBalancer(unittest.TestCase):
         )
 
     def setUp(self) -> None:
+        """
+        Note on self.dataset = self.loaded_dataset.copy(deep=True):
+        This is done to limit file handling to "labels.tsv.gz". Now it is loaded once and copied
+        within RAM.
+        """
         self.dataset = self.loaded_dataset.copy(deep=True)  # limiting IO
         self.hardcoded_columns = [
             'variant',
@@ -42,15 +47,30 @@ class TestBalancer(unittest.TestCase):
         self.balancer_nonverbose = Balancer(False)
 
     def test_sampler_unchanged_more_required(self):
+        """
+        Test to see if a greater amount of "n_required" than the sample size of "dataset" does
+        not change "dataset".
+        """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 5).shape[0], 4)
 
     def test_sampler_unchanged_equal_required(self):
+        """
+        Test to see if an equal amount of "n_required" to the sample size of "dataset" does not
+        change "dataset".
+        """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 4).shape[0], 4)
 
     def test_sampler_changed_less_required(self):
+        """
+        Test to see if a lower amount of "n_required" to the sample size of "dataset" does in fact
+        change the sample size to "n_required".
+        """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 2).shape[0], 2)
 
     def test_set_columns(self):
+        """
+        Test to see if the balancer.columns are correctly set through the _set_columns method.
+        """
         columns = ['foo', 'bar', 'baz']
         test_dataset = pd.DataFrame(columns=columns)
         self.balancer_nonverbose._set_columns(test_dataset.columns)

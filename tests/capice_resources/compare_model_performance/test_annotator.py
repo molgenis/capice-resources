@@ -33,6 +33,9 @@ class TestAnnotator(unittest.TestCase):
         )
 
     def test_add_and_process_impute_af(self):
+        """
+        Test to see if the IMPUTED tag is correctly applied to all nan samples.
+        """
         self.annotator.add_and_process_impute_af(self.dataset)
         self.assertIn(Genums.IMPUTED.value, self.dataset.columns)
         self.assertListEqual(
@@ -41,6 +44,9 @@ class TestAnnotator(unittest.TestCase):
         )
 
     def test_add_model_identifier(self):
+        """
+        Test to see if a unique model identifier is correctly applied inplace.
+        """
         self.annotator.add_model_identifier(self.dataset, 'testing_purposes')
         self.assertIn(Menums.MODEL_IDENTIFIER.value, self.dataset.columns)
         self.assertEqual(

@@ -11,6 +11,9 @@ class TestVepProcesser(unittest.TestCase):
         cls.processor = VEPProcesser()
 
     def test_drop_duplicates(self):
+        """
+        Test to check if a duplicate, according to a list of features, is dropped properly.
+        """
         test_case = pd.DataFrame(
             [
                 ['variant_1', 'value_1', 'value_2', 'value_3'],
@@ -27,6 +30,9 @@ class TestVepProcesser(unittest.TestCase):
             self.assertIn(variant, test_case['variant'].values)
 
     def test_drop_genes_empty(self):
+        """
+        Test to check if a sample that does not have a "SYMBOL" (VEP gene name) is dropped properly.
+        """
         test_case = pd.DataFrame(
             [
                 ['variant_1', 'gene_1', 'train_test'],
@@ -38,6 +44,10 @@ class TestVepProcesser(unittest.TestCase):
         self.assertNotIn('variant_2', test_case['variant'].values)
 
     def test_process_grch38(self):
+        """
+        Test to check if GRCh38 contigs are properly processed. Expected is that all "exotic"
+        contigs (for example chr1_contig114860489) are dropped for consistency reasons.
+        """
         test_case = pd.DataFrame(
             {
                 'CHROM': ['chr1', 'chr2', 'chr3_foobar', 'chrX', 'chrY_fake'],
@@ -52,6 +62,10 @@ class TestVepProcesser(unittest.TestCase):
             self.assertIn(e, test_case['variant'].values)
 
     def test_drop_duplicate_entries(self):
+        """
+        Test that checks if full on duplicates (unlike test_drop_duplicates that subsets a
+        feature list) are dropped properly.
+        """
         # Possible since VEP can output the same variant twice, or more
         test_case = pd.DataFrame(
             {
@@ -71,6 +85,10 @@ class TestVepProcesser(unittest.TestCase):
         pd.testing.assert_frame_equal(test_case, expected)
 
     def test_mismatching_genes(self):
+        """
+        Test that checks if a sample is dropped properly when a gene-name from the ID column
+        mismatches with the SYMBOL column.
+        """
         test_case = pd.DataFrame(
             {
                 'ID': ['1!1!A!G!foo', '1!1!A!G!bar', '1!1!A!G!baz'],
@@ -82,6 +100,10 @@ class TestVepProcesser(unittest.TestCase):
         self.assertNotIn('var3', test_case['variant'].values)
 
     def test_drop_heterozygous_variants_in_ar_genes(self):
+        """
+        Test that checks if a variant is properly dropped when it only has been observed as
+        "heterozygous" (so homozygous counts is 0, not NaN) in Autosomal Recessive observed genes.
+        """
         test_case = pd.DataFrame(
             {
                 'variant': ['var1', 'var2', 'var3'],
@@ -98,6 +120,11 @@ class TestVepProcesser(unittest.TestCase):
             self.assertIn(variant, test_case['variant'].values)
 
     def test_drop_variants_incorrect_label_or_weight(self):
+        """
+        Test that ensures that the binarized_label and sample_weight are set to proper standards.
+        In the past (due to incorrect ID column split) it was possible for binarized_label to
+        become an incorrect label.
+        """
         test_case = pd.DataFrame(
             {
                 'ID': [None, 'foo', 'bar', 'baz'],

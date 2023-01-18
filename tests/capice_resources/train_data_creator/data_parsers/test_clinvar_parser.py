@@ -35,6 +35,11 @@ class TestClinvarParser(unittest.TestCase):
         )
 
     def test_component_parser(self):
+        """
+        Component test of the ClinVar parser.
+        Tests if the ModuleEnums.columns_of_interest() are all present, binarized_label and if
+        the source is set correctly.
+        """
         observed = self.parser.parse(self.dataset)
         self.assertIsNone(observed._is_copy)
         for col in Menums.columns_of_interest():
@@ -46,6 +51,9 @@ class TestClinvarParser(unittest.TestCase):
         )
 
     def test_obtain_class(self):
+        """
+        Tests if the classification is correctly obtained from the INFO field.
+        """
         self.assertNotIn(Menums.CLASS.value, self.specific_testing_frame.columns)
         self.parser._obtain_class(self.specific_testing_frame)
         self.assertIn(Menums.CLASS.value, self.specific_testing_frame.columns)
@@ -55,6 +63,9 @@ class TestClinvarParser(unittest.TestCase):
         )
 
     def test_obtain_gene(self):
+        """
+        Tests if the gene name is correctly obtained from the INFO field.
+        """
         self.assertNotIn(Menums.GENE.value, self.specific_testing_frame.columns)
         self.parser._obtain_gene(self.specific_testing_frame)
         self.assertIn(Menums.GENE.value, self.specific_testing_frame.columns)
@@ -64,6 +75,10 @@ class TestClinvarParser(unittest.TestCase):
         )
 
     def test_obtain_review(self):
+        """
+        Tests if the ClinVar review status is correctly obtained from the INFO field and
+        correctly parsed into a numerical value.
+        """
         self.assertNotIn(Menums.REVIEW.value, self.specific_testing_frame.columns)
         self.parser._obtain_review(self.specific_testing_frame)
         self.assertIn(Menums.REVIEW.value, self.specific_testing_frame.columns)
@@ -74,6 +89,10 @@ class TestClinvarParser(unittest.TestCase):
         )
 
     def test_obtain_review_unknown_review(self):
+        """
+        Tests if an UserWarning is raised when an unknown review status is encountered in the
+        review INFO field.
+        """
         test_case = pd.DataFrame(
             {
                 'INFO': [

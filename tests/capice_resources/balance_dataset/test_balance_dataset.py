@@ -35,6 +35,14 @@ class TestBalanceDataset(unittest.TestCase):
         ]
     )
     def test_component(self):
+        """
+        Full component test from CLI to export of the balance-dataset module.
+        Does not include the verbose flag, since that is specific to the VerbosePrinter which is
+        tested separately.
+
+        Also tests if the output contains samples and if "remainder" sample size is greater than
+        "balanced" (as expected).
+        """
         BalanceDataset().run()
         filepath_balanced = os.path.join(self.output_directory, 'balanced.tsv.gz')
         filepath_remainder = os.path.join(self.output_directory, 'remainder.tsv.gz')

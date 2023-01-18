@@ -10,6 +10,9 @@ from molgenis.capice_resources.train_data_creator.utilities import correct_order
 
 class TestUtilities(unittest.TestCase):
     def test_correct_order_vcf_notation(self):
+        """
+        Tests a complex order of CHROM and POS to the correct VCF notation.
+        """
         test_set = pd.DataFrame(
             {
                 Genums.VCF_CHROM.value: [1, 'MT', 5, 3, 3, 'Y', 'X'],
@@ -26,6 +29,10 @@ class TestUtilities(unittest.TestCase):
         pd.testing.assert_frame_equal(test_set, expected)
 
     def test_apply_binarized_label(self):
+        """
+        Tests that LB and B get the correct binarized label of "0" and LP and P get the correct
+        binarized label of "1". Also checks that unknown labels are removed.
+        """
         test_case = pd.DataFrame(
             {
                 Menums.CLASS.value: [

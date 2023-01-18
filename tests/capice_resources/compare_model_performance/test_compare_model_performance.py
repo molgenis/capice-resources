@@ -24,6 +24,11 @@ class TestCompareModelPerformance(unittest.TestCase):
             check_and_remove_directory(os.path.join(cls.output_directory, file))
 
     def tearDown(self) -> None:
+        """
+        plt.close('all') is required, as matplotlib keeps all figures loaded. With the amount of
+        matplotlib related tests in capice-resources, matplotlib does throw an warning that too
+        many figures are loaded unless this call is made.
+        """
         plt.close('all')
 
     @patch(
@@ -37,6 +42,11 @@ class TestCompareModelPerformance(unittest.TestCase):
         ]
     )
     def test_component_full(self):
+        """
+        Full component testing of the compare-model-performance from CLI to export.
+        It does not matter that the scores for both model 1 and model 2 are equal,
+        as compare-model-performance does not really care about that.
+        """
         CompareModelPerformance().run()
         for figure in [
             Penums.FIG_AF.value,
@@ -51,6 +61,9 @@ class TestCompareModelPerformance(unittest.TestCase):
 
     def test_attempt_mismatch_merge_fail(self):
         """
+        Test to see if the "_merge_scores_and_labels" function raises the SampleMismatchError as
+        a result of unequal sample sizes and force_merge being set to False (by default).
+
         Since it doesn't matter what is inside the dataframes, supplying empty frames.
         (as the error is raised before anything is done with the frame)
         """
@@ -67,6 +80,11 @@ class TestCompareModelPerformance(unittest.TestCase):
         )
 
     def test_attempt_mismatch_merge_pass(self):
+        """
+        More expanded test to see if "_attempt_mismatch_merge" correctly merges 2 unequal sample
+        size dataframes if force_merge is supplied as True. Also checks if a unique column to
+        "labels" is preserved after the merge (mimicking the binarized_label column).
+        """
         module = CompareModelPerformance()
         scores = pd.DataFrame(
             {

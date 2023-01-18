@@ -19,6 +19,9 @@ class TestCompareModelsExplain(unittest.TestCase):
         })
 
     def test_normalize_column(self):
+        """
+        Very sensitive test to see if the Z score normalizer performs as expected on "gain".
+        """
         expected_output = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
             'gain': [197.3686981201172, 39.576637268066406, 38.426273345947266, 9.386235237121582],
@@ -33,6 +36,9 @@ class TestCompareModelsExplain(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_output, self.valid_input)
 
     def test_add_ranking_column(self):
+        """
+        Test to see if an unordered "weight" column gets ranked properly.
+        """
         expected_output = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
             'gain': [197.3686981201172, 39.576637268066406, 38.426273345947266, 9.386235237121582],
@@ -47,6 +53,10 @@ class TestCompareModelsExplain(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_output, self.valid_input)
 
     def test_table_merge(self):
+        """
+        Test to see if 2 fully processed (normalized, ranked, ordered) are merged properly,
+        assigning the correct suffix to the models.
+        """
         expected_output = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
             'gain_model1': [197.3686981201172, 39.576637268066406, 38.426273345947266,
@@ -71,6 +81,10 @@ class TestCompareModelsExplain(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_output, actual_output)
 
     def test_reorder_table(self):
+        """
+        Test to see if the columns of a merged explanation between model 1 and model 2 are
+        properly reordered. Also, that the ordering of indexes are done properly.
+        """
         input_table = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
             'gain_model1': [197.3686981201172, 39.576637268066406, 38.426273345947266,
@@ -123,6 +137,10 @@ class TestCompareModelsExplain(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_output, actual_output)
 
     def test_process_table(self):
+        """
+        Component test that checks if normalizer and ranker are correctly applied within
+        _process_explain().
+        """
         expected_output = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
             'gain': [197.3686981201172, 39.576637268066406, 38.426273345947266, 9.386235237121582],
