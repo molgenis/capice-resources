@@ -3,7 +3,6 @@ import unittest
 import pandas as pd
 
 from molgenis.capice_resources.core import GlobalEnums
-
 from molgenis.capice_resources.compare_model_performance.performance_calculator import \
     PerformanceCalculator
 

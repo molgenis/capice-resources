@@ -10,7 +10,7 @@ class Balancer:
     def __init__(self, verbose: bool):
         self.printer = VerbosityPrinter(verbose)
         self.bins = [pd.IntervalIndex]
-        self.columns = []
+        self.columns: list[str] = []
         self.drop_benign = pd.Index([])
         self.drop_pathogenic = pd.Index([])
         self.random_state = 5
@@ -76,7 +76,7 @@ class Balancer:
                 performed.
 
         """
-        self.columns = columns
+        self.columns = list(columns)
 
     def balance(self, dataset: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -251,6 +251,7 @@ class Balancer:
 
         Returns:
             dataframe:
-                The input "dataset" containing only samples that are within the AF range of "af_bin".
+                The input "dataset" containing only samples that
+                are within the AF range of "af_bin".
         """
         return dataset[dataset[Genums.GNOMAD_AF.value].apply(lambda value: value in af_bin)]

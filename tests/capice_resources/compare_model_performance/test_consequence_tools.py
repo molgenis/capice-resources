@@ -7,8 +7,9 @@ from molgenis.capice_resources.compare_model_performance.consequence_tools impor
 
 class TestConsequenceTools(unittest.TestCase):
     def setUp(self):
-        self.consequences = ['synonymous_variant', 'missense_variant', 'synonymous_variant',
-                            'intron_variant']
+        self.consequences = [
+            'synonymous_variant', 'missense_variant', 'synonymous_variant', 'intron_variant'
+        ]
         self.df = pd.DataFrame(data={
             'score': [0.000013, 0.097279, 0.000550, 0.007370],
             'Consequence': self.consequences,

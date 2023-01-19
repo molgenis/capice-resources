@@ -1,6 +1,7 @@
 import unittest
 
 import pandas as pd
+
 from molgenis.capice_resources.train_data_creator.filter import SVFilter
 
 

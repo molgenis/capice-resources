@@ -287,7 +287,7 @@ class ProcessVEP(Module):
     def _split_data(
             merged_data: pd.DataFrame,
             validation_present: bool = True
-    ) -> tuple[pd.DataFrame, pd.DataFrame |  None]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         """
         Method to split the merged train-test and validation back to the 2 separate datasets.
 
