@@ -18,7 +18,7 @@ class TestClinvarParser(unittest.TestCase):
             skiprows=27,
             low_memory=False
         )
-        cls.parser = ClinVarParser()
+        cls.parser = ClinVarParser()  # type: ignore
 
     def setUp(self) -> None:
         self.specific_testing_frame = pd.DataFrame(

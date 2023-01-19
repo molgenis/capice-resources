@@ -15,7 +15,7 @@ install:
 script:
 - coverage run -m pytest --junitxml=results.xml
 - coverage xml
-- sonar-scanner
+- sonar-scanner -X
 - mypy --ignore-missing-imports src/ tests/
 - flake8 src/ tests/
 addons:

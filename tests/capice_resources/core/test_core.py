@@ -53,7 +53,7 @@ class ModuleMetaclassTest(Module):
 
     def run_module(self, arguments: dict[str, str | object]) -> dict:
         foobar = arguments['input']
-        splitted_foobar = foobar.split(' ')
+        splitted_foobar = foobar.split(' ')  # type: ignore
         none_object = arguments['fake']
         if none_object is not None:
             raise AssertionError('Incorrect implementation of providing None for non-existing '

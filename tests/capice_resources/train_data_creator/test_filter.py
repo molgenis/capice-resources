@@ -10,9 +10,14 @@ class TestSVFilter(unittest.TestCase):
     def setUpClass(cls) -> None:
         """
         Small note: the length of "structural_variant" is exactly 62 characters long.
+
+        The structural variant has been set up this way, because without the tuple and without
+        the ignore statement mypy will complain but with the ignore statement flake8 will complain.
         """
-        cls.sv_filter = SVFilter()
-        cls.structural_variant = 'THISISNOTAVARIANTBUTASTRUCTURALVARIANTTHATHASALENGTHOFSIXTYTWO'
+        cls.sv_filter = SVFilter()  # type: ignore
+        cls.structural_variant = (  # type: ignore
+            'THISISNOTAVARIANTBUTASTRUCTURALVARIANTTHATHASALENGTHOFSIXTYTWO'
+        )
 
     def test_filter_correct_ref_sv(self):
         """

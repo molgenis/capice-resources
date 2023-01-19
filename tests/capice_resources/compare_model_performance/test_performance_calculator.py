@@ -10,13 +10,13 @@ from molgenis.capice_resources.compare_model_performance.performance_calculator 
 class TestPerformanceCalculator(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.dataset = pd.DataFrame(
+        cls.dataset = pd.DataFrame(  # type: ignore
             {
                 GlobalEnums.BINARIZED_LABEL.value: [1, 1, 0, 0],
                 GlobalEnums.SCORE.value: [0.9, 0.1, 0.9, 0.1]
             }
         )
-        cls.calculator = PerformanceCalculator()
+        cls.calculator = PerformanceCalculator()  # type: ignore
 
     def test_calculate_auc(self):
         """

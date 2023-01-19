@@ -17,7 +17,7 @@ class TestVKGLParser(unittest.TestCase):
             os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_vkgl.tsv.gz'),
             sep=Genums.TSV_SEPARATOR.value
         )
-        cls.parser = VKGLParser()
+        cls.parser = VKGLParser()  # type: ignore
 
     def test_component_parser(self):
         """

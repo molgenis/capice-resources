@@ -8,7 +8,7 @@ from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 class TestVepProcesser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.processor = VEPProcesser()
+        cls.processor = VEPProcesser()  # type: ignore
 
     def test_drop_duplicates(self):
         """

@@ -11,7 +11,7 @@ from molgenis.capice_resources.train_data_creator.sample_weighter import SampleW
 class TestSampleWeighter(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.weighter = SampleWeighter()
+        cls.weighter = SampleWeighter()  # type: ignore
 
     def test_sample_weighter(self):
         """

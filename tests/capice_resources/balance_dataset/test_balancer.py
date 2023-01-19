@@ -29,7 +29,7 @@ class TestBalancer(unittest.TestCase):
         This is done to limit file handling to "labels.tsv.gz". Now it is loaded once and copied
         within RAM.
         """
-        self.dataset = self.loaded_dataset.copy(deep=True)  # limiting IO
+        self.dataset = self.loaded_dataset.copy(deep=True)  # type: ignore
         self.hardcoded_columns = [
             'variant',
             Genums.CONSEQUENCE.value,

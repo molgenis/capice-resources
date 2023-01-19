@@ -13,7 +13,7 @@ from tests.capice_resources.testing_utilities import get_testing_resources_dir, 
 class TestProcessVEP(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.processor = ProcessVEP()
+        cls.processor = ProcessVEP()  # type: ignore
 
     def tearDown(self) -> None:
         directory = os.path.join(get_testing_resources_dir(), 'process_vep', 'output')
