@@ -74,7 +74,7 @@ class TestBalancer(unittest.TestCase):
         columns = ['foo', 'bar', 'baz']
         test_dataset = pd.DataFrame(columns=columns)
         self.balancer_nonverbose._set_columns(test_dataset.columns)
-        pd.testing.assert_index_equal(self.balancer_nonverbose.columns, pd.Index(columns))
+        self.assertListEqual(self.balancer_nonverbose.columns, columns)
 
     def set_up_test_balancer(self):
         balanced_dataset, _ = self.balancer_nonverbose.balance(self.dataset)
