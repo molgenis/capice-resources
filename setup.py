@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='capice-resources',
-    version='1.0.0.dev0',
+    version='1.0.0',
     packages=find_namespace_packages('src', exclude=['tests']),
     package_dir={"": "src"},
     url='https://capice.molgeniscloud.org/',
@@ -16,7 +16,7 @@ setup(
     description='Resource files for CAPICE to train new CAPICE models',
     long_description=long_description,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'License :: LGPL-3.0',
         'Programming Language :: Python :: 3.10'
     ],
