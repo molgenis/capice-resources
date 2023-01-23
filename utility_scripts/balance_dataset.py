@@ -146,7 +146,7 @@ class CommandLineArgumentsValidator:
 
     @staticmethod
     def _validate_output_exists(output):
-        if not os.path.isdir(output):
+        if not os.path.exists(output):
             warnings.warn(f'Output {output} does not exist, attempting to create.')
             os.makedirs(output)
 

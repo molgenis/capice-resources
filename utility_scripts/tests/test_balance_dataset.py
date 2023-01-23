@@ -104,17 +104,17 @@ class TestBalancer(unittest.TestCase):
             )
         )
 
-    def test_sampler_unchanged_more_required(self):
+    def test_sampler_unchanged_input_smaller_than_required(self):
         balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 5).shape[0], 4)
 
-    def test_sampler_unchanged_equal_required(self):
+    def test_sampler_unchanged_input_equal_required(self):
         balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 4).shape[0], 4)
 
-    def test_sampler_changed_less_required(self):
+    def test_sampler_changed_input_bigger_than_required(self):
         balancer = Balancer(VerbosityPrinter())
         test_set = self.test_sampler_data.copy(deep=True)
         self.assertEqual(balancer._sample_variants(test_set, 2).shape[0], 2)
