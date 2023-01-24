@@ -46,26 +46,35 @@ class TestBalancer(unittest.TestCase):
         )
         self.balancer_nonverbose = Balancer(False)
 
-    def test_sampler_unchanged_more_required(self):
+    def test_sampler_unchanged_input_smaller_than_required(self):
         """
         Test to see if a greater amount of "n_required" than the sample size of "dataset" does
         not change "dataset".
         """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 5).shape[0], 4)
 
-    def test_sampler_unchanged_equal_required(self):
+    def test_sampler_unchanged_input_equal_required(self):
         """
         Test to see if an equal amount of "n_required" to the sample size of "dataset" does not
         change "dataset".
         """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 4).shape[0], 4)
 
-    def test_sampler_changed_less_required(self):
+    def test_sampler_changed_input_bigger_than_required(self):
         """
         Test to see if a lower amount of "n_required" to the sample size of "dataset" does in fact
         change the sample size to "n_required".
         """
         self.assertEqual(self.balancer_nonverbose._sample_variants(self.test_set, 2).shape[0], 2)
+
+    def test_sampler_changed_zero_required(self):
+        """
+        Test to see if a "n_required" of 0 does not cause errors in terms of amount of samples and if the
+        column names are still correctly applied.
+        """
+        observed = self.balancer_nonverbose._sample_variants(self.test_set, 0)
+        self.assertEqual(observed.shape[0], 0)
+        self.assertListEqual(list(observed.columns), self.hardcoded_columns)
 
     def test_set_columns(self):
         """
