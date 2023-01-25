@@ -69,8 +69,8 @@ class TestBalancer(unittest.TestCase):
 
     def test_sampler_changed_zero_required(self):
         """
-        Test to see if a "n_required" of 0 does not cause errors in terms of amount of samples and if the
-        column names are still correctly applied.
+        Test to see if a "n_required" of 0 does not cause errors in terms of amount of samples and
+        if the column names are still correctly applied.
         """
         observed = self.balancer_nonverbose._sample_variants(self.test_set, 0)
         self.assertEqual(observed.shape[0], 0)

@@ -1,6 +1,6 @@
 import os
 import gzip
-from enum import Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 from abc import abstractmethod, ABCMeta
 from argparse import ArgumentParser
@@ -213,23 +213,13 @@ class Module(metaclass=ABCMeta):
         pass
 
 
-class ExtendedEnum(Enum):
-    """
-    Extension of the standard Enum python library to return a list of all values the class houses
-    once ExtendedEnum.list() is called.
-    """
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-
-
-class GlobalEnums(ExtendedEnum):
+class VCFEnums(Enum, StrEnum):
     """
     Enums to use for all modules.
     """
-    SEPARATOR = '!'
+    ID_SEPARATOR = '!'
     OUTPUT = 'output'
-    TSV_EXTENSIONS = ('.tsv.gz', '.tsv')
+
     SYMBOL = 'SYMBOL'
     CHROM = 'CHROM'
     VCF_CHROM = '#CHROM'
@@ -250,6 +240,10 @@ class GlobalEnums(ExtendedEnum):
     CONSEQUENCE = 'Consequence'
     IMPUTED = 'is_imputed'
     NA_VALUES = '.'
+
+
+class TSVFileEnums(Enum):
+    TSV_EXTENSIONS = ('.tsv.gz', '.tsv')
     TSV_SEPARATOR = '\t'
 
 
