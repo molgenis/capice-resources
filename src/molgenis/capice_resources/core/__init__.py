@@ -1,6 +1,6 @@
 import os
 import gzip
-from enum import Enum, StrEnum
+from enum import Enum
 from pathlib import Path
 from abc import abstractmethod, ABCMeta
 from argparse import ArgumentParser
@@ -33,7 +33,7 @@ class Module(metaclass=ABCMeta):
         self.data_validator = DataValidator()
         self.program = program
         self.description = description
-        self.exporter = Exporter(GlobalEnums.TSV_SEPARATOR.value)
+        self.exporter = Exporter(TSVFileEnums.TSV_SEPARATOR.value)
 
     def run(self) -> None:
         """
@@ -131,9 +131,9 @@ class Module(metaclass=ABCMeta):
         return self.data_validator.validate_pandas_dataframe(
             pd.read_csv(
                 path,
-                sep=GlobalEnums.TSV_SEPARATOR.value,
+                sep=TSVFileEnums.TSV_SEPARATOR.value,
                 low_memory=False,
-                na_values=GlobalEnums.NA_VALUES.value
+                na_values=TSVFileEnums.NA_VALUES.value
             ),
             required_columns
         )
@@ -173,15 +173,15 @@ class Module(metaclass=ABCMeta):
                 path,
                 sep='\t',
                 low_memory=False,
-                na_values=GlobalEnums.NA_VALUES.value,
+                na_values=TSVFileEnums.NA_VALUES.value,
                 skiprows=skiprows
             ),
             [
-                GlobalEnums.VCF_CHROM.value,
-                GlobalEnums.POS.value,
-                GlobalEnums.REF.value,
-                GlobalEnums.ALT.value,
-                GlobalEnums.INFO.value
+                VCFEnums.VCF_CHROM.value,
+                VCFEnums.POS.value,
+                VCFEnums.REF.value,
+                VCFEnums.ALT.value,
+                VCFEnums.INFO.value
             ]
         )
 
@@ -213,50 +213,46 @@ class Module(metaclass=ABCMeta):
         pass
 
 
-class VCFEnums(Enum, StrEnum):
+class VCFEnums(Enum):
     """
     Enums to use for all modules.
     """
     ID_SEPARATOR = '!'
-    OUTPUT = 'output'
-
-    SYMBOL = 'SYMBOL'
-    CHROM = 'CHROM'
     VCF_CHROM = '#CHROM'
     POS = 'POS'
     REF = 'REF'
     ALT = 'ALT'
     INFO = 'INFO'
+
+
+class DatasetIdentifierEnums(Enum):
+    TRAIN_TEST = 'train_test'
+    VALIDATION = 'validation'
+    OUTPUT = 'output'
+
+
+class ColumnEnums(Enum):
+    CHROM = 'CHROM'
+    SYMBOL = 'SYMBOL'
+    SAMPLE_WEIGHT = 'sample_weight'
     BINARIZED_LABEL = 'binarized_label'
     SCORE = 'score'
     DATASET_SOURCE = 'dataset_source'
-    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
-    SAMPLE_WEIGHT = 'sample_weight'
-    TRAIN_TEST = 'train_test'
-    VALIDATION = 'validation'
     ID = 'ID'
-    AF_BINS = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin 100%
     GNOMAD_AF = 'gnomAD_AF'
     CONSEQUENCE = 'Consequence'
     IMPUTED = 'is_imputed'
-    NA_VALUES = '.'
+
+
+class PlottingEnums(Enum):
+    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+
+
+class AlleleFrequencyEnums(Enum):
+    AF_BINS = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]  # Starting at < 0.0001%, up to bin 100%
 
 
 class TSVFileEnums(Enum):
     TSV_EXTENSIONS = ('.tsv.gz', '.tsv')
     TSV_SEPARATOR = '\t'
-
-
-def add_dataset_source(frame: pd.DataFrame, name: str) -> None:
-    """
-    Function to add a dataset source to a dataset.
-    Created it here as creating it in utilities would create a circular import loop.
-
-    Args:
-        frame:
-            The dataframe to which apply the dataset source to.
-        name:
-            The name of the dataset source that needs to be applied.
-
-    """
-    frame[GlobalEnums.DATASET_SOURCE.value] = name
+    NA_VALUES = '.'

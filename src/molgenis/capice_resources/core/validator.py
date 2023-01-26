@@ -4,10 +4,31 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-from molgenis.capice_resources.utilities import extract_key_value_dict_cli
-
 
 class InputValidator:
+    @staticmethod
+    def _extract_key_value_dict_cli(cli_dict: dict[str, str | None]) -> tuple[str, str | None]:
+        """
+        Function to extract the CLI argument key and its value from an CLI dictionary
+
+        Args:
+            cli_dict:
+                The dictionary containing the (key) argument key and (value) its command line value.
+
+        Returns:
+            tuple:
+                Tuple containing [0] the argument key (str) and [1] its value (str or None).
+        """
+        # Done with list(path.keys())[0] so that the path_key is stored as string instead of
+        # dict_keys()
+        key = list(cli_dict.keys())[0]
+        # Check for None in case we meet an optional argument
+        if cli_dict[key] is not None:
+            value = str(cli_dict[key])
+        else:
+            value = None
+        return key, value
+
     def validate_icli_file(
             self,
             path: dict[str, os.PathLike[str] | None | str],
@@ -37,7 +58,7 @@ class InputValidator:
 
                 IOError is also raised when a non-optional argument is encountered as None.
         """
-        path_key, path_value = extract_key_value_dict_cli(path)
+        path_key, path_value = self._extract_key_value_dict_cli(path)
         if path_value is not None:
             path_value = Path(path_value).absolute()
         self._validate_file(path_value, extension, can_be_optional)
@@ -100,7 +121,7 @@ class InputValidator:
             OSError:
                 OSError is raised when the output directory can not be made.
         """
-        path_key, path_value = extract_key_value_dict_cli(path)
+        path_key, path_value = self._extract_key_value_dict_cli(path)
         self._validate_path_is_none(path_value, False)
         path_value = Path(path_value)
         # Parent path is to prevent the making of output.tsv.gz directory instead of putting
