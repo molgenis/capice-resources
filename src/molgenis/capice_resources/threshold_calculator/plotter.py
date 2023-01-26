@@ -22,7 +22,7 @@ class ThresholdPlotter:
         self.recall = recall_data.loc[0, Menums.RECALL.value]
         self.precision = recall_data.loc[0, Menums.F1.value]
         self.f1 = recall_data.loc[0, Menums.RECALL.value]
-        self.figure = plt.figure()
+        self.figure = plt.figure(dpi=100)
         self.figure.set_constrained_layout(Genums.CONSTRAINED_LAYOUT.value)
 
     def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:

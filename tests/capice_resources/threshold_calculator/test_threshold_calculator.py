@@ -63,6 +63,22 @@ class TestCalculator(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(observed, expected)
 
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-v', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-s', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_plotter_correct_size_dpi(self):
+        module = ThresholdCalculator()
+        args = module.parse_and_validate_cli()
+        plot = module.run_module(args)[ThresholdEnums.FIGURE.value]
+        self.assertEqual(100, plot.dpi)
+        self.assertTupleEqual((0, 1), plot.get_ylim())
+
 
 if __name__ == '__main__':
     unittest.main()

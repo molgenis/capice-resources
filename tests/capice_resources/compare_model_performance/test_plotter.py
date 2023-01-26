@@ -34,6 +34,7 @@ class TestPlotter(unittest.TestCase):
         self.assertEqual(2, plotter.n_rows)
         self.assertEqual(3, plotter.n_cols)
         self.assertTupleEqual((20, 40), plotter._set_figure_size(consequences))
+        self.assertEqual(100, plotter.fig_auc.dpi)
         figure_size = list(plotter.fig_auc.get_size_inches()*plotter.fig_auc.dpi)
         self.assertEqual(2000.0, figure_size[0])
         self.assertEqual(4000.0, figure_size[1])
