@@ -4,6 +4,7 @@ Repository for resource files for CAPICE and updating CAPICE model. It contains 
 module contains their own README (if applicable) describing how to use them.
 
 ## Requirements
+
 - CAPICE (personal git branch for development)
 - [VIP](https://github.com/molgenis/vip) v4.8.0 (include both GRCh37 & GRCh38 during installation)
 - Python 3.9 or higher
