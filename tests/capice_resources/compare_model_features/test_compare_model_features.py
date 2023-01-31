@@ -1,7 +1,11 @@
+import os
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
+from tests.capice_resources.testing_utilities import check_and_remove_directory, \
+    get_testing_resources_dir
 from molgenis.capice_resources.compare_model_features.ranker import Ranker
 from molgenis.capice_resources.compare_model_features.orderer import Orderer
 from molgenis.capice_resources.compare_model_features.normalizer import Normalizer
@@ -9,6 +13,16 @@ from molgenis.capice_resources.compare_model_features.__main__ import CompareMod
 
 
 class TestCompareModelsExplain(unittest.TestCase):
+    output_path = os.path.join(
+        get_testing_resources_dir(),
+        'compare_model_features',
+        'output',
+        'output.tsv.gz'
+    )
+    @classmethod
+    def tearDownClass(cls) -> None:
+        check_and_remove_directory(cls.output_path)
+
     def setUp(self):
         self.valid_input = pd.DataFrame(data={
             'feature': ['phyloP', 'SIFTval', 'PolyPhenVal', 'Grantham'],
@@ -156,6 +170,31 @@ class TestCompareModelsExplain(unittest.TestCase):
         CompareModelFeatures()._process_explain(self.valid_input)
 
         pd.testing.assert_frame_equal(expected_output, self.valid_input)
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a',
+            os.path.join(get_testing_resources_dir(), 'compare_model_features', 'example.tsv.gz'),
+            '-b',
+            os.path.join(get_testing_resources_dir(), 'compare_model_features', 'example.tsv.gz'),
+            '-o', output_path,
+        ]
+    )
+    def test_component_compare_model_features(self):
+        required_features = pd.read_csv(
+            os.path.join(get_testing_resources_dir(), 'compare_model_features', 'example.tsv.gz'),
+            sep='\t',
+            usecols=['feature']
+        )
+        CompareModelFeatures().run()
+        output = pd.read_csv(
+            self.output_path,
+            sep='\t'
+        )
+        for feature in required_features['feature'].values:
+            self.assertIn(feature, output['feature'].values)
 
 
 if __name__ == '__main__':

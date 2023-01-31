@@ -1,7 +1,7 @@
 import pandas as pd
 
 from molgenis.capice_resources.core import Module
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import TSVFileEnums, DatasetIdentifierEnums
 from molgenis.capice_resources.compare_model_features.ranker import Ranker
 from molgenis.capice_resources.compare_model_features.orderer import Orderer
 from molgenis.capice_resources.compare_model_features.normalizer import Normalizer
@@ -66,15 +66,15 @@ class CompareModelFeatures(Module):
     def _validate_module_specific_arguments(self, parser):
         explain_1 = self.input_validator.validate_icli_file(
             parser.get_argument('explain_1'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         explain_2 = self.input_validator.validate_icli_file(
             parser.get_argument('explain_2'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         output = self.input_validator.validate_ocli_directory(
             parser.get_argument('output'),
-            Genums.TSV_EXTENSIONS.value,
+            TSVFileEnums.TSV_EXTENSIONS.value,
             parser.get_argument('force')
         )
         return {
@@ -84,14 +84,34 @@ class CompareModelFeatures(Module):
         }
 
     def run_module(self, arguments) -> dict[str, object]:
-        explain_1 = self._read_pandas_tsv(arguments['explain_1'], Menums.list())
+        explain_1 = self._read_pandas_tsv(
+            arguments['explain_1'],
+            [  # type:ignore
+                Menums.FEATURE.value,
+                Menums.GAIN.value,
+                Menums.TOTAL_GAIN.value,
+                Menums.COVER.value,
+                Menums.TOTAL_COVER.value,
+                Menums.WEIGHT.value
+            ]
+        )
         self._process_explain(explain_1)
-        explain_2 = self._read_pandas_tsv(arguments['explain_2'], Menums.list())
+        explain_2 = self._read_pandas_tsv(
+            arguments['explain_2'],
+            [  # type:ignore
+                Menums.FEATURE.value,
+                Menums.GAIN.value,
+                Menums.TOTAL_GAIN.value,
+                Menums.COVER.value,
+                Menums.TOTAL_COVER.value,
+                Menums.WEIGHT.value
+            ]
+        )
         self._process_explain(explain_2)
         merge = self._merge_explains(explain_1, explain_2)
         orderer = Orderer()
         out = orderer.order(merge)
-        return {'dataframe': out, Genums.OUTPUT.value: arguments['output']}
+        return {'dataframe': out, DatasetIdentifierEnums.OUTPUT.value: arguments['output']}
 
     def _process_explain(self, explain: pd.DataFrame) -> None:
         """
@@ -104,7 +124,7 @@ class CompareModelFeatures(Module):
 
         """
         normalizer = Normalizer()
-        normalizer.normalize_column(explain, Menums.GAIN.value)
+        normalizer.normalize_column(explain, Menums.GAIN.value)  # type:ignore
         ranker = Ranker()
         ranker.add_rank(explain, Menums.GAIN.value + Menums.NORMALIZED.value)
 
@@ -124,12 +144,14 @@ class CompareModelFeatures(Module):
             explain1,
             explain2,
             how='outer',
-            on=Menums.FEATURE.value,
+            on=Menums.FEATURE.value,  # type:ignore
             suffixes=('_model1', '_model2')
         )
 
     def export(self, output):
-        self.exporter.export_pandas_file(output[Genums.OUTPUT.value], output['dataframe'])
+        self.exporter.export_pandas_file(
+            output[DatasetIdentifierEnums.OUTPUT.value], output['dataframe']
+        )
 
 
 def main():
