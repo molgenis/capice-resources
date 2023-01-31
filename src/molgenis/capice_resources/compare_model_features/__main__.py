@@ -1,7 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import Module
-from molgenis.capice_resources.core import TSVFileEnums, DatasetIdentifierEnums
+from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums
 from molgenis.capice_resources.compare_model_features.ranker import Ranker
 from molgenis.capice_resources.compare_model_features.orderer import Orderer
 from molgenis.capice_resources.compare_model_features.normalizer import Normalizer

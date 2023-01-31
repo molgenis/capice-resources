@@ -2,8 +2,8 @@ import warnings
 
 import pandas as pd
 
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.utilities import split_consequences
-from molgenis.capice_resources.core import GlobalEnums as Genums
 
 
 class ConsequenceTools:
@@ -26,18 +26,18 @@ class ConsequenceTools:
                 either model 1 merge frame or model 2 merge frame.
         """
         if (
-                Genums.CONSEQUENCE.value not in merged_model_1.columns or
-                Genums.CONSEQUENCE.value not in merged_model_2.columns
+                ColumnEnums.CONSEQUENCE.value not in merged_model_1.columns or
+                ColumnEnums.CONSEQUENCE.value not in merged_model_2.columns
         ):
             warnings.warn(
                 'Missing consequence column. Disabling per-consequence performance metrics.'
             )
             return False
         else:
-            if Genums.CONSEQUENCE.value in merged_model_1:
-                return split_consequences(merged_model_1[Genums.CONSEQUENCE.value].values)
+            if ColumnEnums.CONSEQUENCE.value in merged_model_1:
+                return split_consequences(merged_model_1[ColumnEnums.CONSEQUENCE.value].values)
             else:
-                return split_consequences(merged_model_2[Genums.CONSEQUENCE.value].values)
+                return split_consequences(merged_model_2[ColumnEnums.CONSEQUENCE.value].values)
 
     @staticmethod
     def subset_consequence(dataframe: pd.DataFrame, consequence: str) -> pd.DataFrame:
@@ -56,7 +56,7 @@ class ConsequenceTools:
                 The sub setted input dataframe in which all samples contain the consequence
                 "consequence".
         """
-        return dataframe[dataframe[Genums.CONSEQUENCE.value].str.contains(consequence)]
+        return dataframe[dataframe[ColumnEnums.CONSEQUENCE.value].str.contains(consequence)]
 
     @staticmethod
     def validate_consequence_samples_equal(
@@ -80,10 +80,10 @@ class ConsequenceTools:
         nonequal = []
         for consequence in splitted_consequences:
             m1 = merged_model_1[
-                merged_model_1[Genums.CONSEQUENCE.value].str.contains(consequence)
+                merged_model_1[ColumnEnums.CONSEQUENCE.value].str.contains(consequence)
             ]
             m2 = merged_model_2[
-                merged_model_2[Genums.CONSEQUENCE.value].str.contains(consequence)
+                merged_model_2[ColumnEnums.CONSEQUENCE.value].str.contains(consequence)
             ]
             if m1.shape[0] != m2.shape[0] and consequence not in nonequal:
                 nonequal.append(consequence)

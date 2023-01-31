@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_curve, roc_auc_score
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 
 
 class PerformanceCalculator:
@@ -22,8 +22,8 @@ class PerformanceCalculator:
         """
         return round(
             roc_auc_score(
-                y_true=dataset[Genums.BINARIZED_LABEL.value],
-                y_score=dataset[Genums.SCORE.value]
+                y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
+                y_score=dataset[ColumnEnums.SCORE.value]
             ),
             4
         )
@@ -43,7 +43,7 @@ class PerformanceCalculator:
                 np.array) and [2] Area Under Curve (float, rounded to 4 decimals).
         """
         fpr, tpr, _ = roc_curve(
-            y_true=dataset[Genums.BINARIZED_LABEL.value],
-            y_score=dataset[Genums.SCORE.value]
+            y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
+            y_score=dataset[ColumnEnums.SCORE.value]
         )
         return fpr, tpr, self.calculate_auc(dataset)

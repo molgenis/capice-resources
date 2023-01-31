@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
-from molgenis.capice_resources.compare_model_performance import PlottingEnums as Penums
+from molgenis.capice_resources.core import ColumnEnums, PlottingEnums, AlleleFrequencyEnums
+from molgenis.capice_resources.compare_model_performance import CMPPlottingEnums as Penums
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 from molgenis.capice_resources.compare_model_performance.performance_calculator import \
     PerformanceCalculator
@@ -185,7 +185,7 @@ class Plotter:
         figure.suptitle(
             f'Model 1 vs Model 2 {figure_supertitle}'
         )
-        figure.set_constrained_layout(Genums.CONSTRAINED_LAYOUT.value)
+        figure.set_constrained_layout(PlottingEnums.CONSTRAINED_LAYOUT.value)
 
     def _set_nrows_and_ncols(self) -> None:
         """
@@ -315,11 +315,11 @@ class Plotter:
 
     def _plot_roc(
             self,
-            fpr_model_1: float,
-            tpr_model_1: float,
+            fpr_model_1: np.ndarray,
+            tpr_model_1: np.ndarray,
             auc_model_1: float,
-            fpr_model_2: float,
-            tpr_model_2: float,
+            fpr_model_2: np.ndarray,
+            tpr_model_2: np.ndarray,
             auc_model_2: float
     ) -> None:
         """
@@ -409,15 +409,15 @@ class Plotter:
         """
         if last_iter:
             return dataset[
-                (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[Genums.GNOMAD_AF.value] <= upper_bound) &
-                (~dataset[Genums.IMPUTED.value])
+                (dataset[ColumnEnums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[ColumnEnums.GNOMAD_AF.value] <= upper_bound) &
+                (~dataset[ColumnEnums.IMPUTED.value])
                 ]
         else:
             return dataset[
-                (dataset[Genums.GNOMAD_AF.value] >= lower_bound) &
-                (dataset[Genums.GNOMAD_AF.value] < upper_bound) &
-                (~dataset[Genums.IMPUTED.value])
+                (dataset[ColumnEnums.GNOMAD_AF.value] >= lower_bound) &
+                (dataset[ColumnEnums.GNOMAD_AF.value] < upper_bound) &
+                (~dataset[ColumnEnums.IMPUTED.value])
                 ]
 
     def _plot_bin(
@@ -502,10 +502,10 @@ class Plotter:
         # Including imputed and non-imputed 0
         try:
             f_auc_m1 = self.calculator.calculate_auc(
-                model_1_data[model_1_data[Genums.GNOMAD_AF.value] == 0]
+                model_1_data[model_1_data[ColumnEnums.GNOMAD_AF.value] == 0]
             )
             f_auc_m2 = self.calculator.calculate_auc(
-                model_2_data[model_2_data[Genums.GNOMAD_AF.value] == 0]
+                model_2_data[model_2_data[ColumnEnums.GNOMAD_AF.value] == 0]
             )
         except ValueError:
             print('Could not calculate an AUC for possible singleton variants.')
@@ -518,12 +518,12 @@ class Plotter:
             0,
             '"0"',
             f_auc_m1,
-            model_1_data[model_1_data[Genums.GNOMAD_AF.value] == 0].shape[0],
+            model_1_data[model_1_data[ColumnEnums.GNOMAD_AF.value] == 0].shape[0],
             f_auc_m2,
-            model_2_data[model_2_data[Genums.GNOMAD_AF.value] == 0].shape[0]
+            model_2_data[model_2_data[ColumnEnums.GNOMAD_AF.value] == 0].shape[0]
         )
 
-        bins = Genums.AF_BINS.value
+        bins = AlleleFrequencyEnums.AF_BINS.value
         # Sadly bins*100 doesn't work for 1e-6, cause of rounding errors
         bins_labels = [0, 1e-4, 1e-3, 0.01, 0.1, 1, 100]
         for i in range(1, len(bins)):
@@ -676,7 +676,7 @@ class Plotter:
         """
         self._create_boxplot_for_column(
             self.fig_score_dist_box,
-            Genums.SCORE.value,
+            ColumnEnums.SCORE.value,
             model_1_data,
             model_1_size,
             model_2_data,
@@ -685,7 +685,7 @@ class Plotter:
         )
         self._create_violinplot_for_column(
             self.fig_score_dist_vio,
-            Genums.SCORE.value,
+            ColumnEnums.SCORE.value,
             model_1_data,
             model_1_size,
             model_2_data,
@@ -765,10 +765,10 @@ class Plotter:
                 returns both labels joined together in a single string.
 
         """
-        n_benign_m1 = model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 0].shape[0]
-        n_patho_m1 = model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 1].shape[0]
-        n_benign_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 0].shape[0]
-        n_patho_m2 = model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 1].shape[0]
+        n_benign_m1 = model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_patho_m1 = model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
+        n_benign_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_patho_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
         return_value = (
             f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}',
             f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
@@ -812,10 +812,10 @@ class Plotter:
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         ax.boxplot(
             [
-                model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_1_data[model_1_data[Genums.BINARIZED_LABEL.value] == 1][column_to_plot],
-                model_2_data[model_2_data[Genums.BINARIZED_LABEL.value] == 1][column_to_plot],
+                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
+                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
             ],
             labels=[
                 'Model 1\nBenign',
@@ -876,9 +876,9 @@ class Plotter:
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         sns.violinplot(
             data=pd.concat([model_1_data, model_2_data]),
-            x=Genums.BINARIZED_LABEL.value,
+            x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
-            hue=Menums.MODEL_IDENTIFIER.value,
+            hue=ColumnEnums.DATASET_SOURCE.value,
             ax=ax,
             split=True,
             bw=0.1,

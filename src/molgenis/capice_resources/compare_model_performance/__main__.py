@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.utilities import add_dataset_source
+from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums, \
+    ColumnEnums, VCFEnums
 from molgenis.capice_resources.core.errors import SampleMismatchError
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
@@ -104,19 +105,19 @@ class CompareModelPerformance(Module):
     def _validate_module_specific_arguments(self, parser):
         scores1 = self.input_validator.validate_icli_file(
             parser.get_argument('scores_model_1'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         scores2 = self.input_validator.validate_icli_file(
             parser.get_argument('scores_model_2'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         labels = self.input_validator.validate_icli_file(
             parser.get_argument('labels'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         labels_2 = self.input_validator.validate_icli_file(
             parser.get_argument('labels_model_2'),
-            Genums.TSV_EXTENSIONS.value,
+            TSVFileEnums.TSV_EXTENSIONS.value,
             can_be_optional=True
         )
         output = self.input_validator.validate_ocli_directory(
@@ -161,8 +162,8 @@ class CompareModelPerformance(Module):
         annotator.add_and_process_impute_af(model_1)
         annotator.add_and_process_impute_af(model_2)
 
-        annotator.add_model_identifier(model_1, Menums.MODEL_1.value)
-        annotator.add_model_identifier(model_2, Menums.MODEL_2.value)
+        add_dataset_source(model_1, Menums.MODEL_1.value)
+        add_dataset_source(model_2, Menums.MODEL_2.value)
 
         plotter = Plotter(
             consequences,
@@ -172,7 +173,7 @@ class CompareModelPerformance(Module):
             path_labels_model_2
         )
         plots = plotter.plot(model_1, model_2)
-        return {**plots, Genums.OUTPUT.value: arguments['output']}
+        return {**plots, DatasetIdentifierEnums.OUTPUT.value: arguments['output']}
 
     def _read_and_parse_input_data(
             self,
@@ -204,21 +205,21 @@ class CompareModelPerformance(Module):
         """
         scores_model_1 = self._read_pandas_tsv(
             scores1_argument,
-            [
-                Genums.SCORE.value
+            [  # type: ignore
+                ColumnEnums.SCORE.value
             ]
         )
         scores_model_2 = self._read_pandas_tsv(
             scores2_argument,
-            [
-                Genums.SCORE.value
+            [  # type: ignore
+                ColumnEnums.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
             labels1_argument,
-            [
-                Genums.BINARIZED_LABEL.value,
-                Genums.GNOMAD_AF.value
+            [  # type: ignore
+                ColumnEnums.BINARIZED_LABEL.value,
+                ColumnEnums.GNOMAD_AF.value
             ]
         )
         # No _read_pandas_tsv yet, since it can be None
@@ -238,9 +239,9 @@ class CompareModelPerformance(Module):
         else:
             labels_model_2 = self._read_pandas_tsv(
                 labels2,
-                [
-                    Genums.BINARIZED_LABEL.value,
-                    Genums.GNOMAD_AF.value
+                [  # type: ignore
+                    ColumnEnums.BINARIZED_LABEL.value,
+                    ColumnEnums.GNOMAD_AF.value
                 ]
             )
             merge_model_2 = self._merge_scores_and_labes(
@@ -314,9 +315,9 @@ class CompareModelPerformance(Module):
             raise SampleMismatchError('Sample sizes differ and -f/--force-merge is not supplied!')
         scores_merge_columns = [
             Menums.CHR.value,
-            Genums.POS.value.lower(),
-            Genums.REF.value.lower(),
-            Genums.ALT.value.lower(),
+            VCFEnums.POS.value.lower(),
+            VCFEnums.REF.value.lower(),
+            VCFEnums.ALT.value.lower(),
             Menums.GENE_NAME.value
         ]
         self.data_validator.validate_pandas_dataframe(
@@ -324,26 +325,26 @@ class CompareModelPerformance(Module):
             scores_merge_columns
         )
         labels_merge_columns = [
-            Genums.CHROM.value,
-            Genums.POS.value,
-            Genums.REF.value,
-            Genums.ALT.value,
-            Genums.SYMBOL.value
+            ColumnEnums.CHROM.value,
+            VCFEnums.POS.value,
+            VCFEnums.REF.value,
+            VCFEnums.ALT.value,
+            ColumnEnums.SYMBOL.value
         ]
         self.data_validator.validate_pandas_dataframe(
             labels,
             labels_merge_columns
         )
         scores[Menums.MERGE_COLUMN.value] = scores[scores_merge_columns].astype(
-            str).agg(Genums.SEPARATOR.value.join, axis=1)
+            str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
         labels[Menums.MERGE_COLUMN.value] = labels[labels_merge_columns].astype(
-            str).agg(Genums.SEPARATOR.value.join, axis=1)
-        return scores.merge(labels, on=Menums.MERGE_COLUMN.value, how='left')
+            str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
+        return scores.merge(labels, on=Menums.MERGE_COLUMN.value, how='left')  # type: ignore
 
     def export(self, output) -> None:
-        output_path = output[Genums.OUTPUT.value]
+        output_path = output[DatasetIdentifierEnums.OUTPUT.value]
         for filename, figure in output.items():
-            if filename == Genums.OUTPUT.value:
+            if filename == DatasetIdentifierEnums.OUTPUT.value:
                 continue
             figure.savefig(os.path.join(output_path, filename + '.png'))  # type: ignore
 

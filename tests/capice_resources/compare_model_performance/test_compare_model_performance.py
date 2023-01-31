@@ -5,11 +5,11 @@ from unittest.mock import patch
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums, VCFEnums
 from molgenis.capice_resources.core.errors import SampleMismatchError
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
-from molgenis.capice_resources.compare_model_performance import PlottingEnums as Penums
+from molgenis.capice_resources.compare_model_performance import CMPPlottingEnums as Penums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
     Menums
 from molgenis.capice_resources.compare_model_performance.__main__ import CompareModelPerformance
@@ -89,24 +89,24 @@ class TestCompareModelPerformance(unittest.TestCase):
         scores = pd.DataFrame(
             {
                  Menums.CHR.value: [1, 2, 3, 4],
-                 Genums.POS.value.lower(): [100, 200, 300, 400],
-                 Genums.REF.value.lower(): ['A', 'C', 'T', 'G'],
-                 Genums.ALT.value.lower(): ['T', 'G', 'A', 'C'],
+                 VCFEnums.POS.value.lower(): [100, 200, 300, 400],
+                 VCFEnums.REF.value.lower(): ['A', 'C', 'T', 'G'],
+                 VCFEnums.ALT.value.lower(): ['T', 'G', 'A', 'C'],
                  Menums.GENE_NAME.value: ['foo', 'foo', 'bar', 'baz']
             }
         )
         labels = pd.DataFrame(
             {
-                Genums.CHROM.value: [1, 2, 3],
-                Genums.POS.value: [100, 200, 300],
-                Genums.REF.value: ['A', 'C', 'T'],
-                Genums.ALT.value: ['T', 'G', 'A'],
-                Genums.SYMBOL.value: ['foo', 'foo', 'bar'],
+                ColumnEnums.CHROM.value: [1, 2, 3],
+                VCFEnums.POS.value: [100, 200, 300],
+                VCFEnums.REF.value: ['A', 'C', 'T'],
+                VCFEnums.ALT.value: ['T', 'G', 'A'],
+                ColumnEnums.SYMBOL.value: ['foo', 'foo', 'bar'],
                 'SuperUniqueLabelColumn': [1, 0, 0]
             }
         )
         observed = module._merge_scores_and_labes(scores, labels, force_merge=True)
-        self.assertIn(Genums.CHROM.value, observed.columns)
+        self.assertIn(ColumnEnums.CHROM.value, observed.columns)
         self.assertIn('SuperUniqueLabelColumn', observed.columns)
 
 

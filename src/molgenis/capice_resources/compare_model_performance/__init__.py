@@ -1,7 +1,7 @@
-from molgenis.capice_resources.core import ExtendedEnum
+from enum import Enum
 
 
-class CompareModelPerformanceEnums(ExtendedEnum):
+class CompareModelPerformanceEnums(Enum):
     """
     Enums specific to CompareModelPerformance, not including the enums that are specific to
     plotting the actual performance.
@@ -15,7 +15,7 @@ class CompareModelPerformanceEnums(ExtendedEnum):
     MODEL_2 = 'model_2'
 
 
-class PlottingEnums(ExtendedEnum):
+class CMPPlottingEnums(Enum):
     """
     Enums specific to the plotting process of CompareModelPerformance.
     """

@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
     Menums
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
@@ -13,9 +13,9 @@ class TestAnnotator(unittest.TestCase):
         self.annotator = Annotator()
         self.dataset = pd.DataFrame(
             {
-                Genums.SCORE.value: [0.9, 0.8, 0.7, 0.6],
-                Genums.BINARIZED_LABEL.value: [1, 0, 1, 0],
-                Genums.GNOMAD_AF.value: [0.9, None, None, 0.0]
+                ColumnEnums.SCORE.value: [0.9, 0.8, 0.7, 0.6],
+                ColumnEnums.BINARIZED_LABEL.value: [1, 0, 1, 0],
+                ColumnEnums.GNOMAD_AF.value: [0.9, None, None, 0.0]
             }
         )
 
@@ -37,20 +37,10 @@ class TestAnnotator(unittest.TestCase):
         Test to see if the IMPUTED tag is correctly applied to all nan samples.
         """
         self.annotator.add_and_process_impute_af(self.dataset)
-        self.assertIn(Genums.IMPUTED.value, self.dataset.columns)
+        self.assertIn(ColumnEnums.IMPUTED.value, self.dataset.columns)
         self.assertListEqual(
-            list(self.dataset[Genums.IMPUTED.value].values),
+            list(self.dataset[ColumnEnums.IMPUTED.value].values),
             [False, True, True, False]
-        )
-
-    def test_add_model_identifier(self):
-        """
-        Test to see if a unique model identifier is correctly applied inplace.
-        """
-        self.annotator.add_model_identifier(self.dataset, 'testing_purposes')
-        self.assertIn(Menums.MODEL_IDENTIFIER.value, self.dataset.columns)
-        self.assertEqual(
-            self.dataset[Menums.MODEL_IDENTIFIER.value].unique(), 'testing_purposes'
         )
 
 

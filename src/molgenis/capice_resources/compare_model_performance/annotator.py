@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
     Menums
 
@@ -20,9 +20,9 @@ class Annotator:
         """
         merged_model_frame[Menums.SCORE_DIFF.value] = abs(
             merged_model_frame[
-                Genums.SCORE.value
+                ColumnEnums.SCORE.value
             ] - merged_model_frame[
-                Genums.BINARIZED_LABEL.value
+                ColumnEnums.BINARIZED_LABEL.value
             ]
         )
 
@@ -38,31 +38,15 @@ class Annotator:
                 imputed. Marks samples that have been imputed. Is performed inplace.
 
         """
-        merged_model_frame[Genums.IMPUTED.value] = False
+        merged_model_frame[ColumnEnums.IMPUTED.value] = False
         merged_model_frame.loc[
-            merged_model_frame[Genums.GNOMAD_AF.value].isnull(),
-            Genums.IMPUTED.value
+            merged_model_frame[ColumnEnums.GNOMAD_AF.value].isnull(),
+            ColumnEnums.IMPUTED.value
         ] = True
         merged_model_frame.loc[
             merged_model_frame[
-                (merged_model_frame[Genums.IMPUTED.value]) &
-                (merged_model_frame[Genums.GNOMAD_AF.value].isnull())
+                (merged_model_frame[ColumnEnums.IMPUTED.value]) &
+                (merged_model_frame[ColumnEnums.GNOMAD_AF.value].isnull())
                 ].index,
-            Genums.GNOMAD_AF.value
+            ColumnEnums.GNOMAD_AF.value
         ] = 0
-
-    @staticmethod
-    def add_model_identifier(merged_model_frame: pd.DataFrame, model: str) -> None:
-        """
-        Function to add a model identifier to merged_model_frame.
-
-        Args:
-            merged_model_frame:
-                Merged frame between score and label frames over which a column should be added
-                that marks the origin of the merged frame with "model". Please note that this is
-                performed inplace.
-            model:
-                The string that will fill the column that marks the origin.
-
-        """
-        merged_model_frame[Menums.MODEL_IDENTIFIER.value] = model
