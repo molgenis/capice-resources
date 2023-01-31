@@ -124,7 +124,10 @@ class Balancer:
                 selected_benign
             )
             counts = processed_consequence.value_counts(  # One-liner in F-string not possible.
-                subset=[Genums.BINARIZED_LABEL.value, Genums.GNOMAD_AF.value]  # type: ignore
+                subset=[  # type: ignore
+                    ColumnEnums.BINARIZED_LABEL.value,
+                    ColumnEnums.GNOMAD_AF.value
+                ]
             )
             self.printer.print(
                 f'Sampled total for consequence: {consequence}\n'

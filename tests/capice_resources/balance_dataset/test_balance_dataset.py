@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.balance_dataset.__main__ import BalanceDataset
@@ -50,8 +49,8 @@ class TestBalanceDataset(unittest.TestCase):
             self.assertIn(os.path.basename(file), os.listdir(self.output_directory))
         balanced = pd.read_csv(  # type: ignore
             filepath_balanced,
-            sep=Genums.TSV_SEPARATOR.value,
-            na_values=Genums.NA_VALUES.value
+            sep='\t',
+            na_values='.'
         )
         self.assertGreaterEqual(
             balanced.shape[0],
@@ -59,8 +58,8 @@ class TestBalanceDataset(unittest.TestCase):
         )
         remainder = pd.read_csv(  # type: ignore
             filepath_remainder,
-            sep=Genums.TSV_SEPARATOR.value,
-            na_values=Genums.NA_VALUES.value
+            sep='\t',
+            na_values='.'
         )
         self.assertGreaterEqual(
             remainder.shape[0],
