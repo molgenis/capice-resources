@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums, VCFEnums
 from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums
 
 
@@ -24,7 +24,7 @@ class VEPProcesser:
 
         """
         print('Dropping empty genes.')
-        data.drop(index=data[data[Genums.SYMBOL.value].isnull()].index, inplace=True)
+        data.drop(index=data[data[ColumnEnums.SYMBOL.value].isnull()].index, inplace=True)
 
     @staticmethod
     def process_grch38(data: pd.DataFrame) -> None:
@@ -38,9 +38,10 @@ class VEPProcesser:
 
         """
         print('Processing GRCh38.')
-        data[Genums.CHROM.value] = data[Genums.CHROM.value].str.split('chr', expand=True)[1]
+        data[ColumnEnums.CHROM.value] = data[ColumnEnums.CHROM.value].str.split(
+            'chr', expand=True)[1]
         y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
-        data.drop(data[~data[Genums.CHROM.value].isin(y)].index, inplace=True)
+        data.drop(data[~data[ColumnEnums.CHROM.value].isin(y)].index, inplace=True)
 
     @staticmethod
     def drop_duplicate_entries(data: pd.DataFrame) -> None:
@@ -69,9 +70,9 @@ class VEPProcesser:
         """
         print('Dropping variants with mismatching genes.')
         data.drop(
-            index=data[data[Genums.ID.value].str.split(
-                Genums.SEPARATOR.value, expand=True
-            )[4] != data[Genums.SYMBOL.value]].index,
+            index=data[data[VCFEnums.ID.value].str.split(
+                VCFEnums.ID_SEPARATOR.value, expand=True
+            )[4] != data[ColumnEnums.SYMBOL.value]].index,
             inplace=True
         )
 
@@ -93,7 +94,7 @@ class VEPProcesser:
             data[
                 (data[Menums.GNOMAD_HN.value].notnull()) &
                 (data[Menums.GNOMAD_HN.value] == 0) &
-                (data[Genums.SYMBOL.value].isin(cgd))
+                (data[ColumnEnums.SYMBOL.value].isin(cgd))
                 ].index, inplace=True
         )
 
@@ -110,16 +111,16 @@ class VEPProcesser:
         """
         print('Dropping variants with an incorrect label or weight')
         data.drop(
-            index=data[data[Genums.BINARIZED_LABEL.value].isnull()].index,
-            columns=[Genums.ID.value],
+            index=data[data[ColumnEnums.BINARIZED_LABEL.value].isnull()].index,
+            columns=[VCFEnums.ID.value],
             inplace=True
         )
         data.drop(
-            index=data[~data[Genums.BINARIZED_LABEL.value].isin([0.0, 1.0])].index,
+            index=data[~data[ColumnEnums.BINARIZED_LABEL.value].isin([0.0, 1.0])].index,
             inplace=True
         )
         data.drop(
-            index=data[~data[Genums.SAMPLE_WEIGHT.value].isin(
+            index=data[~data[ColumnEnums.SAMPLE_WEIGHT.value].isin(
                 Menums.SAMPLE_WEIGHTS.value)].index,
             inplace=True
         )

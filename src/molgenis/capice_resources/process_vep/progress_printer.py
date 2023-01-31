@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 
 
 class ProgressPrinter:
@@ -17,7 +17,7 @@ class ProgressPrinter:
                 Merged dataset containing both train-test and validation.
                 Should also contain the dataset source column.
         """
-        self.grouped_save = dataset.groupby(Genums.DATASET_SOURCE.value).size()
+        self.grouped_save = dataset.groupby(ColumnEnums.DATASET_SOURCE.value).size()
 
     def new_shape(self, dataset: pd.DataFrame):
         """
@@ -29,7 +29,7 @@ class ProgressPrinter:
                 each of the processing steps.
 
         """
-        new_save = dataset.groupby(Genums.DATASET_SOURCE.value).size()
+        new_save = dataset.groupby(ColumnEnums.DATASET_SOURCE.value).size()
         dropped = self.grouped_save - new_save
         for group, counts in zip(dropped.index, dropped.values):
             print(f'Dropped {counts} variants from {group}')

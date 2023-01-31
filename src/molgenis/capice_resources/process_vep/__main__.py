@@ -3,9 +3,9 @@ import os
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module, add_dataset_source
-from molgenis.capice_resources.core import GlobalEnums as Genums
-from molgenis.capice_resources.utilities import merge_dataset_rows
+from molgenis.capice_resources.core import Module, TSVFileEnums, ColumnEnums, \
+    DatasetIdentifierEnums, VCFEnums
+from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_source
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
 from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums
@@ -74,11 +74,11 @@ class ProcessVEP(Module):
     def _validate_module_specific_arguments(self, parser):
         train_test = self.input_validator.validate_icli_file(
             parser.get_argument('train_test'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         validation = self.input_validator.validate_icli_file(
             parser.get_argument('validation'),
-            Genums.TSV_EXTENSIONS.value,
+            TSVFileEnums.TSV_EXTENSIONS.value,
             can_be_optional=True
         )
         train_features = self.input_validator.validate_icli_file(
@@ -106,10 +106,10 @@ class ProcessVEP(Module):
         train_test = self._read_vep_data(arguments['train_test'])
         validation_present = self._is_validation_present(arguments['validation'])
         output = arguments['output']
-        add_dataset_source(train_test, Genums.TRAIN_TEST.value)
+        add_dataset_source(train_test, DatasetIdentifierEnums.TRAIN_TEST.value)
         if validation_present:
             validation = self._read_vep_data(arguments['validation'])
-            add_dataset_source(validation, Genums.VALIDATION.value)
+            add_dataset_source(validation, DatasetIdentifierEnums.VALIDATION.value)
             merged_datasets = merge_dataset_rows(train_test, validation)
         else:
             merged_datasets = train_test.copy(deep=True)
@@ -124,9 +124,9 @@ class ProcessVEP(Module):
         )
         train_test, validation = self._split_data(merged_datasets, validation_present)
         return {
-            Genums.TRAIN_TEST.value: train_test,
-            Genums.VALIDATION.value: validation,
-            Genums.OUTPUT.value: output
+            DatasetIdentifierEnums.TRAIN_TEST.value: train_test,
+            DatasetIdentifierEnums.VALIDATION.value: validation,
+            DatasetIdentifierEnums.OUTPUT.value: output
         }
 
     @staticmethod
@@ -191,7 +191,13 @@ class ProcessVEP(Module):
                 since that gene can not ever be AR (it lies on the X chromosome, outside of PAR
                 region).
         """
-        data = self._read_pandas_tsv(cgd_file_argument, CGDEnum.list())
+        data = self._read_pandas_tsv(
+            cgd_file_argument,
+            [
+                CGDEnum.GENE.value,
+                CGDEnum.INHERITANCE.value
+            ]
+        )
         genes = self._correct_cgd_data(data)
         return genes
 
@@ -278,10 +284,10 @@ class ProcessVEP(Module):
 
         """
         print('Extracting binarized_label and sample_weight')
-        data[Genums.BINARIZED_LABEL.value] = data[Genums.ID.value].str.split(
-            Genums.SEPARATOR.value, expand=True)[5].astype(float)
-        data[Genums.SAMPLE_WEIGHT.value] = data[Genums.ID.value].str.split(
-            Genums.SEPARATOR.value, expand=True)[6].astype(float)
+        data[ColumnEnums.BINARIZED_LABEL.value] = data[VCFEnums.ID.value].str.split(
+            VCFEnums.ID_SEPARATOR.value, expand=True)[5].astype(float)
+        data[ColumnEnums.SAMPLE_WEIGHT.value] = data[VCFEnums.ID.value].str.split(
+            VCFEnums.ID_SEPARATOR.value, expand=True)[6].astype(float)
 
     @staticmethod
     def _split_data(
@@ -304,19 +310,21 @@ class ProcessVEP(Module):
         """
         train_test = merged_data.loc[
             merged_data[
-                merged_data[Genums.DATASET_SOURCE.value] == Genums.TRAIN_TEST.value
+                merged_data[
+                    ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.TRAIN_TEST.value
             ].index, :
         ]
         train_test.reset_index(drop=True, inplace=True)
-        train_test.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
+        train_test.drop(columns=ColumnEnums.DATASET_SOURCE.value, inplace=True)
         if validation_present:
             validation = merged_data.loc[
                 merged_data[
-                    merged_data[Genums.DATASET_SOURCE.value] == Genums.VALIDATION.value
+                    merged_data[
+                        ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value
                 ].index, :
             ]
             validation.reset_index(drop=True, inplace=True)
-            validation.drop(columns=Genums.DATASET_SOURCE.value, inplace=True)
+            validation.drop(columns=ColumnEnums.DATASET_SOURCE.value, inplace=True)
         else:
             validation = None
         return train_test, validation
@@ -332,13 +340,13 @@ class ProcessVEP(Module):
 
         """
         self._export_train_test(
-            output[Genums.TRAIN_TEST.value],
-            output[Genums.OUTPUT.value]  # type: ignore
+            output[DatasetIdentifierEnums.TRAIN_TEST.value],
+            output[DatasetIdentifierEnums.OUTPUT.value]  # type: ignore
         )
-        if output[Genums.VALIDATION.value] is not None:
+        if output[DatasetIdentifierEnums.VALIDATION.value] is not None:
             self._export_validation(
-                output[Genums.VALIDATION.value],
-                output[Genums.OUTPUT.value]  # type: ignore
+                output[DatasetIdentifierEnums.VALIDATION.value],
+                output[DatasetIdentifierEnums.OUTPUT.value]  # type: ignore
             )
 
     def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike[str]) -> None:

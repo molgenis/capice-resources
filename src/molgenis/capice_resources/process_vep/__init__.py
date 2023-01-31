@@ -1,7 +1,7 @@
-from molgenis.capice_resources.core import ExtendedEnum
+from enum import Enum
 
 
-class ProcessVEPEnums(ExtendedEnum):
+class ProcessVEPEnums(Enum):
     """
     Enums dedicated to the module Process VEP.
     """
@@ -9,7 +9,7 @@ class ProcessVEPEnums(ExtendedEnum):
     SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
 
 
-class CGDEnum(ExtendedEnum):
+class CGDEnum(Enum):
     """
     Enum dedicated to columns that are already (should be) present in the CGD file.
     """
