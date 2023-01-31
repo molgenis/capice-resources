@@ -2,8 +2,7 @@ import os
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import Module, TSVFileEnums, ColumnEnums, DatasetIdentifierEnums
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
 from molgenis.capice_resources.threshold_calculator.calculator import Calculator
 from molgenis.capice_resources.threshold_calculator.plotter import ThresholdPlotter
@@ -50,11 +49,11 @@ class ThresholdCalculator(Module):
     def _validate_module_specific_arguments(self, parser):
         validation = self.input_validator.validate_icli_file(
             parser.get_argument('validation'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         score = self.input_validator.validate_icli_file(
             parser.get_argument('score'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         output = self.input_validator.validate_ocli_directory(
             parser.get_argument('output')
@@ -68,18 +67,18 @@ class ThresholdCalculator(Module):
     def run_module(self, arguments):
         validation = self._read_pandas_tsv(
             arguments['validation'],
-            [Genums.BINARIZED_LABEL.value]
+            [ColumnEnums.BINARIZED_LABEL.value]
         )
         score = self._read_pandas_tsv(
             arguments['score'],
-            [Genums.SCORE.value]
+            [ColumnEnums.SCORE.value]
         )
         merge = pd.concat([validation, score], axis=1)
         thresholds = Calculator().calculate_threshold(merge)
         plotter = ThresholdPlotter(thresholds)
         figure = plotter.plot_threshold(merge)
         return {
-            Genums.OUTPUT.value: arguments['output'],
+            DatasetIdentifierEnums.OUTPUT.value: arguments['output'],
             Menums.THRESHOLDS.value: thresholds,
             Menums.FIGURE.value: figure
         }
@@ -87,14 +86,14 @@ class ThresholdCalculator(Module):
     def export(self, output):
         self.exporter.export_pandas_file(
             os.path.join(  # type: ignore
-                output[Genums.OUTPUT.value],
+                output[DatasetIdentifierEnums.OUTPUT.value],
                 Menums.THRESHOLDS.value + '.tsv.gz'
             ),
             output[Menums.THRESHOLDS.value]
         )
         output[Menums.FIGURE.value].savefig(  # type: ignore
             os.path.join(  # type: ignore
-                output[Genums.OUTPUT.value],
+                output[DatasetIdentifierEnums.OUTPUT.value],
                 Menums.THRESHOLDS.value + '.png'
             )
         )

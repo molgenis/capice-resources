@@ -1,7 +1,7 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums, PlottingEnums
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
 
 
@@ -23,7 +23,7 @@ class ThresholdPlotter:
         self.precision = recall_data.loc[0, Menums.F1.value]
         self.f1 = recall_data.loc[0, Menums.RECALL.value]
         self.figure = plt.figure(dpi=100)
-        self.figure.set_constrained_layout(Genums.CONSTRAINED_LAYOUT.value)
+        self.figure.set_constrained_layout(PlottingEnums.CONSTRAINED_LAYOUT.value)
 
     def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:
         """
@@ -43,21 +43,21 @@ class ThresholdPlotter:
         """
         ax_plot = self.figure.add_subplot(1, 1, 1)
         subset_benign = validation_score_data[
-            validation_score_data[Genums.BINARIZED_LABEL.value] == 0
+            validation_score_data[ColumnEnums.BINARIZED_LABEL.value] == 0
             ]
         subset_pathogenic = validation_score_data[
-            validation_score_data[Genums.BINARIZED_LABEL.value] == 1
+            validation_score_data[ColumnEnums.BINARIZED_LABEL.value] == 1
             ]
         ax_plot.scatter(
             subset_benign.index,
-            subset_benign[Genums.SCORE.value],
+            subset_benign[ColumnEnums.SCORE.value],
             s=0.5,
             color='green',
             label=f'N benign: {subset_benign.shape[0]}'
         )
         ax_plot.scatter(
             subset_pathogenic.index,
-            subset_pathogenic[Genums.SCORE.value],
+            subset_pathogenic[ColumnEnums.SCORE.value],
             s=0.5,
             color='red',
             label=f'N pathogenic: {subset_pathogenic.shape[0]}'

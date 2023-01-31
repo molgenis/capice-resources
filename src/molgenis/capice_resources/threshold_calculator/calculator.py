@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import recall_score, precision_score, f1_score
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
 
 
@@ -34,19 +34,19 @@ class Calculator:
         for i in np.arange(0, 1, 0.01):
             i = round(i, 2)
             dataset.loc[
-                dataset[Genums.SCORE.value] >= i,
+                dataset[ColumnEnums.SCORE.value] >= i,
                 Menums.CALCULATED_THRESHOLD.value
             ] = 1
             recall = recall_score(
-                y_true=dataset[Genums.BINARIZED_LABEL.value],
+                y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
                 y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
             )
             precision = precision_score(
-                y_true=dataset[Genums.BINARIZED_LABEL.value],
+                y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
                 y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
             )
             f1 = f1_score(
-                y_true=dataset[Genums.BINARIZED_LABEL.value],
+                y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
                 y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
             )
             threshold_store.append(i)

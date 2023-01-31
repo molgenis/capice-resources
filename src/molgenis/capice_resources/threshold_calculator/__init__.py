@@ -1,7 +1,7 @@
-from molgenis.capice_resources.core import ExtendedEnum
+from enum import Enum
 
 
-class ThresholdEnums(ExtendedEnum):
+class ThresholdEnums(Enum):
     """
     Enums specific to the Threshold calculator.
     """
