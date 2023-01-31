@@ -187,6 +187,34 @@ class TestInputValidator(unittest.TestCase):
         )
         self.assertDictEqual(observed, {'output': Path(path)})
 
+    def test_extract_key_value_dict_simple_pass(self):
+        """
+        Test for extract_key_value_dict_cli that the key and value are properly returned as tuple.
+        """
+        test_case = {'foo': 'bar/baz'}
+        observed = self.validator._extract_key_value_dict_cli(test_case)
+        self.assertTupleEqual(observed, ('foo', 'bar/baz'))
+
+    def test_extract_key_value_dict_simple_none_pass(self):
+        """
+        Test for extract_key_value_dict_cli that the key and value are properly returned as
+        tuple, even when the value is supplied as None.
+        (by design, the value is converted to String, which would cause an issue when supplying
+        None)
+        """
+        test_case = {'foo': None}
+        observed = self.validator._extract_key_value_dict_cli(test_case)
+        self.assertTupleEqual(observed, ('foo', None))
+
+    def test_extract_key_value_incorrect_pass(self):
+        """
+        Test for extract_key_value_dict_cli that checks if something like a float is properly
+        converted to string.
+        """
+        test_case = {'foo': 0.01}
+        observed = self.validator._extract_key_value_dict_cli(test_case)  # type: ignore
+        self.assertTupleEqual(observed, ('foo', '0.01'))
+
 
 class TestDataValidator(unittest.TestCase):
     def setUp(self) -> None:

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums, AlleleFrequencyEnums
 from molgenis.capice_resources.utilities import split_consequences
 from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
 from molgenis.capice_resources.balance_dataset.verbosity_printer import VerbosityPrinter
@@ -28,9 +28,9 @@ class Balancer:
                 Performed inplace.
 
         """
-        dataset[Genums.IMPUTED.value] = 0
-        dataset.loc[dataset[Genums.GNOMAD_AF.value].isnull(), Genums.IMPUTED.value] = 1
-        dataset[Genums.GNOMAD_AF.value].fillna(0, inplace=True)
+        dataset[ColumnEnums.IMPUTED.value] = 0
+        dataset.loc[dataset[ColumnEnums.GNOMAD_AF.value].isnull(), ColumnEnums.IMPUTED.value] = 1
+        dataset[ColumnEnums.GNOMAD_AF.value].fillna(0, inplace=True)
 
     @staticmethod
     def _reset_impute(dataset: pd.DataFrame) -> None:
@@ -45,8 +45,8 @@ class Balancer:
                 Performed inplace.
 
         """
-        dataset.loc[dataset[Genums.IMPUTED.value] == 1, Genums.IMPUTED.value] = None
-        dataset.drop(columns=[Genums.IMPUTED.value], inplace=True)
+        dataset.loc[dataset[ColumnEnums.IMPUTED.value] == 1, ColumnEnums.IMPUTED.value] = None
+        dataset.drop(columns=[ColumnEnums.IMPUTED.value], inplace=True)
 
     def _set_bins(self, gnomad_af: pd.Series) -> None:
         """
@@ -60,7 +60,7 @@ class Balancer:
         """
         self.bins = pd.cut(
             gnomad_af,
-            bins=Genums.AF_BINS.value,
+            bins=AlleleFrequencyEnums.AF_BINS.value,
             right=False,
             include_lowest=True
         ).dropna().unique()
@@ -98,21 +98,23 @@ class Balancer:
         """
         self._mark_and_impute(dataset)
         self._set_columns(dataset.columns)
-        self._set_bins(dataset[Genums.GNOMAD_AF.value])
-        pathogenic = dataset.loc[dataset[dataset[Genums.BINARIZED_LABEL.value] == 1].index, :]
-        benign = dataset.loc[dataset[dataset[Genums.BINARIZED_LABEL.value] == 0].index, :]
+        self._set_bins(dataset[ColumnEnums.GNOMAD_AF.value])
+        pathogenic = dataset.loc[dataset[dataset[ColumnEnums.BINARIZED_LABEL.value] == 1].index, :]
+        benign = dataset.loc[dataset[dataset[ColumnEnums.BINARIZED_LABEL.value] == 0].index, :]
         return_dataset = pd.DataFrame(columns=self.columns)
-        consequences = split_consequences(dataset[Genums.CONSEQUENCE.value])
+        consequences = split_consequences(dataset[ColumnEnums.CONSEQUENCE.value])
         for consequence in consequences:
             self.printer.print(f'Processing: {consequence}')
             selected_pathogenic = pathogenic[
-                pathogenic[Genums.CONSEQUENCE.value].str.contains(consequence)
+                pathogenic[ColumnEnums.CONSEQUENCE.value].str.contains(consequence)
             ]
             self.printer.print(
                 f'Total amount of pathogenic samples (for consequence): '
                 f'{selected_pathogenic.shape[0]}'
             )
-            selected_benign = benign[benign[Genums.CONSEQUENCE.value].str.contains(consequence)]
+            selected_benign = benign[
+                benign[ColumnEnums.CONSEQUENCE.value].str.contains(consequence)
+            ]
             self.printer.print(
                 f'Total amount of benign samples (for consequence): '
                 f'{selected_benign.shape[0]}'
@@ -254,4 +256,4 @@ class Balancer:
                 The input "dataset" containing only samples that
                 are within the AF range of "af_bin".
         """
-        return dataset[dataset[Genums.GNOMAD_AF.value].apply(lambda value: value in af_bin)]
+        return dataset[dataset[ColumnEnums.GNOMAD_AF.value].apply(lambda value: value in af_bin)]

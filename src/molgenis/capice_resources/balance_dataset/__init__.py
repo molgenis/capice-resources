@@ -1,7 +1,7 @@
-from molgenis.capice_resources.core import ExtendedEnum
+from enum import Enum
 
 
-class BalanceDatasetEnums(ExtendedEnum):
+class BalanceDatasetEnums(Enum):
     BALANCED = 'balanced'
     REMAINDER = 'remainder'
     BALANCED_ON = 'balanced_on'

@@ -2,8 +2,8 @@ import os
 
 import pandas as pd
 
-from molgenis.capice_resources.core import Module, CommandLineInterface
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import Module, CommandLineInterface, \
+    TSVFileEnums, AlleleFrequencyEnums, ColumnEnums, DatasetIdentifierEnums
 from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
 from molgenis.capice_resources.balance_dataset.balancer import Balancer
 
@@ -20,7 +20,7 @@ class BalanceDataset(Module):
                         'Also requires the "consequence" column.'
         )
         self.random_state = 5
-        self.bins = Genums.AF_BINS.value
+        self.bins = AlleleFrequencyEnums.AF_BINS.value
 
     @staticmethod
     def _create_module_specific_arguments(parser):
@@ -55,7 +55,7 @@ class BalanceDataset(Module):
     def _validate_module_specific_arguments(self, parser: CommandLineInterface):
         input_file = self.input_validator.validate_icli_file(
             parser.get_argument('input'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         output = self.input_validator.validate_ocli_directory(
             parser.get_argument('output')
@@ -70,7 +70,11 @@ class BalanceDataset(Module):
     def run_module(self, arguments):
         dataset = self._read_pandas_tsv(
             arguments['input'],
-            [Genums.GNOMAD_AF.value, Genums.CONSEQUENCE.value, Genums.BINARIZED_LABEL.value]
+            [  # type: ignore
+                ColumnEnums.GNOMAD_AF.value,
+                ColumnEnums.CONSEQUENCE.value,
+                ColumnEnums.BINARIZED_LABEL.value
+            ]
         )
         self._validate_benign_pathogenic_present(dataset)
         balancer = Balancer(arguments['verbose'])
@@ -78,7 +82,7 @@ class BalanceDataset(Module):
         return {
             Menums.BALANCED.value: balanced,
             Menums.REMAINDER.value: remainder,
-            Genums.OUTPUT.value: arguments['output']
+            DatasetIdentifierEnums.OUTPUT.value: arguments['output']
         }
 
     @staticmethod
@@ -98,8 +102,8 @@ class BalanceDataset(Module):
                 ValueError is raised when either no benign or pathogenic samples are present.
 
         """
-        n_benign = dataset[dataset[Genums.BINARIZED_LABEL.value] == 0].shape[0]
-        n_pathogenic = dataset[dataset[Genums.BINARIZED_LABEL.value] == 1].shape[0]
+        n_benign = dataset[dataset[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
+        n_pathogenic = dataset[dataset[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
         if n_benign == 0:
             raise ValueError('No benign samples present. Balancing not possible.')
         if n_pathogenic == 0:
@@ -107,17 +111,17 @@ class BalanceDataset(Module):
 
     def export(self, output) -> None:
         self.exporter.export_pandas_file(
-            os.path.join(
-                output[Genums.OUTPUT.value],
+            os.path.join(  # type: ignore
+                output[DatasetIdentifierEnums.OUTPUT.value],
                 Menums.BALANCED.value
-            ) + Genums.TSV_EXTENSIONS.value[0],
+            ) + TSVFileEnums.TSV_EXTENSIONS.value[0],
             output[Menums.BALANCED.value]
         )
         self.exporter.export_pandas_file(
-            os.path.join(
-                output[Genums.OUTPUT.value],
+            os.path.join(  # type: ignore
+                output[DatasetIdentifierEnums.OUTPUT.value],
                 Menums.REMAINDER.value
-            ) + Genums.TSV_EXTENSIONS.value[0],
+            ) + TSVFileEnums.TSV_EXTENSIONS.value[0],
             output[Menums.REMAINDER.value]
         )
 
