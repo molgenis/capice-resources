@@ -17,7 +17,9 @@ class TestSplitDatasets(unittest.TestCase):
                 'POS': [100, 200, 400, 500, 600, 700, 800, 1000],
                 'REF': ['A', 'A', 'C', 'A', 'A', 'G', 'C', 'CG'],
                 'ALT': ['T', 'T', 'G', 'T', 'T', 'C', 'G', 'AT'],
-                'dataset_source': ['VKGL', 'VKGL', 'VKGL', 'VKGL', 'CLINVAR', 'CLINVAR', 'CLINVAR', 'VKGL'],
+                'dataset_source': [
+                    'VKGL', 'VKGL', 'VKGL', 'VKGL', 'CLINVAR', 'CLINVAR', 'CLINVAR', 'VKGL'
+                ],
                 'review': [2, 2, 2, 2, 2, 3, 2, 2],
                 'sample_weight': [0.9, 0.9, 0.9, 0.9, 0.9, 1.0, 0.9, 0.9],
                 'binarized_label': [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0],

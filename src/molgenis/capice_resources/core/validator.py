@@ -58,11 +58,11 @@ class InputValidator:
 
                 IOError is also raised when a non-optional argument is encountered as None.
         """
-        path_key, path_value = self._extract_key_value_dict_cli(path)
+        path_key, path_value = self._extract_key_value_dict_cli(path)  # type: ignore
         if path_value is not None:
-            path_value = Path(path_value).absolute()
-        self._validate_file(path_value, extension, can_be_optional)
-        return {path_key: path_value}
+            path_value = Path(path_value).absolute()  # type: ignore
+        self._validate_file(path_value, extension, can_be_optional)  # type: ignore
+        return {path_key: path_value}  # type: ignore
 
     def _validate_file(
             self,
@@ -121,17 +121,17 @@ class InputValidator:
             OSError:
                 OSError is raised when the output directory can not be made.
         """
-        path_key, path_value = self._extract_key_value_dict_cli(path)
+        path_key, path_value = self._extract_key_value_dict_cli(path)  # type: ignore
         self._validate_path_is_none(path_value, False)
-        path_value = Path(path_value)
+        path_value = Path(path_value)  # type: ignore
         # Parent path is to prevent the making of output.tsv.gz directory instead of putting
         # output.tsv.gz in the output directory.
         if extension is not None:
-            self._validate_output_file(path_value, extension, force)
-            self._check_path_exists(path_value.parent)
+            self._validate_output_file(path_value, extension, force)  # type: ignore
+            self._check_path_exists(path_value.parent)  # type: ignore
         else:
-            self._check_path_exists(path_value)
-        return {path_key: path_value}
+            self._check_path_exists(path_value)  # type: ignore
+        return {path_key: path_value}  # type: ignore
 
     @staticmethod
     def _check_path_exists(directory: str | os.PathLike[str] | Path) -> None:
