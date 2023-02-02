@@ -4,7 +4,6 @@ import unittest
 import pandas as pd
 
 from tests.capice_resources.testing_utilities import get_testing_resources_dir
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
 
 
@@ -41,23 +40,32 @@ class TestClinvarParser(unittest.TestCase):
         """
         observed = self.parser.parse(self.dataset)
         self.assertIsNone(observed._is_copy)
-        for col in Menums.columns_of_interest():
+        for col in [
+            '#CHROM',
+            'POS',
+            'REF',
+            'ALT',
+            'gene',
+            'class',
+            'review',
+            'dataset_source'
+        ]:
             self.assertIn(col, observed.columns)
         self.assertIn('binarized_label', observed.columns)
         self.assertListEqual(
             list(observed['dataset_source'].unique()),
-            [Menums.CLINVAR.value]
+            ['CLINVAR']
         )
 
     def test_obtain_class(self):
         """
         Tests if the classification is correctly obtained from the INFO field.
         """
-        self.assertNotIn(Menums.CLASS.value, self.specific_testing_frame.columns)
+        self.assertNotIn('class', self.specific_testing_frame.columns)
         self.parser._obtain_class(self.specific_testing_frame)
-        self.assertIn(Menums.CLASS.value, self.specific_testing_frame.columns)
+        self.assertIn('class', self.specific_testing_frame.columns)
         self.assertListEqual(
-            list(self.specific_testing_frame[Menums.CLASS.value].values),
+            list(self.specific_testing_frame['class'].values),
             ['LP', 'P', 'B']
         )
 
@@ -65,11 +73,11 @@ class TestClinvarParser(unittest.TestCase):
         """
         Tests if the gene name is correctly obtained from the INFO field.
         """
-        self.assertNotIn(Menums.GENE.value, self.specific_testing_frame.columns)
+        self.assertNotIn('gene', self.specific_testing_frame.columns)
         self.parser._obtain_gene(self.specific_testing_frame)
-        self.assertIn(Menums.GENE.value, self.specific_testing_frame.columns)
+        self.assertIn('gene', self.specific_testing_frame.columns)
         self.assertListEqual(
-            list(self.specific_testing_frame[Menums.GENE.value].values),
+            list(self.specific_testing_frame['gene'].values),
             ['foo', 'bar', 'baz']
         )
 
@@ -78,12 +86,12 @@ class TestClinvarParser(unittest.TestCase):
         Tests if the ClinVar review status is correctly obtained from the INFO field and
         correctly parsed into a numerical value.
         """
-        self.assertNotIn(Menums.REVIEW.value, self.specific_testing_frame.columns)
+        self.assertNotIn('review', self.specific_testing_frame.columns)
         self.parser._obtain_review(self.specific_testing_frame)
-        self.assertIn(Menums.REVIEW.value, self.specific_testing_frame.columns)
+        self.assertIn('review', self.specific_testing_frame.columns)
         # baz falls off since that will result in a -1 review score
         self.assertListEqual(
-            list(self.specific_testing_frame[Menums.REVIEW.value].values),
+            list(self.specific_testing_frame['review'].values),
             [3, 1]
         )
 

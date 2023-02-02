@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.process_vep.__main__ import ProcessVEP
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
@@ -92,7 +91,7 @@ class TestProcessVEP(unittest.TestCase):
             sep='\t'
         )
         self.assertGreaterEqual(observed.shape[0], 3000)
-        self.assertNotIn(ColumnEnums.DATASET_SOURCE.value, observed.columns)
+        self.assertNotIn('dataset_source', observed.columns)
 
     @patch(
         'sys.argv',
@@ -129,7 +128,7 @@ class TestProcessVEP(unittest.TestCase):
         )
         self.assertNotIn('validation.tsv.gz', os.listdir(output_directory))
         self.assertGreaterEqual(observed.shape[0], 10000)
-        self.assertNotIn(ColumnEnums.DATASET_SOURCE.value, observed.columns)
+        self.assertNotIn('dataset_source', observed.columns)
 
     @patch(
         'sys.argv',

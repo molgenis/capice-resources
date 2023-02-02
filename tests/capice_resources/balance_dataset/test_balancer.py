@@ -3,11 +3,9 @@ import unittest
 
 import pandas as pd
 
-from molgenis.capice_resources.core import ColumnEnums, AlleleFrequencyEnums
 from molgenis.capice_resources.utilities import split_consequences
-from tests.capice_resources.testing_utilities import get_testing_resources_dir
 from molgenis.capice_resources.balance_dataset.balancer import Balancer
-from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
+from tests.capice_resources.testing_utilities import get_testing_resources_dir
 
 
 class TestBalancer(unittest.TestCase):
@@ -32,9 +30,9 @@ class TestBalancer(unittest.TestCase):
         self.dataset = self.loaded_dataset.copy(deep=True)  # type: ignore
         self.hardcoded_columns = [
             'variant',
-            ColumnEnums.CONSEQUENCE.value,
-            ColumnEnums.GNOMAD_AF.value,
-            ColumnEnums.BINARIZED_LABEL.value
+            'Consequence',
+            'gnomAD_AF',
+            'binarized_label'
         ]
         self.test_set = pd.DataFrame(
             data=[
@@ -89,10 +87,10 @@ class TestBalancer(unittest.TestCase):
         balanced_dataset, _ = self.balancer_nonverbose.balance(self.dataset)
         self.assertGreater(balanced_dataset.shape[0], 0)
         self.assertEqual(
-            balanced_dataset[balanced_dataset[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0],
-            balanced_dataset[balanced_dataset[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
+            balanced_dataset[balanced_dataset['binarized_label'] == 0].shape[0],
+            balanced_dataset[balanced_dataset['binarized_label'] == 1].shape[0]
         )
-        self.assertIn(Menums.BALANCED_ON.value, balanced_dataset.columns)
+        self.assertIn('balanced_on', balanced_dataset.columns)
         return balanced_dataset
 
     def test_balancer_consequences(self):
@@ -101,11 +99,11 @@ class TestBalancer(unittest.TestCase):
         """
         balanced_dataset = self.set_up_test_balancer()
         incorrect_consequences = []
-        consequences = split_consequences(balanced_dataset[ColumnEnums.CONSEQUENCE.value])
+        consequences = split_consequences(balanced_dataset['Consequence'])
         for consequence in consequences:
-            subset = balanced_dataset[balanced_dataset[Menums.BALANCED_ON.value] == consequence]
-            n_benign = subset[subset[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
-            n_pathogenic = subset[subset[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
+            subset = balanced_dataset[balanced_dataset['balanced_on'] == consequence]
+            n_benign = subset[subset['binarized_label'] == 0].shape[0]
+            n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
             if n_benign != n_pathogenic:
                 incorrect_consequences.append(
                     f'{consequence} (n_b: {n_benign}, n_p: {n_pathogenic})'
@@ -119,17 +117,18 @@ class TestBalancer(unittest.TestCase):
         """
         balanced_dataset = self.set_up_test_balancer()
         # Required, because 0 impute is reset during balancing
-        balanced_dataset[ColumnEnums.GNOMAD_AF.value].fillna(0, inplace=True)
+        balanced_dataset['gnomAD_AF'].fillna(0, inplace=True)
         incorrect_afbins = []
-        for ind in range(len(AlleleFrequencyEnums.AF_BINS.value) - 1):  # type: ignore
-            lower_bound = AlleleFrequencyEnums.AF_BINS.value[ind]
-            upper_bound = AlleleFrequencyEnums.AF_BINS.value[ind + 1]
+        af_bins = [0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, 1]
+        for ind in range(len(af_bins) - 1):  # type: ignore
+            lower_bound = af_bins[ind]
+            upper_bound = af_bins[ind + 1]
             subset = balanced_dataset[
-                (balanced_dataset[ColumnEnums.GNOMAD_AF.value] >= lower_bound) &
-                (balanced_dataset[ColumnEnums.GNOMAD_AF.value] < upper_bound)
+                (balanced_dataset['gnomAD_AF'] >= lower_bound) &
+                (balanced_dataset['gnomAD_AF'] < upper_bound)
                 ]
-            n_benign = subset[subset[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
-            n_pathogenic = subset[subset[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
+            n_benign = subset[subset['binarized_label'] == 0].shape[0]
+            n_pathogenic = subset[subset['binarized_label'] == 1].shape[0]
             if n_benign != n_pathogenic:
                 incorrect_afbins.append(
                     f'{lower_bound}-{upper_bound} (n_b: {n_benign}, n_p: {n_pathogenic})'
@@ -149,20 +148,20 @@ class TestBalancer(unittest.TestCase):
         Function to check "test_set" according to the amount of "expected_rows".
         Done to prevent duplication of test code.
         """
-        self.balancer_nonverbose._set_bins(test_set[ColumnEnums.GNOMAD_AF.value])
+        self.balancer_nonverbose._set_bins(test_set['gnomAD_AF'])
         self.balancer_nonverbose._set_columns(test_set.columns)
-        consequences = split_consequences(test_set[ColumnEnums.CONSEQUENCE.value])
+        consequences = split_consequences(test_set['Consequence'])
         for consequence in consequences:
             observed = self.balancer_nonverbose._process_consequence(
                 test_set[
-                    (test_set[ColumnEnums.CONSEQUENCE.value].str.contains(
+                    (test_set['Consequence'].str.contains(
                         consequence, regex=False)) &
-                    (test_set[ColumnEnums.BINARIZED_LABEL.value] == 1)
+                    (test_set['binarized_label'] == 1)
                     ],
                 test_set[
-                    (test_set[ColumnEnums.CONSEQUENCE.value].str.contains(
+                    (test_set['Consequence'].str.contains(
                         consequence, regex=False)) &
-                    (test_set[ColumnEnums.BINARIZED_LABEL.value] == 0)
+                    (test_set['binarized_label'] == 0)
                     ]
             )
             self.assertEqual(
@@ -170,8 +169,8 @@ class TestBalancer(unittest.TestCase):
                 expected_rows[consequence],
                 msg=f'Test failed on consequence: {consequence}'
             )
-            n_benign = observed[observed[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
-            n_patho = observed[observed[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
+            n_benign = observed[observed['binarized_label'] == 0].shape[0]
+            n_patho = observed[observed['binarized_label'] == 1].shape[0]
             self.assertEqual(
                 n_benign,
                 n_patho,
@@ -355,19 +354,19 @@ class TestBalancer(unittest.TestCase):
         """
         test_dataset = pd.DataFrame(
             {
-                ColumnEnums.CONSEQUENCE.value: [
+                'Consequence': [
                     'consequence_1&consequence_2',
                     'consequence_1',
                     'consequence_2'
                 ],
-                ColumnEnums.BINARIZED_LABEL.value: [0, 1, 1],
-                ColumnEnums.GNOMAD_AF.value: [0.0, 0.0, 0.0]
+                'binarized_label': [0, 1, 1],
+                'gnomAD_AF': [0.0, 0.0, 0.0]
             }
         )
         observed, remainder = self.balancer_nonverbose.balance(test_dataset)
         self.assertFalse(observed.duplicated().any())
-        self.assertFalse('consequence_2' in observed[ColumnEnums.CONSEQUENCE.value].values)
-        self.assertTrue('consequence_2' in remainder[ColumnEnums.CONSEQUENCE.value].values)
+        self.assertFalse('consequence_2' in observed['Consequence'].values)
+        self.assertTrue('consequence_2' in remainder['Consequence'].values)
 
 
 if __name__ == '__main__':

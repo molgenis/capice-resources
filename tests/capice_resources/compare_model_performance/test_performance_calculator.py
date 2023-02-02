@@ -2,7 +2,6 @@ import unittest
 
 import pandas as pd
 
-from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.compare_model_performance.performance_calculator import \
     PerformanceCalculator
 
@@ -12,8 +11,8 @@ class TestPerformanceCalculator(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.dataset = pd.DataFrame(  # type: ignore
             {
-                ColumnEnums.BINARIZED_LABEL.value: [1, 1, 0, 0],
-                ColumnEnums.SCORE.value: [0.9, 0.1, 0.9, 0.1]
+                'binarized_label': [1, 1, 0, 0],
+                'score': [0.9, 0.1, 0.9, 0.1]
             }
         )
         cls.calculator = PerformanceCalculator()  # type: ignore

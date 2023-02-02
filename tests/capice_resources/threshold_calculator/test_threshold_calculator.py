@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.threshold_calculator.__main__ import ThresholdCalculator
@@ -45,11 +44,11 @@ class TestCalculator(unittest.TestCase):
         """
         ThresholdCalculator().run()
         self.assertIn(
-            ThresholdEnums.THRESHOLDS.value + '.tsv.gz',
+            'thresholds.tsv.gz',
             os.listdir(self.output_directory)
         )
         self.assertIn(
-            ThresholdEnums.THRESHOLDS.value + '.png',
+            'thresholds.png',
             os.listdir(self.output_directory)
         )
         expected = pd.read_csv(
@@ -57,7 +56,7 @@ class TestCalculator(unittest.TestCase):
             sep='\t'
         )
         observed = pd.read_csv(
-            os.path.join(self.output_directory, ThresholdEnums.THRESHOLDS.value + '.tsv.gz'),
+            os.path.join(self.output_directory, 'thresholds.tsv.gz'),
             sep='\t'
         )
         pd.testing.assert_frame_equal(observed, expected)
@@ -74,7 +73,7 @@ class TestCalculator(unittest.TestCase):
     def test_plotter_correct_size_dpi(self):
         module = ThresholdCalculator()
         args = module.parse_and_validate_cli()
-        plot = module.run_module(args)[ThresholdEnums.FIGURE.value]
+        plot = module.run_module(args)['figure']
         self.assertEqual(100, plot.dpi)
         self.assertTupleEqual((0, 1), plot.axes[0].get_ylim())
 

@@ -5,13 +5,9 @@ from unittest.mock import patch
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.core import ColumnEnums, VCFEnums
 from molgenis.capice_resources.core.errors import SampleMismatchError
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
-from molgenis.capice_resources.compare_model_performance import CMPPlottingEnums as Penums
-from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menums
 from molgenis.capice_resources.compare_model_performance.__main__ import CompareModelPerformance
 
 
@@ -49,13 +45,13 @@ class TestCompareModelPerformance(unittest.TestCase):
         """
         CompareModelPerformance().run()
         for figure in [
-            Penums.FIG_AF.value,
-            Penums.FIG_ROC.value,
-            Penums.FIG_AUC.value,
-            Penums.FIG_B_DIFF.value,
-            Penums.FIG_V_DIFF.value,
-            Penums.FIG_B_DIST.value,
-            Penums.FIG_V_DIST.value
+            'auc',
+            'roc',
+            'allele_frequency',
+            'score_distributions_box',
+            'score_distributions_vio',
+            'score_differences_vio',
+            'score_differences_box'
         ]:
             self.assertIn(figure + '.png', os.listdir(self.output_directory))
 
@@ -88,25 +84,25 @@ class TestCompareModelPerformance(unittest.TestCase):
         module = CompareModelPerformance()
         scores = pd.DataFrame(
             {
-                 Menums.CHR.value: [1, 2, 3, 4],
-                 VCFEnums.POS.value.lower(): [100, 200, 300, 400],
-                 VCFEnums.REF.value.lower(): ['A', 'C', 'T', 'G'],
-                 VCFEnums.ALT.value.lower(): ['T', 'G', 'A', 'C'],
-                 Menums.GENE_NAME.value: ['foo', 'foo', 'bar', 'baz']
+                 'chr': [1, 2, 3, 4],
+                 'pos': [100, 200, 300, 400],
+                 'ref': ['A', 'C', 'T', 'G'],
+                 'alt': ['T', 'G', 'A', 'C'],
+                 'gene_name': ['foo', 'foo', 'bar', 'baz']
             }
         )
         labels = pd.DataFrame(
             {
-                ColumnEnums.CHROM.value: [1, 2, 3],
-                VCFEnums.POS.value: [100, 200, 300],
-                VCFEnums.REF.value: ['A', 'C', 'T'],
-                VCFEnums.ALT.value: ['T', 'G', 'A'],
-                ColumnEnums.SYMBOL.value: ['foo', 'foo', 'bar'],
+                'CHROM': [1, 2, 3],
+                'POS': [100, 200, 300],
+                'REF': ['A', 'C', 'T'],
+                'ALT': ['T', 'G', 'A'],
+                'SYMBOL': ['foo', 'foo', 'bar'],
                 'SuperUniqueLabelColumn': [1, 0, 0]
             }
         )
         observed = module._merge_scores_and_labes(scores, labels, force_merge=True)
-        self.assertIn(ColumnEnums.CHROM.value, observed.columns)
+        self.assertIn('CHROM', observed.columns)
         self.assertIn('SuperUniqueLabelColumn', observed.columns)
 
 

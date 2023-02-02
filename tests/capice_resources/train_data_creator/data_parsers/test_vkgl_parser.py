@@ -6,7 +6,6 @@ import pandas as pd
 
 from tests.capice_resources.testing_utilities import get_testing_resources_dir
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 
 
 class TestVKGLParser(unittest.TestCase):
@@ -26,12 +25,21 @@ class TestVKGLParser(unittest.TestCase):
         """
         observed = self.parser.parse(self.dataset)
         self.assertIsNone(observed._is_copy)
-        for col in Menums.columns_of_interest():
+        for col in [
+            '#CHROM',
+            'POS',
+            'REF',
+            'ALT',
+            'gene',
+            'class',
+            'review',
+            'dataset_source'
+        ]:
             self.assertIn(col, observed.columns)
         self.assertIn('binarized_label', observed.columns)
         self.assertListEqual(
             list(observed['dataset_source'].unique()),
-            [Menums.VKGL.value]
+            ['VKGL']
         )
 
     def test_correct_columns_names(self):
@@ -53,16 +61,16 @@ class TestVKGLParser(unittest.TestCase):
         """
         test_case = pd.DataFrame(
             {
-                Menums.SUPPORT.value: ['5 labs', '1 lab', '3 labs']
+                'support': ['5 labs', '1 lab', '3 labs']
             }
         )
         self.parser._correct_support(test_case)
         self.assertTrue(
-            test_case[Menums.SUPPORT.value].dtype == np.int64,
-            msg=f'Actual dtype: {test_case[Menums.SUPPORT.value].dtype}'
+            test_case['support'].dtype == np.int64,
+            msg=f'Actual dtype: {test_case["support"].dtype}'
         )
         self.assertListEqual(
-            list(test_case[Menums.SUPPORT.value].values),
+            list(test_case['support'].values),
             [5, 1, 3]
         )
 
@@ -72,16 +80,16 @@ class TestVKGLParser(unittest.TestCase):
         """
         test_case = pd.DataFrame(
             {
-                Menums.SUPPORT.value: [
+                'support': [
                     1, 2, 3, 4
                 ]
             }
         )
-        self.assertNotIn(Menums.REVIEW.value, test_case.columns)
+        self.assertNotIn('review', test_case.columns)
         self.parser._apply_review_status(test_case)
-        self.assertIn(Menums.REVIEW.value, test_case.columns)
+        self.assertIn('review', test_case.columns)
         self.assertListEqual(
-            list(test_case[Menums.REVIEW.value].values),
+            list(test_case['review'].values),
             [1, 2, 2, 2]
         )
 

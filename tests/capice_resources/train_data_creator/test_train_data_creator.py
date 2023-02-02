@@ -8,6 +8,7 @@ import pandas as pd
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.train_data_creator.__main__ import TrainDataCreator
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
 class TestTrainDataCreator(unittest.TestCase):
@@ -21,6 +22,39 @@ class TestTrainDataCreator(unittest.TestCase):
     def tearDownClass(cls) -> None:
         check_and_remove_directory(os.path.join(cls.output_directory, 'train_test.vcf.gz'))
         check_and_remove_directory(os.path.join(cls.output_directory, 'validation.vcf.gz'))
+
+    def test_classmethod_list_columns_of_interest(self):
+        """
+        Test to check if the classmethod columns_of_interest list is returned properly.
+        """
+        self.assertListEqual(
+            TrainDataCreatorEnums.columns_of_interest(),
+            [
+                '#CHROM',
+                'POS',
+                'REF',
+                'ALT',
+                'gene',
+                'class',
+                'review',
+                'dataset_source'
+            ]
+        )
+
+    def test_classmethod_list_further_processing_columns(self):
+        """
+        Test to check if the classmethod further_processing_columns list is returned properly.
+        """
+        self.assertListEqual(
+            TrainDataCreatorEnums.further_processing_columns(),
+            [
+                '#CHROM',
+                'POS',
+                'REF',
+                'ALT',
+                'gene',
+            ]
+        )
 
     @patch(
         'sys.argv',
