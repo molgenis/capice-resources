@@ -9,7 +9,7 @@ class ProcessVEPEnums(Enum):
     SAMPLE_WEIGHTS = [0.8, 0.9, 1.0]
 
 
-class CGDEnum(Enum):
+class CGDColumnEnums(Enum):
     """
     Enum dedicated to columns that are already (should be) present in the CGD file.
     """

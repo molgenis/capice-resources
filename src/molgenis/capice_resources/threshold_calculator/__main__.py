@@ -47,15 +47,15 @@ class ThresholdCalculator(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser):
-        validation = self.input_validator.validate_icli_file(
+        validation = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('validation'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        score = self.input_validator.validate_icli_file(
+        score = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('score'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        output = self.input_validator.validate_ocli_directory(
+        output = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
         return {

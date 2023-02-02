@@ -6,7 +6,7 @@ import pandas as pd
 from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums, \
     ColumnEnums, VCFEnums
-from molgenis.capice_resources.core.errors import SampleMismatchError
+from molgenis.capice_resources.core.errors import SampleSizeMismatchError
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
 from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
@@ -103,24 +103,24 @@ class CompareModelPerformance(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser):
-        scores1 = self.input_validator.validate_icli_file(
+        scores1 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('scores_model_1'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        scores2 = self.input_validator.validate_icli_file(
+        scores2 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('scores_model_2'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        labels = self.input_validator.validate_icli_file(
+        labels = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('labels'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        labels_2 = self.input_validator.validate_icli_file(
+        labels_2 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('labels_model_2'),
             TSVFileEnums.TSV_EXTENSIONS.value,
             can_be_optional=True
         )
-        output = self.input_validator.validate_ocli_directory(
+        output = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
         force_merge = parser.get_argument('force_merge')
@@ -274,8 +274,8 @@ class CompareModelPerformance(Module):
                 the "scores" is leading in the merging.
 
         Raises:
-            SampleMismatchError:
-                SampleMismatchError is raised when force_merge is set to False and the sample
+            SampleSizeMismatchError:
+                SampleSizeMismatchError is raised when force_merge is set to False and the sample
                 sizes differ.
         """
         if scores.shape[0] == labels.shape[0]:
@@ -307,12 +307,14 @@ class CompareModelPerformance(Module):
                 leading in the merge.
 
         Raises:
-            SampleMismatchError:
-                SampleMismatchError is raised when force_merge is set to False and the sample
+            SampleSizeMismatchError:
+                SampleSizeMismatchError is raised when force_merge is set to False and the sample
                 sizes differ.
         """
         if not force_merge:
-            raise SampleMismatchError('Sample sizes differ and -f/--force-merge is not supplied!')
+            raise SampleSizeMismatchError(
+                'Sample sizes differ and -f/--force-merge is not supplied!'
+            )
         scores_merge_columns = [
             Menums.CHR.value,
             VCFEnums.POS.value.lower(),

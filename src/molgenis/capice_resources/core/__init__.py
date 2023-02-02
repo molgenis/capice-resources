@@ -40,9 +40,13 @@ class Module(metaclass=ABCMeta):
         Main run function of each module.
 
         Consists of creating, parsing and validating the Command Line Interface.
+
         Then
+
         Running the module itself.
+
         Then
+
         Exporting the results.
         """
         args = self.parse_and_validate_cli()
@@ -115,7 +119,7 @@ class Module(metaclass=ABCMeta):
             path:
                 Path-like object that points to the data.
             required_columns:
-                List containing all the columns that this data should have.
+                List containing all the column names that this data should have.
 
         Returns:
             pandas.DataFrame:

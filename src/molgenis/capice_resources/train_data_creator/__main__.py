@@ -51,15 +51,15 @@ class TrainDataCreator(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser):
-        vkgl = self.input_validator.validate_icli_file(
+        vkgl = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('input_vkgl'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        clinvar = self.input_validator.validate_icli_file(
+        clinvar = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('input_clinvar'),
             ('.vcf.gz', '.vcf')
         )
-        output = self.input_validator.validate_ocli_directory(
+        output = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
         return {

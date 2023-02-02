@@ -63,15 +63,15 @@ class CompareModelFeatures(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser):
-        explain_1 = self.input_validator.validate_icli_file(
+        explain_1 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('explain_1'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        explain_2 = self.input_validator.validate_icli_file(
+        explain_2 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('explain_2'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        output = self.input_validator.validate_ocli_directory(
+        output = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output'),
             TSVFileEnums.TSV_EXTENSIONS.value,
             parser.get_argument('force')

@@ -28,7 +28,7 @@ class TestInputValidator(unittest.TestCase):
         the correct extension.
         """
         correct_path = os.path.join(get_testing_resources_dir(), 'existing_tsv_file.tsv.gz')
-        observed = self.validator.validate_icli_file(
+        observed = self.validator.validate_input_command_line_interface_file(
             {'input': correct_path},
             extension=('.tsv.gz', '.tsv')
         )
@@ -40,7 +40,7 @@ class TestInputValidator(unittest.TestCase):
         Same as "test_icli_file_pass" but with a JSON instead of a TSV(.gz).
         """
         correct_path = os.path.join(get_testing_resources_dir(), 'features.json')
-        observed = self.validator.validate_icli_file(
+        observed = self.validator.validate_input_command_line_interface_file(
             {'json': correct_path},
             extension='json'
         )
@@ -56,7 +56,7 @@ class TestInputValidator(unittest.TestCase):
             get_testing_resources_dir(), 'nonexisting_tsv_file.tsv.gz'
         )
         with self.assertRaises(FileNotFoundError) as e:
-            self.validator.validate_icli_file(
+            self.validator.validate_input_command_line_interface_file(
                 {'input': incorrect_path},
                 extension='\t'
             )
@@ -68,7 +68,7 @@ class TestInputValidator(unittest.TestCase):
         optional flag) is supplied, but can_be_optional is set to its default False.
         """
         with self.assertRaises(IOError) as e:
-            self.validator.validate_icli_file(
+            self.validator.validate_input_command_line_interface_file(
                 {'input': None},
                 extension='\t'
             )
@@ -83,7 +83,7 @@ class TestInputValidator(unittest.TestCase):
             get_testing_resources_dir(), 'existing_txt_file.txt.gz'
         )
         with self.assertRaises(IOError) as e:
-            self.validator.validate_icli_file(
+            self.validator.validate_input_command_line_interface_file(
                 {'input': path},
                 extension=('.tsv.gz', '.tsv')
             )
@@ -97,7 +97,7 @@ class TestInputValidator(unittest.TestCase):
         Test to check if None passes when can_be_optional is set to True.
         """
         expected = {'input': None}
-        observed = self.validator.validate_icli_file(
+        observed = self.validator.validate_input_command_line_interface_file(
             expected,
             extension='\t',
             can_be_optional=True
@@ -107,7 +107,7 @@ class TestInputValidator(unittest.TestCase):
     def test_ocli_path_pass(self):
         directory = 'a_new_directory'
         path = os.path.join(get_testing_resources_dir(), directory)
-        self.validator.validate_ocli_directory(
+        self.validator.validate_output_command_line_interface_path(
             {'output': path}
         )
         self.assertIn(directory, os.listdir(get_testing_resources_dir()))
@@ -115,12 +115,12 @@ class TestInputValidator(unittest.TestCase):
 
     def test_ocli_file_pass(self):
         """
-        Test to see if the validate_ocli_directory properly functions when supplied with a full
-        path + filename.
+        Test to see if the validate_output_command_line_interface_path properly functions
+        when supplied with a full path + filename.
         """
         filename = 'some_file.tsv.gz'
         path = os.path.join(get_testing_resources_dir(), filename)
-        observed = self.validator.validate_ocli_directory(
+        observed = self.validator.validate_output_command_line_interface_path(
             {'output': path},
             extension=('.tsv.gz', '.tsv')
         )
@@ -129,11 +129,12 @@ class TestInputValidator(unittest.TestCase):
 
     def test_ocli_none_fail(self):
         """
-        Test to see if "validate_ocli_directory" properly raises IOError when supplied with None.
-        "can_be_optional" is not a flag, since output must always be set in all modules.
+        Test to see if "validate_output_command_line_interface_path" properly raises
+        IOError when supplied with None. "can_be_optional" is not a flag,
+        since output must always be set in all modules.
         """
         with self.assertRaises(IOError) as e:
-            self.validator.validate_ocli_directory(
+            self.validator.validate_output_command_line_interface_path(
                 {'output': None}
             )
         self.assertEqual('Encountered None argument in non-optional flag.', str(e.exception))
@@ -145,7 +146,7 @@ class TestInputValidator(unittest.TestCase):
         """
         path = os.path.join(get_testing_resources_dir(), 'some_file.csv.gz')
         with self.assertRaises(IOError) as e:
-            self.validator.validate_ocli_directory(
+            self.validator.validate_output_command_line_interface_path(
                 {'output': path},
                 extension=('.tsv.gz', '.tsv')
             )
@@ -160,11 +161,11 @@ class TestInputValidator(unittest.TestCase):
         supplied but the file already exists.
         (Force is not an option by default, as it differs per module if it requires an output
         directory or an output file). To prevent additional (duplicated) code, force IS an
-        argument that can be supplied to "validate_ocli_directory".
+        argument that can be supplied to "validate_output_command_line_interface_path".
         """
         path = os.path.join(get_testing_resources_dir(), 'existing_tsv_file.tsv.gz')
         with self.assertRaises(FileExistsError) as e:
-            self.validator.validate_ocli_directory(
+            self.validator.validate_output_command_line_interface_path(
                 {'output': path},
                 extension=('.tsv.gz', '.tsv')
             )
@@ -178,7 +179,7 @@ class TestInputValidator(unittest.TestCase):
         force flag is set to True.
         """
         path = os.path.join(get_testing_resources_dir(), 'existing_tsv_file.tsv.gz')
-        observed = self.validator.validate_ocli_directory(
+        observed = self.validator.validate_output_command_line_interface_path(
             {'output': path},
             extension=('.tsv.gz', '.tsv'),
             force=True

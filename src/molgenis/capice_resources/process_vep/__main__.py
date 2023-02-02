@@ -9,7 +9,7 @@ from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
 from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums
-from molgenis.capice_resources.process_vep import CGDEnum
+from molgenis.capice_resources.process_vep import CGDColumnEnums
 
 
 class ProcessVEP(Module):
@@ -72,24 +72,24 @@ class ProcessVEP(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser):
-        train_test = self.input_validator.validate_icli_file(
+        train_test = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('train_test'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        validation = self.input_validator.validate_icli_file(
+        validation = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('validation'),
             TSVFileEnums.TSV_EXTENSIONS.value,
             can_be_optional=True
         )
-        train_features = self.input_validator.validate_icli_file(
+        train_features = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('features'),
             '.json'
         )
-        genes_argument = self.input_validator.validate_icli_file(
+        genes_argument = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('genes'),
             ('.tsv.gz', '.tsv', '.txt', '.txt.gz')
         )
-        output_argument = self.input_validator.validate_ocli_directory(
+        output_argument = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
         assembly_flag = parser.get_argument('assembly')
@@ -194,8 +194,8 @@ class ProcessVEP(Module):
         data = self._read_pandas_tsv(
             cgd_file_argument,
             [
-                CGDEnum.GENE.value,
-                CGDEnum.INHERITANCE.value
+                CGDColumnEnums.GENE.value,
+                CGDColumnEnums.INHERITANCE.value
             ]
         )
         genes = self._correct_cgd_data(data)
@@ -216,9 +216,11 @@ class ProcessVEP(Module):
                 since that gene can not ever be AR (it lies on the X chromosome, outside of PAR
                 region).
         """
-        cgd_data.drop(index=cgd_data[cgd_data[CGDEnum.GENE.value] == 'TENM1'].index, inplace=True)
-        return list(cgd_data[cgd_data[CGDEnum.INHERITANCE.value].str.contains('AR')][
-                        CGDEnum.GENE.value].values)
+        cgd_data.drop(
+            index=cgd_data[cgd_data[CGDColumnEnums.GENE.value] == 'TENM1'].index, inplace=True
+        )
+        return list(cgd_data[cgd_data[CGDColumnEnums.INHERITANCE.value].str.contains('AR')][
+                        CGDColumnEnums.GENE.value].values)
 
     def _process_vep(
             self,

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from molgenis.capice_resources.core.errors import SampleMismatchError
+from molgenis.capice_resources.core.errors import SampleSizeMismatchError
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.compare_model_performance.__main__ import CompareModelPerformance
@@ -57,14 +57,14 @@ class TestCompareModelPerformance(unittest.TestCase):
 
     def test_attempt_mismatch_merge_fail(self):
         """
-        Test to see if the "_merge_scores_and_labels" function raises the SampleMismatchError as
+        Test to see if the "_merge_scores_and_labels" function raises the SampleSizeMismatchError as
         a result of unequal sample sizes and force_merge being set to False (by default).
 
         Since it doesn't matter what is inside the dataframes, supplying empty frames.
         (as the error is raised before anything is done with the frame)
         """
         module = CompareModelPerformance()
-        with self.assertRaises(SampleMismatchError) as e:
+        with self.assertRaises(SampleSizeMismatchError) as e:
             module._merge_scores_and_labes(
                 pd.DataFrame({'foo': ['bar', 'baz']}),
                 pd.DataFrame({'bar': ['foo']}),

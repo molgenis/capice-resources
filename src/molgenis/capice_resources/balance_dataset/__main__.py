@@ -53,11 +53,11 @@ class BalanceDataset(Module):
         return parser
 
     def _validate_module_specific_arguments(self, parser: CommandLineInterface):
-        input_file = self.input_validator.validate_icli_file(
+        input_file = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('input'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
-        output = self.input_validator.validate_ocli_directory(
+        output = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
         verbose = parser.get_argument('verbose')

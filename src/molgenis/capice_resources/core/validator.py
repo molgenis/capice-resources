@@ -29,7 +29,7 @@ class InputValidator:
             value = None
         return key, value
 
-    def validate_icli_file(
+    def validate_input_command_line_interface_file(
             self,
             path: dict[str, os.PathLike[str] | None | str],
             extension: tuple[str] | str,
@@ -87,7 +87,7 @@ class InputValidator:
                 )
         self._validate_path_is_none(path, can_be_optional)
 
-    def validate_ocli_directory(
+    def validate_output_command_line_interface_path(
             self,
             path: dict[str, str | os.PathLike[str]],
             extension: tuple[str] | None = None,
