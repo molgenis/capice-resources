@@ -3,7 +3,6 @@ import unittest
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
@@ -14,7 +13,7 @@ class TestClinvarParser(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_clinvar.vcf.gz'),
-            sep=Genums.TSV_SEPARATOR.value,
+            sep='\t',
             skiprows=27,
             low_memory=False
         )
@@ -44,9 +43,9 @@ class TestClinvarParser(unittest.TestCase):
         self.assertIsNone(observed._is_copy)
         for col in Menums.columns_of_interest():
             self.assertIn(col, observed.columns)
-        self.assertIn(Genums.BINARIZED_LABEL.value, observed.columns)
+        self.assertIn('binarized_label', observed.columns)
         self.assertListEqual(
-            list(observed[Genums.DATASET_SOURCE.value].unique()),
+            list(observed['dataset_source'].unique()),
             [Menums.CLINVAR.value]
         )
 

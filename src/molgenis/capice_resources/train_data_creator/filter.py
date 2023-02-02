@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import VCFEnums
 
 
 class SVFilter:
@@ -17,7 +17,7 @@ class SVFilter:
         """
         merged_frame.drop(
             index=merged_frame[
-                (merged_frame[GlobalEnums.REF.value].str.len() > 50) |
-                (merged_frame[GlobalEnums.ALT.value].str.len() > 50)
+                (merged_frame[VCFEnums.REF.value].str.len() > 50) |
+                (merged_frame[VCFEnums.ALT.value].str.len() > 50)
                 ].index, inplace=True
         )

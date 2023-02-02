@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
@@ -25,5 +25,5 @@ class SampleWeighter:
             2: 0.9,
             1: 0.8
         }
-        merged_frame[GlobalEnums.SAMPLE_WEIGHT.value] = merged_frame[
+        merged_frame[ColumnEnums.SAMPLE_WEIGHT.value] = merged_frame[
             TrainDataCreatorEnums.REVIEW.value].map(sample_weights)

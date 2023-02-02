@@ -4,7 +4,6 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
@@ -15,7 +14,7 @@ class TestVKGLParser(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_vkgl.tsv.gz'),
-            sep=Genums.TSV_SEPARATOR.value
+            sep='\t'
         )
         cls.parser = VKGLParser()  # type: ignore
 
@@ -29,9 +28,9 @@ class TestVKGLParser(unittest.TestCase):
         self.assertIsNone(observed._is_copy)
         for col in Menums.columns_of_interest():
             self.assertIn(col, observed.columns)
-        self.assertIn(Genums.BINARIZED_LABEL.value, observed.columns)
+        self.assertIn('binarized_label', observed.columns)
         self.assertListEqual(
-            list(observed[Genums.DATASET_SOURCE.value].unique()),
+            list(observed['dataset_source'].unique()),
             [Menums.VKGL.value]
         )
 

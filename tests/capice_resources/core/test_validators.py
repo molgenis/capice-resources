@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     temp_output_file_path_and_name, check_and_remove_directory
 from molgenis.capice_resources.core.validator import InputValidator, DataValidator
@@ -31,7 +30,7 @@ class TestInputValidator(unittest.TestCase):
         correct_path = os.path.join(get_testing_resources_dir(), 'existing_tsv_file.tsv.gz')
         observed = self.validator.validate_icli_file(
             {'input': correct_path},
-            extension=GlobalEnums.TSV_EXTENSIONS.value
+            extension=('.tsv.gz', '.tsv')
         )
         expected = {'input': Path(correct_path)}
         self.assertDictEqual(observed, expected)
@@ -59,7 +58,7 @@ class TestInputValidator(unittest.TestCase):
         with self.assertRaises(FileNotFoundError) as e:
             self.validator.validate_icli_file(
                 {'input': incorrect_path},
-                extension=GlobalEnums.TSV_EXTENSIONS.value
+                extension='\t'
             )
         self.assertEqual(f'Input path: {incorrect_path} does not exist!', str(e.exception))
 
@@ -71,7 +70,7 @@ class TestInputValidator(unittest.TestCase):
         with self.assertRaises(IOError) as e:
             self.validator.validate_icli_file(
                 {'input': None},
-                extension=GlobalEnums.TSV_EXTENSIONS.value
+                extension='\t'
             )
         self.assertEqual('Encountered None argument in non-optional flag.', str(e.exception))
 
@@ -86,11 +85,10 @@ class TestInputValidator(unittest.TestCase):
         with self.assertRaises(IOError) as e:
             self.validator.validate_icli_file(
                 {'input': path},
-                extension=GlobalEnums.TSV_EXTENSIONS.value
+                extension=('.tsv.gz', '.tsv')
             )
         self.assertEqual(
-            f'Input {path} does not match the correct extension: '
-            f'{", ".join(GlobalEnums.TSV_EXTENSIONS.value)}',
+            f'Input {path} does not match the correct extension: .tsv.gz, .tsv',
             str(e.exception)
         )
 
@@ -101,7 +99,7 @@ class TestInputValidator(unittest.TestCase):
         expected = {'input': None}
         observed = self.validator.validate_icli_file(
             expected,
-            extension=GlobalEnums.TSV_EXTENSIONS.value,
+            extension='\t',
             can_be_optional=True
         )
         self.assertDictEqual(observed, expected)
@@ -124,7 +122,7 @@ class TestInputValidator(unittest.TestCase):
         path = os.path.join(get_testing_resources_dir(), filename)
         observed = self.validator.validate_ocli_directory(
             {'output': path},
-            extension=GlobalEnums.TSV_EXTENSIONS.value
+            extension=('.tsv.gz', '.tsv')
         )
         self.assertNotIn(filename, os.listdir(get_testing_resources_dir()))
         self.assertDictEqual(observed, {'output': Path(path)})
@@ -149,7 +147,7 @@ class TestInputValidator(unittest.TestCase):
         with self.assertRaises(IOError) as e:
             self.validator.validate_ocli_directory(
                 {'output': path},
-                extension=GlobalEnums.TSV_EXTENSIONS.value
+                extension=('.tsv.gz', '.tsv')
             )
         self.assertEqual(
             f'Output {path} does not end with required extension: .tsv.gz, .tsv',
@@ -168,7 +166,7 @@ class TestInputValidator(unittest.TestCase):
         with self.assertRaises(FileExistsError) as e:
             self.validator.validate_ocli_directory(
                 {'output': path},
-                extension=GlobalEnums.TSV_EXTENSIONS.value
+                extension=('.tsv.gz', '.tsv')
             )
         self.assertEqual(
             f'Output {path} already exists and force is not enabled!', str(e.exception)
@@ -182,7 +180,7 @@ class TestInputValidator(unittest.TestCase):
         path = os.path.join(get_testing_resources_dir(), 'existing_tsv_file.tsv.gz')
         observed = self.validator.validate_ocli_directory(
             {'output': path},
-            extension=GlobalEnums.TSV_EXTENSIONS.value,
+            extension=('.tsv.gz', '.tsv'),
             force=True
         )
         self.assertDictEqual(observed, {'output': Path(path)})

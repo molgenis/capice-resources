@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.train_data_creator.__main__ import TrainDataCreator
@@ -68,9 +67,9 @@ class TestTrainDataCreator(unittest.TestCase):
             self.assertEqual(n_header_lines, 27)
         tt = pd.read_csv(  # type: ignore
             filepath_train_test,
-            sep=Genums.TSV_SEPARATOR.value,
+            sep='\t',
             skiprows=27,
-            na_values=Genums.NA_VALUES.value
+            na_values='.'
         )
         self.assertGreaterEqual(
             tt.shape[0],
@@ -78,9 +77,9 @@ class TestTrainDataCreator(unittest.TestCase):
         )
         val = pd.read_csv(  # type: ignore
             filepath_validation,
-            sep=Genums.TSV_SEPARATOR.value,
+            sep='\t',
             skiprows=27,
-            na_values=Genums.NA_VALUES.value
+            na_values='.'
         )
         self.assertGreaterEqual(
             val.shape[0],

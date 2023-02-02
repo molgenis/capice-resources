@@ -1,7 +1,9 @@
-from molgenis.capice_resources.core import ExtendedEnum, GlobalEnums
+from enum import Enum
+
+from molgenis.capice_resources.core import VCFEnums, ColumnEnums
 
 
-class TrainDataCreatorEnums(ExtendedEnum):
+class TrainDataCreatorEnums(Enum):
     """
     Enums specific to the Train Data Creator
     """
@@ -27,14 +29,14 @@ class TrainDataCreatorEnums(ExtendedEnum):
                 Alt, Gene, Class(ification), Review score and the source of the data.
         """
         return [
-            GlobalEnums.VCF_CHROM.value,
-            GlobalEnums.POS.value,
-            GlobalEnums.REF.value,
-            GlobalEnums.ALT.value,
+            VCFEnums.VCF_CHROM.value,
+            VCFEnums.POS.value,
+            VCFEnums.REF.value,
+            VCFEnums.ALT.value,
             TrainDataCreatorEnums.GENE.value,  # type: ignore
             TrainDataCreatorEnums.CLASS.value,  # type: ignore
             TrainDataCreatorEnums.REVIEW.value,  # type: ignore
-            GlobalEnums.DATASET_SOURCE.value
+            ColumnEnums.DATASET_SOURCE.value
         ]
 
     @classmethod
@@ -49,9 +51,9 @@ class TrainDataCreatorEnums(ExtendedEnum):
                 Alt and Gene.
         """
         return [
-            GlobalEnums.VCF_CHROM.value,
-            GlobalEnums.POS.value,
-            GlobalEnums.REF.value,
-            GlobalEnums.ALT.value,
+            VCFEnums.VCF_CHROM.value,
+            VCFEnums.POS.value,
+            VCFEnums.REF.value,
+            VCFEnums.ALT.value,
             TrainDataCreatorEnums.GENE.value  # type: ignore
         ]

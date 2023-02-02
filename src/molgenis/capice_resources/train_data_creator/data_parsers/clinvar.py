@@ -3,8 +3,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.core import add_dataset_source
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import VCFEnums
+from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.utilities import apply_binarized_label
 
@@ -112,7 +112,7 @@ class ClinVarParser:
 
         """
         clinvar_frame[column_to_add] = clinvar_frame[
-            Genums.INFO.value
+            VCFEnums.INFO.value
         ].str.split(split_identifier, expand=True)[1].str.split(';', expand=True)[0]
 
     @staticmethod

@@ -3,8 +3,6 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.sample_weighter import SampleWeighter
 
 
@@ -19,13 +17,13 @@ class TestSampleWeighter(unittest.TestCase):
         """
         dataset = pd.DataFrame(
             {
-                Menums.REVIEW.value: [3, 4, 1, 2]
+                'review': [3, 4, 1, 2]
             }
         )
         self.weighter.apply_sample_weight(dataset)
-        self.assertIn(Genums.SAMPLE_WEIGHT.value, dataset.columns)
+        self.assertIn('sample_weight', dataset.columns)
         self.assertListEqual(
-            list(dataset[Genums.SAMPLE_WEIGHT.value].values),
+            list(dataset['sample_weight'].values),
             [1.0, 1.0, 0.8, 0.9]
         )
 
@@ -35,13 +33,13 @@ class TestSampleWeighter(unittest.TestCase):
         """
         dataset = pd.DataFrame(
             {
-                Menums.REVIEW.value: [3, 4, 5, 0]
+                'review': [3, 4, 5, 0]
             }
         )
         self.weighter.apply_sample_weight(dataset)
-        self.assertIn(Genums.SAMPLE_WEIGHT.value, dataset.columns)
+        self.assertIn('sample_weight', dataset.columns)
         np.testing.assert_array_equal(
-            dataset[Genums.SAMPLE_WEIGHT.value],
+            dataset['sample_weight'],
             np.array([1.0, 1.0, np.nan, np.nan])
         )
 

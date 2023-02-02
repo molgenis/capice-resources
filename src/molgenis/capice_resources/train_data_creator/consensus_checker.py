@@ -2,7 +2,7 @@ import warnings
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 
 
@@ -19,11 +19,15 @@ class ConsensusChecker:
         """
         before_drop = merged_frame.shape[0]
         vkgl_subset = merged_frame.loc[
-            merged_frame[merged_frame[Genums.DATASET_SOURCE.value] == Menums.VKGL.value].index,
+            merged_frame[
+                merged_frame[ColumnEnums.DATASET_SOURCE.value] == Menums.VKGL.value
+                ].index,
             :
         ]
         clinvar_subset = merged_frame.loc[
-            merged_frame[merged_frame[Genums.DATASET_SOURCE.value] == Menums.CLINVAR.value].index,
+            merged_frame[
+                merged_frame[ColumnEnums.DATASET_SOURCE.value] == Menums.CLINVAR.value
+                ].index,
             :
         ]
         self._perform_check(merged_frame, vkgl_subset)
@@ -54,10 +58,10 @@ class ConsensusChecker:
             suffixes=('_og', '_del'),
             how='left'
         )
-        og_column_source_name = Genums.DATASET_SOURCE.value + '_og'
-        og_column_bl_name = Genums.BINARIZED_LABEL.value + '_og'
-        del_column_source_name = Genums.DATASET_SOURCE.value + '_del'
-        del_column_bl_name = Genums.BINARIZED_LABEL.value + '_del'
+        og_column_source_name = ColumnEnums.DATASET_SOURCE.value + '_og'
+        og_column_bl_name = ColumnEnums.BINARIZED_LABEL.value + '_og'
+        del_column_source_name = ColumnEnums.DATASET_SOURCE.value + '_del'
+        del_column_bl_name = ColumnEnums.BINARIZED_LABEL.value + '_del'
         merged_frame.drop(
             index=indices[
                 (indices[og_column_source_name] != indices[del_column_source_name]) &

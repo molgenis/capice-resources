@@ -2,7 +2,7 @@ import gc
 
 import pandas as pd
 
-from molgenis.capice_resources.core import GlobalEnums
+from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows
 
 
@@ -42,16 +42,16 @@ class SplitDatasets:
                 Tuple containing the [0] train-test dataframe and [1] validation dataframe.
         """
         print('Splitting into validation and training.')
-        pathogenic_set = merged_frame[merged_frame[GlobalEnums.BINARIZED_LABEL.value] == 1]
+        pathogenic_set = merged_frame[merged_frame[ColumnEnums.BINARIZED_LABEL.value] == 1]
         print(f'Amount of pathogenic variants:{pathogenic_set.shape[0]}')
-        benign_set = merged_frame[merged_frame[GlobalEnums.BINARIZED_LABEL.value] == 0]
+        benign_set = merged_frame[merged_frame[ColumnEnums.BINARIZED_LABEL.value] == 0]
         print(f'Amount of benign variants:{benign_set.shape[0]}')
         validation = pathogenic_set[
-            pathogenic_set[GlobalEnums.SAMPLE_WEIGHT.value] >= 0.9
+            pathogenic_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
             ].sample(frac=self.frac)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         if benign_set[
-            benign_set[GlobalEnums.SAMPLE_WEIGHT.value] >= 0.9
+            benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
         ].shape[0] < validation.shape[0]:
             raise ValueError(
                 'Not enough benign variants to match pathogenic variants, unable to create '
@@ -60,7 +60,7 @@ class SplitDatasets:
         validation = merge_dataset_rows(
             validation,
             benign_set[
-                benign_set[GlobalEnums.SAMPLE_WEIGHT.value] >= 0.9
+                benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
                 ].sample(n=validation.shape[0]),
             ignore_index=False
         )

@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from molgenis.capice_resources.core import add_dataset_source
-from molgenis.capice_resources.core import GlobalEnums as Genums
+from molgenis.capice_resources.core import VCFEnums
+from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
 from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
     apply_binarized_label
@@ -45,10 +45,10 @@ class VKGLParser:
         """
         vkgl_frame.rename(  # type: ignore
             columns={
-                Menums.CHROMOSOME.value: Genums.VCF_CHROM.value,
-                Menums.START.value: Genums.POS.value,
-                Genums.REF.value.lower(): Genums.REF.value,
-                Genums.ALT.value.lower(): Genums.ALT.value,
+                Menums.CHROMOSOME.value: VCFEnums.VCF_CHROM.value,
+                Menums.START.value: VCFEnums.POS.value,
+                VCFEnums.REF.value.lower(): VCFEnums.REF.value,
+                VCFEnums.ALT.value.lower(): VCFEnums.ALT.value,
                 Menums.CLASSIFICATION.value: Menums.CLASS.value
             }, inplace=True
         )

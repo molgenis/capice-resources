@@ -2,8 +2,10 @@ import gc
 import os
 import gzip
 
-from molgenis.capice_resources.core import Module
-from molgenis.capice_resources.core import GlobalEnums as Genums
+import pandas as pd
+
+from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums, VCFEnums, \
+    ColumnEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows
 from molgenis.capice_resources.train_data_creator.filter import SVFilter
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
@@ -51,7 +53,7 @@ class TrainDataCreator(Module):
     def _validate_module_specific_arguments(self, parser):
         vkgl = self.input_validator.validate_icli_file(
             parser.get_argument('input_vkgl'),
-            Genums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value
         )
         clinvar = self.input_validator.validate_icli_file(
             parser.get_argument('input_clinvar'),
@@ -69,7 +71,7 @@ class TrainDataCreator(Module):
     def run_module(self, arguments):
         vkgl = self._read_pandas_tsv(
             arguments['input_vkgl'],
-            [
+            [  # type: ignore
                 Menums.CHROMOSOME.value,
                 Menums.START.value,
                 Menums.SUPPORT.value,
@@ -78,7 +80,7 @@ class TrainDataCreator(Module):
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
         clinvar = self._read_vcf_file(
-            arguments['input_clinvar']
+            arguments['input_clinvar']  # type: ignore
         )
         parsed_clinvar = ClinVarParser().parse(clinvar)
         merge = merge_dataset_rows(parsed_clinvar, parsed_vkgl)
@@ -99,9 +101,9 @@ class TrainDataCreator(Module):
         gc.collect()
 
         return {
-            Genums.OUTPUT.value: arguments['output'],
-            Genums.TRAIN_TEST.value: train_test,
-            Genums.VALIDATION.value: validation
+            DatasetIdentifierEnums.OUTPUT.value: arguments['output'],
+            DatasetIdentifierEnums.TRAIN_TEST.value: train_test,
+            DatasetIdentifierEnums.VALIDATION.value: validation
         }
 
     def export(self, output):
@@ -134,43 +136,47 @@ class TrainDataCreator(Module):
             '##contig=<ID=MT,length=16569,assembly=b37>',
             '##fileDate=20200320'
         ]
-        for types in [Genums.TRAIN_TEST.value, Genums.VALIDATION.value]:
-            export_loc = os.path.join(
-                output[Genums.OUTPUT.value],
+        for types in [
+            DatasetIdentifierEnums.TRAIN_TEST.value,
+            DatasetIdentifierEnums.VALIDATION.value
+        ]:
+            export_loc = os.path.join(  # type: ignore
+                output[DatasetIdentifierEnums.OUTPUT.value],
                 types + '.vcf.gz'
             )
             with gzip.open(export_loc, 'wt') as fh:
                 for line in fake_vcf_header:
                     fh.write(f'{line}\n')
 
-            frame = output[types]
+            # Defining frame as pd.DataFrame else "frame" would throw confusion within pycharm
+            frame: pd.DataFrame = output[types]  # type: ignore
 
-            frame['QUAL'] = Genums.NA_VALUES.value
+            frame['QUAL'] = TSVFileEnums.NA_VALUES.value
             frame['FILTER'] = 'PASS'
-            frame[Genums.INFO.value] = Genums.NA_VALUES.value
+            frame[VCFEnums.INFO.value] = TSVFileEnums.NA_VALUES.value
 
-            frame[Genums.ID.value] = frame[
+            frame[VCFEnums.ID.value] = frame[
                 [
                     *Menums.further_processing_columns(),
-                    Genums.BINARIZED_LABEL.value,
-                    Genums.SAMPLE_WEIGHT.value
+                    ColumnEnums.BINARIZED_LABEL.value,
+                    ColumnEnums.SAMPLE_WEIGHT.value
                 ]
-            ].astype(str).agg(Genums.SEPARATOR.value.join, axis=1)
+            ].astype(str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
 
             self.exporter.export_pandas_file(
                 export_loc,
                 frame[
                     [
-                        Genums.VCF_CHROM.value,
-                        Genums.POS.value,
-                        Genums.ID.value,
-                        Genums.REF.value,
-                        Genums.ALT.value,
+                        VCFEnums.VCF_CHROM.value,
+                        VCFEnums.POS.value,
+                        VCFEnums.ID.value,
+                        VCFEnums.REF.value,
+                        VCFEnums.ALT.value,
                         'QUAL',
                         'FILTER',
-                        Genums.INFO.value
+                        VCFEnums.INFO.value
                     ]
-                ], mode='a', compression='gzip', na_rep=Genums.NA_VALUES.value
+                ], mode='a', compression='gzip', na_rep=TSVFileEnums.NA_VALUES.value
             )
 
 

@@ -6,7 +6,8 @@ import pandas as pd
 
 from tests.capice_resources.testing_utilities import temp_output_file_path_and_name, \
     check_and_remove_directory
-from molgenis.capice_resources.core import Module, GlobalEnums, ExtendedEnum, CommandLineInterface
+from molgenis.capice_resources.core import Module, CommandLineInterface, ColumnEnums, VCFEnums, \
+    TSVFileEnums
 
 
 class ModuleMetaclassTest(Module):
@@ -66,28 +67,6 @@ class ModuleMetaclassTest(Module):
         self.exporter.export_pandas_file(temp_output_file_path_and_name(), output['frame'])
 
 
-class TestExtendedEnum(unittest.TestCase):
-    def test_multiple_enum_correct(self):
-        """
-        Test to check proper function of the "list" classmethod with multiple Enums.
-        """
-        class TestMultipleEnum(ExtendedEnum):
-            FOO = 'foo'
-            BAR = 'bar'
-            BAZ = 'baz'
-
-        self.assertListEqual(TestMultipleEnum.list(), ['foo', 'bar', 'baz'])
-
-    def test_single_enum_correct(self):
-        """
-        Test to check proper function of the "list" classmethod with a single Enum.
-        """
-        class TestSingleEnum(ExtendedEnum):
-            FOO = 'foo'
-
-        self.assertListEqual(TestSingleEnum.list(), ['foo'])
-
-
 class TestModule(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -112,31 +91,31 @@ class TestModule(unittest.TestCase):
         )
         observed = pd.read_csv(  # type: ignore
             temp_output_file_path_and_name(),
-            sep=GlobalEnums.TSV_SEPARATOR.value
+            sep='\t'
         )
         check_and_remove_directory(temp_output_file_path_and_name())
         pd.testing.assert_frame_equal(observed, expected)
 
 
 class TestGlobalEnums(unittest.TestCase):
-    def test_global_enum_present(self):
+    def test_column_enum_value(self):
         """
-        Test to see if a random (present) variable is present within the GlobalEnums list
-        classmethod.
+        Test to see if dataset_source is correctly saved within ColumnEnums.
         """
-        self.assertIn('dataset_source', GlobalEnums.list())
+        self.assertEqual('dataset_source', ColumnEnums.DATASET_SOURCE.value)
 
-    def test_global_enum_value(self):
+    def test_vcf_enum_value(self):
         """
-        Essentially a test to validate that Enum.VARIABLE.value functions properly with a string.
+        Test to see if #CHROM is correctly saved within VCFEnums.
         """
-        self.assertEqual('dataset_source', GlobalEnums.DATASET_SOURCE.value)
+        self.assertEqual('#CHROM', VCFEnums.VCF_CHROM.value)
 
-    def test_global_enum_tsv_extensions(self):
+    def test_tsv_enum_tsv_extensions(self):
         """
-        Essentially a test to validate that Enum.VARIABLE.value functions properly with a tuple.
+        Test to see if the (.tsv.gz, .tsv) tuple within TSVFileEnums.TSV_EXTENSIONS is set
+        correctly.
         """
-        self.assertTupleEqual(('.tsv.gz', '.tsv'), GlobalEnums.TSV_EXTENSIONS.value)
+        self.assertTupleEqual(('.tsv.gz', '.tsv'), TSVFileEnums.TSV_EXTENSIONS.value)
 
 
 if __name__ == '__main__':
