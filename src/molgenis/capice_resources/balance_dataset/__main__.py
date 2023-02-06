@@ -19,7 +19,6 @@ class BalanceDataset(Module):
                         'annotation from VEP is also required (custom or VEP flag). '
                         'Also requires the "consequence" column.'
         )
-        self.random_state = 5
         self.bins = AlleleFrequencyEnums.AF_BINS.value
 
     @staticmethod

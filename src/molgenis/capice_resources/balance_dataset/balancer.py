@@ -7,13 +7,14 @@ from molgenis.capice_resources.balance_dataset.verbosity_printer import Verbosit
 
 
 class Balancer:
+    RANDOM_STATE = 5
+
     def __init__(self, verbose: bool):
         self.printer = VerbosityPrinter(verbose)
         self.bins = [pd.IntervalIndex]
         self.columns: list[str] = []
         self.drop_benign = pd.Index([])
         self.drop_pathogenic = pd.Index([])
-        self.random_state = 5
 
     @staticmethod
     def _mark_and_impute(dataset: pd.DataFrame) -> None:
@@ -173,7 +174,7 @@ class Balancer:
 
         """
         if dataset.shape[0] > n_required:
-            dataset = dataset.sample(n=n_required, random_state=self.random_state)
+            dataset = dataset.sample(n=n_required, random_state=self.RANDOM_STATE)
         return dataset
 
     def _process_consequence(

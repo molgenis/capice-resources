@@ -1,6 +1,7 @@
 import gc
 import os
 import gzip
+from importlib.resources import files
 
 import pandas as pd
 
@@ -107,35 +108,9 @@ class TrainDataCreator(Module):
         }
 
     def export(self, output):
-        fake_vcf_header = [
-            '##fileformat=VCFv4.2',
-            '##contig=<ID=1,length=249250621,assembly=b37>',
-            '##contig=<ID=2,assembly=b37,length=243199373>',
-            '##contig=<ID=3,assembly=b37,length=198022430>',
-            '##contig=<ID=4,length=191154276,assembly=b37>',
-            '##contig=<ID=5,length=180915260,assembly=b37>',
-            '##contig=<ID=6,length=171115067,assembly=b37>',
-            '##contig=<ID=7,length=159138663,assembly=b37>',
-            '##contig=<ID=8,length=146364022,assembly=b37>',
-            '##contig=<ID=9,length=141213431,assembly=b37>',
-            '##contig=<ID=10,length=135534747,assembly=b37>',
-            '##contig=<ID=11,length=135006516,assembly=b37>',
-            '##contig=<ID=12,length=133851895,assembly=b37>',
-            '##contig=<ID=13,length=115169878,assembly=b37>',
-            '##contig=<ID=14,length=107349540,assembly=b37>',
-            '##contig=<ID=15,length=102531392,assembly=b37>',
-            '##contig=<ID=16,length=90354753,assembly=b37>',
-            '##contig=<ID=17,length=81195210,assembly=b37>',
-            '##contig=<ID=18,length=78077248,assembly=b37>',
-            '##contig=<ID=19,length=59128983,assembly=b37>',
-            '##contig=<ID=20,length=63025520,assembly=b37>',
-            '##contig=<ID=21,length=48129895,assembly=b37>',
-            '##contig=<ID=22,length=51304566,assembly=b37>',
-            '##contig=<ID=X,assembly=b37,length=155270560>',
-            '##contig=<ID=Y,length=59373566,assembly=b37>',
-            '##contig=<ID=MT,length=16569,assembly=b37>',
-            '##fileDate=20200320'
-        ]
+        fake_vcf_header = files(
+            'molgenis.capice_resources.train_data_creator.resources'
+        ).joinpath('fake_vcf_header.txt').read_text()
         for types in [
             DatasetIdentifierEnums.TRAIN_TEST.value,
             DatasetIdentifierEnums.VALIDATION.value
@@ -145,8 +120,7 @@ class TrainDataCreator(Module):
                 types + '.vcf.gz'
             )
             with gzip.open(export_loc, 'wt') as fh:
-                for line in fake_vcf_header:
-                    fh.write(f'{line}\n')
+                fh.write(fake_vcf_header)
 
             # Defining frame as pd.DataFrame else "frame" would throw confusion within pycharm
             frame: pd.DataFrame = output[types]  # type: ignore
@@ -167,7 +141,7 @@ class TrainDataCreator(Module):
                 export_loc,
                 frame[
                     [
-                        VCFEnums.VCF_CHROM.value,
+                        VCFEnums.CHROM.vcf_name,
                         VCFEnums.POS.value,
                         VCFEnums.ID.value,
                         VCFEnums.REF.value,

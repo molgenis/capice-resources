@@ -7,8 +7,8 @@ from molgenis.capice_resources.utilities import split_consequences
 
 
 class ConsequenceTools:
+    @staticmethod
     def has_consequence(
-            self,
             merged_model_1: pd.DataFrame,
             merged_model_2: pd.DataFrame
     ) -> bool | list[str]:

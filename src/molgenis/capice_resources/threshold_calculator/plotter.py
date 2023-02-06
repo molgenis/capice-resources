@@ -10,8 +10,7 @@ class ThresholdPlotter:
         """
         Main plotter function of ThresholdCalculator.
 
-        Initializes the best scores according to the first threshold (from 0 to 1) that hits a
-        recall between 0.94 and 0.96.
+        Initializes the best scores according to the  "calculator.py"
 
         Args:
             recall_data:

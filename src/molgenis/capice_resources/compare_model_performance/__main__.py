@@ -316,10 +316,10 @@ class CompareModelPerformance(Module):
                 'Sample sizes differ and -f/--force-merge is not supplied!'
             )
         scores_merge_columns = [
-            Menums.CHR.value,
-            VCFEnums.POS.value.lower(),
-            VCFEnums.REF.value.lower(),
-            VCFEnums.ALT.value.lower(),
+            VCFEnums.CHROM.shortened_name,
+            VCFEnums.POS.lower,
+            VCFEnums.REF.lower,
+            VCFEnums.ALT.lower,
             Menums.GENE_NAME.value
         ]
         self.data_validator.validate_pandas_dataframe(
@@ -327,7 +327,7 @@ class CompareModelPerformance(Module):
             scores_merge_columns
         )
         labels_merge_columns = [
-            ColumnEnums.CHROM.value,
+            VCFEnums.CHROM.processed_name,
             VCFEnums.POS.value,
             VCFEnums.REF.value,
             VCFEnums.ALT.value,

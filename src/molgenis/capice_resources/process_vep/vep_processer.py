@@ -38,10 +38,10 @@ class VEPProcesser:
 
         """
         print('Processing GRCh38.')
-        data[ColumnEnums.CHROM.value] = data[ColumnEnums.CHROM.value].str.split(
-            'chr', expand=True)[1]
+        data[VCFEnums.CHROM.processed_name] = data[VCFEnums.CHROM.processed_name].str.split(
+            VCFEnums.CHROM.shortened_name, expand=True)[1]
         y = np.append(np.arange(1, 23).astype(str), ['X', 'Y', 'MT'])
-        data.drop(data[~data[ColumnEnums.CHROM.value].isin(y)].index, inplace=True)
+        data.drop(data[~data[VCFEnums.CHROM.processed_name].isin(y)].index, inplace=True)
 
     @staticmethod
     def drop_duplicate_entries(data: pd.DataFrame) -> None:

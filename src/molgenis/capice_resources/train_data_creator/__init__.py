@@ -29,7 +29,7 @@ class TrainDataCreatorEnums(Enum):
                 Alt, Gene, Class(ification), Review score and the source of the data.
         """
         return [
-            VCFEnums.VCF_CHROM.value,
+            VCFEnums.CHROM.vcf_name,
             VCFEnums.POS.value,
             VCFEnums.REF.value,
             VCFEnums.ALT.value,
@@ -51,7 +51,7 @@ class TrainDataCreatorEnums(Enum):
                 Alt and Gene.
         """
         return [
-            VCFEnums.VCF_CHROM.value,
+            VCFEnums.CHROM.vcf_name,
             VCFEnums.POS.value,
             VCFEnums.REF.value,
             VCFEnums.ALT.value,

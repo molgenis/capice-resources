@@ -6,7 +6,6 @@ class CompareModelPerformanceEnums(Enum):
     Enums specific to CompareModelPerformance, not including the enums that are specific to
     plotting the actual performance.
     """
-    CHR = 'chr'
     GENE_NAME = 'gene_name'
     MERGE_COLUMN = 'merge_column'
     SCORE_DIFF = 'score_diff'

@@ -45,10 +45,10 @@ class VKGLParser:
         """
         vkgl_frame.rename(  # type: ignore
             columns={
-                Menums.CHROMOSOME.value: VCFEnums.VCF_CHROM.value,
+                Menums.CHROMOSOME.value: VCFEnums.CHROM.vcf_name,
                 Menums.START.value: VCFEnums.POS.value,
-                VCFEnums.REF.value.lower(): VCFEnums.REF.value,
-                VCFEnums.ALT.value.lower(): VCFEnums.ALT.value,
+                VCFEnums.REF.lower: VCFEnums.REF.value,
+                VCFEnums.ALT.lower: VCFEnums.ALT.value,
                 Menums.CLASSIFICATION.value: Menums.CLASS.value
             }, inplace=True
         )

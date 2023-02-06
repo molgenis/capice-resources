@@ -15,7 +15,7 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
             Please note that this ordering is performed inplace.
 
     """
-    pseudo_vcf['order'] = pseudo_vcf[VCFEnums.VCF_CHROM.value]
+    pseudo_vcf['order'] = pseudo_vcf[VCFEnums.CHROM.vcf_name]
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'X'].index, 'order'] = 23
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'Y'].index, 'order'] = 24
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'MT'].index, 'order'] = 25

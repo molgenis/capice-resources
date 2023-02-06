@@ -97,18 +97,23 @@ class TestModule(unittest.TestCase):
         pd.testing.assert_frame_equal(observed, expected)
 
 
-class TestGlobalEnums(unittest.TestCase):
+class TestEnums(unittest.TestCase):
     def test_column_enum_value(self):
         """
         Test to see if dataset_source is correctly saved within ColumnEnums.
         """
         self.assertEqual('dataset_source', ColumnEnums.DATASET_SOURCE.value)
 
-    def test_vcf_enum_value(self):
+    def test_vcf_enum(self):
         """
-        Test to see if #CHROM is correctly saved within VCFEnums.
+        Test to see if the VCFEnums is set up properly
         """
-        self.assertEqual('#CHROM', VCFEnums.VCF_CHROM.value)
+        self.assertEqual('#CHROM', VCFEnums.CHROM.vcf_name)
+        self.assertEqual('CHROM', VCFEnums.CHROM.processed_name)
+        self.assertEqual('chr', VCFEnums.CHROM.shortened_name)
+        self.assertEqual('POS', VCFEnums.POS.processed_name)
+        self.assertEqual('POS', VCFEnums.POS.vcf_name)
+        self.assertEqual('pos', VCFEnums.POS.lower)
 
     def test_tsv_enum_tsv_extensions(self):
         """

@@ -7,19 +7,7 @@ from molgenis.capice_resources.utilities import merge_dataset_rows
 
 
 class SplitDatasets:
-    def __init__(self, fraction_to_validation: float = 0.5):
-        """
-        Init of SplitDatasets. Easier if in the future the fraction of high quality samples we
-        want to sample for the high quality dataset.
-
-        Args:
-            fraction_to_validation:
-                Float that determines the percentage of high quality variants that go to the
-                validation dataset. Please note that the fraction is for the percentage
-                pathogenic variants, not benign or total, since it is likely that the amount of
-                pathogenic variants is smaller than the amount of benign variants.
-        """
-        self.frac = fraction_to_validation
+    FRACTION_TO_VALIDATION = 0.5
 
     def split(self, merged_frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -48,7 +36,7 @@ class SplitDatasets:
         print(f'Amount of benign variants:{benign_set.shape[0]}')
         validation = pathogenic_set[
             pathogenic_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
-            ].sample(frac=self.frac)
+            ].sample(frac=self.FRACTION_TO_VALIDATION)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         if benign_set[
             benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9

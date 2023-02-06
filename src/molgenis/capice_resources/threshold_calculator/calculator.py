@@ -7,6 +7,9 @@ from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Men
 
 
 class Calculator:
+    RECALL_UPPER_VALUE = 0.96
+    RECALL_LOWER_VALUE = 0.94
+
     def calculate_threshold(self, dataset: pd.DataFrame) -> pd.DataFrame:
         """
         Method to calculate the statistics for each threshold, sort the best threshold between
@@ -65,8 +68,7 @@ class Calculator:
         self._sort_thresholds(out)
         return out.reset_index(drop=True)
 
-    @staticmethod
-    def _sort_thresholds(dataset: pd.DataFrame) -> None:
+    def _sort_thresholds(self, dataset: pd.DataFrame) -> None:
         """
         Object Orientated function to perform the somewhat complicated sorting of the statistics
         output dataframe.
@@ -82,8 +84,8 @@ class Calculator:
         """
         dataset[Menums.INRANGE.value] = 0
         dataset.loc[
-            (dataset[Menums.RECALL.value] >= 0.94) &
-            (dataset[Menums.RECALL.value] <= 0.96),
+            (dataset[Menums.RECALL.value] >= self.RECALL_LOWER_VALUE) &
+            (dataset[Menums.RECALL.value] <= self.RECALL_UPPER_VALUE),
             Menums.INRANGE.value
         ] = 1
         dataset.sort_values(

@@ -181,7 +181,7 @@ class Module(metaclass=ABCMeta):
                 skiprows=skiprows
             ),
             [
-                VCFEnums.VCF_CHROM.value,
+                VCFEnums.CHROM.vcf_name,
                 VCFEnums.POS.value,
                 VCFEnums.REF.value,
                 VCFEnums.ALT.value,
@@ -222,12 +222,27 @@ class VCFEnums(Enum):
     Enums to use for all modules.
     """
     ID_SEPARATOR = '!'
-    VCF_CHROM = '#CHROM'
+    CHROM = ('CHROM', '#CHROM', 'chr')
     POS = 'POS'
     ID = 'ID'
     REF = 'REF'
     ALT = 'ALT'
     INFO = 'INFO'
+
+    def __init__(self, processed_name, vcf_name=None, shortened_name=None):
+        """
+        Set up specifically this way as only Chrom has a truly unique VCF notation, all others
+        remain the same even if processed. By default, vcf_name is set to None to prevent having to
+        define tuples for each and every Enum in this class.
+        """
+        self.processed_name = processed_name
+        self.vcf_name = vcf_name
+        self.shortened_name = shortened_name
+        if self.vcf_name is None:
+            self.vcf_name = processed_name
+        if self.shortened_name is None:
+            self.shortened_name = processed_name
+        self.lower = processed_name.lower()
 
 
 class DatasetIdentifierEnums(Enum):
@@ -237,7 +252,6 @@ class DatasetIdentifierEnums(Enum):
 
 
 class ColumnEnums(Enum):
-    CHROM = 'CHROM'
     SYMBOL = 'SYMBOL'
     SAMPLE_WEIGHT = 'sample_weight'
     BINARIZED_LABEL = 'binarized_label'
