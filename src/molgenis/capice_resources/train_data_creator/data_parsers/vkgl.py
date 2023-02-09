@@ -3,7 +3,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import VCFEnums
 from molgenis.capice_resources.utilities import add_dataset_source
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
     apply_binarized_label
 
@@ -26,8 +26,8 @@ class VKGLParser:
         self._correct_support(vkgl_frame)
         correct_order_vcf_notation(vkgl_frame)
         self._apply_review_status(vkgl_frame)
-        add_dataset_source(vkgl_frame, Menums.VKGL.value)  # type: ignore
-        vkgl_frame_interest = vkgl_frame.loc[:, Menums.columns_of_interest()]
+        add_dataset_source(vkgl_frame, TrainDataCreatorEnums.VKGL.value)  # type: ignore
+        vkgl_frame_interest = vkgl_frame.loc[:, TrainDataCreatorEnums.columns_of_interest()]
         del vkgl_frame  # freeing up memory
         apply_binarized_label(vkgl_frame_interest)
         return vkgl_frame_interest
@@ -45,11 +45,11 @@ class VKGLParser:
         """
         vkgl_frame.rename(  # type: ignore
             columns={
-                Menums.CHROMOSOME.value: VCFEnums.CHROM.vcf_name,
-                Menums.START.value: VCFEnums.POS.value,
+                TrainDataCreatorEnums.CHROMOSOME.value: VCFEnums.CHROM.vcf_name,
+                TrainDataCreatorEnums.START.value: VCFEnums.POS.value,
                 VCFEnums.REF.lower: VCFEnums.REF.value,
                 VCFEnums.ALT.lower: VCFEnums.ALT.value,
-                Menums.CLASSIFICATION.value: Menums.CLASS.value
+                TrainDataCreatorEnums.CLASSIFICATION.value: TrainDataCreatorEnums.CLASS.value
             }, inplace=True
         )
 
@@ -64,8 +64,8 @@ class VKGLParser:
                 Performed inplace.
 
         """
-        vkgl_frame[Menums.SUPPORT.value] = vkgl_frame[
-            Menums.SUPPORT.value
+        vkgl_frame[TrainDataCreatorEnums.SUPPORT.value] = vkgl_frame[
+            TrainDataCreatorEnums.SUPPORT.value
         ].str.split(' ', expand=True)[0].astype(np.int64)
 
     @staticmethod
@@ -81,8 +81,8 @@ class VKGLParser:
                 Performed inaplace.
 
         """
-        vkgl_frame[Menums.REVIEW.value] = 2
+        vkgl_frame[TrainDataCreatorEnums.REVIEW.value] = 2
         vkgl_frame.loc[
-            vkgl_frame[vkgl_frame[Menums.SUPPORT.value] == 1].index,
-            Menums.REVIEW.value
+            vkgl_frame[vkgl_frame[TrainDataCreatorEnums.SUPPORT.value] == 1].index,
+            TrainDataCreatorEnums.REVIEW.value
         ] = 1

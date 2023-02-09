@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 from molgenis.capice_resources.core import Module, TSVFileEnums, ColumnEnums, DatasetIdentifierEnums
-from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
+from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 from molgenis.capice_resources.threshold_calculator.calculator import Calculator
 from molgenis.capice_resources.threshold_calculator.plotter import ThresholdPlotter
 
@@ -79,22 +79,22 @@ class ThresholdCalculator(Module):
         figure = plotter.plot_threshold(merge)
         return {
             DatasetIdentifierEnums.OUTPUT.value: arguments['output'],
-            Menums.THRESHOLDS.value: thresholds,
-            Menums.FIGURE.value: figure
+            ThresholdEnums.THRESHOLDS.value: thresholds,
+            ThresholdEnums.FIGURE.value: figure
         }
 
     def export(self, output):
         self.exporter.export_pandas_file(
             os.path.join(  # type: ignore
                 output[DatasetIdentifierEnums.OUTPUT.value],
-                Menums.THRESHOLDS.value + '.tsv.gz'
+                ThresholdEnums.THRESHOLDS.value + '.tsv.gz'
             ),
-            output[Menums.THRESHOLDS.value]
+            output[ThresholdEnums.THRESHOLDS.value]
         )
-        output[Menums.FIGURE.value].savefig(  # type: ignore
+        output[ThresholdEnums.FIGURE.value].savefig(  # type: ignore
             os.path.join(  # type: ignore
                 output[DatasetIdentifierEnums.OUTPUT.value],
-                Menums.THRESHOLDS.value + '.png'
+                ThresholdEnums.THRESHOLDS.value + '.png'
             )
         )
 

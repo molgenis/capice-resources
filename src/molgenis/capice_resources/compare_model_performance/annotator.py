@@ -1,8 +1,7 @@
 import pandas as pd
 
 from molgenis.capice_resources.core import ColumnEnums
-from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menums
+from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums
 
 
 class Annotator:
@@ -18,7 +17,7 @@ class Annotator:
                 Is performed inplace.
 
         """
-        merged_model_frame[Menums.SCORE_DIFF.value] = abs(
+        merged_model_frame[CompareModelPerformanceEnums.SCORE_DIFF.value] = abs(
             merged_model_frame[
                 ColumnEnums.SCORE.value
             ] - merged_model_frame[

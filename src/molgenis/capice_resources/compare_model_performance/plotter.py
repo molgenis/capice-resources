@@ -9,12 +9,11 @@ from matplotlib import patches as mpatches
 
 
 from molgenis.capice_resources.core import ColumnEnums, PlottingEnums, AlleleFrequencyEnums
-from molgenis.capice_resources.compare_model_performance import CMPPlottingEnums as Penums
+from molgenis.capice_resources.compare_model_performance import CMPPlottingEnums
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 from molgenis.capice_resources.compare_model_performance.performance_calculator import \
     PerformanceCalculator
-from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menums
+from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums
 
 
 class Plotter:
@@ -232,9 +231,9 @@ class Plotter:
         print('Plotting global ROC, AUC, AF Bins, Score distributions and Score differences.')
         self._plot_roc_auc_afbins(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples)
         self._plot_score_dist(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
-                              Penums.GLOBAL.value)
+                              CMPPlottingEnums.GLOBAL.value)
         self._plot_score_diff(merged_model_1_data, m1_samples, merged_model_2_data, m2_samples,
-                              Penums.GLOBAL.value)
+                              CMPPlottingEnums.GLOBAL.value)
         print('Plotting globally done.\n')
         if self.process_consequences:
             print('Plotting per consequence.')
@@ -243,13 +242,13 @@ class Plotter:
             print('Plotting per consequence done.\n')
 
         return {
-            Penums.FIG_ROC.value: self.fig_roc,
-            Penums.FIG_AUC.value: self.fig_auc,
-            Penums.FIG_AF.value: self.fig_afb,
-            Penums.FIG_B_DIST.value: self.fig_score_dist_box,
-            Penums.FIG_V_DIST.value: self.fig_score_dist_vio,
-            Penums.FIG_B_DIFF.value: self.fig_score_diff_box,
-            Penums.FIG_V_DIFF.value: self.fig_score_diff_vio
+            CMPPlottingEnums.FIG_ROC.value: self.fig_roc,
+            CMPPlottingEnums.FIG_AUC.value: self.fig_auc,
+            CMPPlottingEnums.FIG_AF.value: self.fig_afb,
+            CMPPlottingEnums.FIG_B_DIST.value: self.fig_score_dist_box,
+            CMPPlottingEnums.FIG_V_DIST.value: self.fig_score_dist_vio,
+            CMPPlottingEnums.FIG_B_DIFF.value: self.fig_score_diff_box,
+            CMPPlottingEnums.FIG_V_DIFF.value: self.fig_score_diff_vio
         }
 
     def _plot_roc_auc_afbins(
@@ -277,7 +276,7 @@ class Plotter:
         fpr_m1, tpr_m1, auc_m1 = self.calculator.calculate_roc(model_1_data)
         fpr_m2, tpr_m2, auc_m2 = self.calculator.calculate_roc(model_2_data)
         self._plot_roc(fpr_m1, tpr_m1, auc_m1, fpr_m2, tpr_m2, auc_m2)
-        self._plot_auc(auc_m1, model_1_size, auc_m2, model_2_size, Penums.GLOBAL.value)
+        self._plot_auc(auc_m1, model_1_size, auc_m2, model_2_size, CMPPlottingEnums.GLOBAL.value)
         self._plot_af_bins(model_1_data, model_2_data)
 
     def _plot_consequences(
@@ -576,7 +575,7 @@ class Plotter:
         ax_afb.set_ylabel('AUC')
         ax_afb.set_ylim(0.0, 1.0)
         ax_afb.set_xlim(-0.5, len(bins) - 0.5)
-        ax_afb.legend(loc=Penums.LOC.value, bbox_to_anchor=(1.0, 1.01), labelspacing=2)
+        ax_afb.legend(loc=CMPPlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.01), labelspacing=2)
 
     @staticmethod
     def _create_auc_label(
@@ -648,7 +647,7 @@ class Plotter:
         ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
         ax_auc.set_xlim(0.0, 3.0)
         ax_auc.set_ylim(0.0, 1.0)
-        ax_auc.legend(loc=Penums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
+        ax_auc.legend(loc=CMPPlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
     def _plot_score_dist(
             self,
@@ -719,7 +718,7 @@ class Plotter:
         """
         self._create_boxplot_for_column(
             self.fig_score_diff_box,
-            Menums.SCORE_DIFF.value,
+            CompareModelPerformanceEnums.SCORE_DIFF.value,
             model_1_data,
             model_1_size,
             model_2_data,
@@ -728,7 +727,7 @@ class Plotter:
         )
         self._create_violinplot_for_column(
             self.fig_score_diff_vio,
-            Menums.SCORE_DIFF.value,
+            CompareModelPerformanceEnums.SCORE_DIFF.value,
             model_1_data,
             model_1_size,
             model_2_data,
@@ -837,7 +836,7 @@ class Plotter:
         ax.set_ylim(0.0, 1.0)
         ax.set_title(title)
         ax.legend(
-            loc=Penums.LOC.value,
+            loc=CMPPlottingEnums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             handlelength=0
         )
@@ -882,7 +881,10 @@ class Plotter:
             ax=ax,
             split=True,
             bw=0.1,
-            palette={Menums.MODEL_1.value: 'red', Menums.MODEL_2.value: 'blue'},
+            palette={
+                CompareModelPerformanceEnums.MODEL_1.value: 'red',
+                CompareModelPerformanceEnums.MODEL_2.value: 'blue'
+            },
             legend=False
         )
         labels = self._create_boxplot_label(
@@ -898,7 +900,7 @@ class Plotter:
         ax.set_title(title)
         ax.legend(
             handles=[red_patch, blue_patch],
-            loc=Penums.LOC.value,
+            loc=CMPPlottingEnums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             labelspacing=2
         )

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnums as Menums
+from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnums
 
 
 class Normalizer:
@@ -20,4 +20,8 @@ class Normalizer:
         column_index = dataframe.columns.get_loc(column_name)
         normalized_values = (dataframe[column_name] - dataframe[column_name].mean()) / dataframe[
             column_name].std()
-        dataframe.insert(column_index + 1, column_name + Menums.NORMALIZED.value, normalized_values)
+        dataframe.insert(
+            column_index + 1,
+            column_name + CompareModelFeaturesEnums.NORMALIZED.value,
+            normalized_values
+        )

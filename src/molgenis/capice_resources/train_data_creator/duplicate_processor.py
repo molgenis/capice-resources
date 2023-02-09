@@ -1,6 +1,6 @@
 import pandas as pd
 
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
 class DuplicateProcessor:
@@ -16,4 +16,7 @@ class DuplicateProcessor:
 
         """
         print('Dropping duplicates.')
-        merged_frame.drop_duplicates(subset=Menums.further_processing_columns(), inplace=True)
+        merged_frame.drop_duplicates(
+            subset=TrainDataCreatorEnums.further_processing_columns(),
+            inplace=True
+        )

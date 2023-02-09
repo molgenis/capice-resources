@@ -4,11 +4,13 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
+import pandas.testing
 
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.train_data_creator.__main__ import TrainDataCreator
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
+from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation
 
 
 class TestTrainDataCreator(unittest.TestCase):
@@ -109,6 +111,13 @@ class TestTrainDataCreator(unittest.TestCase):
             tt.shape[0],
             99
         )
+        # Testing if output is ordered
+        tt_output = tt.copy(deep=True)
+        # Works if train_data_creator.test_utilities.TestUtilities.test_correct_order_vcf_notation
+        # passes
+        correct_order_vcf_notation(tt)
+        pandas.testing.assert_frame_equal(tt, tt_output)
+
         val = pd.read_csv(  # type: ignore
             filepath_validation,
             sep='\t',
@@ -123,6 +132,10 @@ class TestTrainDataCreator(unittest.TestCase):
             tt.shape[0],
             val.shape[0]
         )
+
+        val_output = val.copy(deep=True)
+        correct_order_vcf_notation(val)
+        pandas.testing.assert_frame_equal(val, val_output)
 
 
 if __name__ == '__main__':

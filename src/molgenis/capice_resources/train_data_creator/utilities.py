@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import VCFEnums, ColumnEnums
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
 def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
@@ -38,11 +38,11 @@ def apply_binarized_label(data: pd.DataFrame) -> None:
     print('Applying binarized label.')
     data[ColumnEnums.BINARIZED_LABEL.value] = np.nan
     data.loc[
-        data[data[Menums.CLASS.value].isin(['LB', 'B'])].index,
+        data[data[TrainDataCreatorEnums.CLASS.value].isin(['LB', 'B'])].index,
         ColumnEnums.BINARIZED_LABEL.value
     ] = 0
     data.loc[
-        data[data[Menums.CLASS.value].isin(['LP', 'P'])].index,
+        data[data[TrainDataCreatorEnums.CLASS.value].isin(['LP', 'P'])].index,
         ColumnEnums.BINARIZED_LABEL.value
     ] = 1
     data.drop(index=data[data[ColumnEnums.BINARIZED_LABEL.value].isnull()].index, inplace=True)

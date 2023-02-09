@@ -4,7 +4,7 @@ from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifi
 from molgenis.capice_resources.compare_model_features.ranker import Ranker
 from molgenis.capice_resources.compare_model_features.orderer import Orderer
 from molgenis.capice_resources.compare_model_features.normalizer import Normalizer
-from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnums as Menums
+from molgenis.capice_resources.compare_model_features import CompareModelFeaturesEnums
 
 
 class CompareModelFeatures(Module):
@@ -86,24 +86,24 @@ class CompareModelFeatures(Module):
         explain_1 = self._read_pandas_tsv(
             arguments['explain_1'],
             [  # type:ignore
-                Menums.FEATURE.value,
-                Menums.GAIN.value,
-                Menums.TOTAL_GAIN.value,
-                Menums.COVER.value,
-                Menums.TOTAL_COVER.value,
-                Menums.WEIGHT.value
+                CompareModelFeaturesEnums.FEATURE.value,
+                CompareModelFeaturesEnums.GAIN.value,
+                CompareModelFeaturesEnums.TOTAL_GAIN.value,
+                CompareModelFeaturesEnums.COVER.value,
+                CompareModelFeaturesEnums.TOTAL_COVER.value,
+                CompareModelFeaturesEnums.WEIGHT.value
             ]
         )
         self._process_explain(explain_1)
         explain_2 = self._read_pandas_tsv(
             arguments['explain_2'],
             [  # type:ignore
-                Menums.FEATURE.value,
-                Menums.GAIN.value,
-                Menums.TOTAL_GAIN.value,
-                Menums.COVER.value,
-                Menums.TOTAL_COVER.value,
-                Menums.WEIGHT.value
+                CompareModelFeaturesEnums.FEATURE.value,
+                CompareModelFeaturesEnums.GAIN.value,
+                CompareModelFeaturesEnums.TOTAL_GAIN.value,
+                CompareModelFeaturesEnums.COVER.value,
+                CompareModelFeaturesEnums.TOTAL_COVER.value,
+                CompareModelFeaturesEnums.WEIGHT.value
             ]
         )
         self._process_explain(explain_2)
@@ -123,9 +123,12 @@ class CompareModelFeatures(Module):
 
         """
         normalizer = Normalizer()
-        normalizer.normalize_column(explain, Menums.GAIN.value)  # type:ignore
+        normalizer.normalize_column(explain, CompareModelFeaturesEnums.GAIN.value)  # type:ignore
         ranker = Ranker()
-        ranker.add_rank(explain, Menums.GAIN.value + Menums.NORMALIZED.value)
+        ranker.add_rank(
+            explain,
+            CompareModelFeaturesEnums.GAIN.value + CompareModelFeaturesEnums.NORMALIZED.value
+        )
 
     @staticmethod
     def _merge_explains(explain1: pd.DataFrame, explain2: pd.DataFrame) -> pd.DataFrame:
@@ -143,7 +146,7 @@ class CompareModelFeatures(Module):
             explain1,
             explain2,
             how='outer',
-            on=Menums.FEATURE.value,  # type:ignore
+            on=CompareModelFeaturesEnums.FEATURE.value,  # type:ignore
             suffixes=('_model1', '_model2')
         )
 

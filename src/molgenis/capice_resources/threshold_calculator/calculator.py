@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import recall_score, precision_score, f1_score
 
 from molgenis.capice_resources.core import ColumnEnums
-from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
+from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 
 
 class Calculator:
@@ -38,19 +38,19 @@ class Calculator:
             i = round(i, 2)
             dataset.loc[
                 dataset[ColumnEnums.SCORE.value] >= i,
-                Menums.CALCULATED_THRESHOLD.value
+                ThresholdEnums.CALCULATED_THRESHOLD.value
             ] = 1
             recall = recall_score(
                 y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
-                y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
+                y_pred=dataset[ThresholdEnums.CALCULATED_THRESHOLD.value]
             )
             precision = precision_score(
                 y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
-                y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
+                y_pred=dataset[ThresholdEnums.CALCULATED_THRESHOLD.value]
             )
             f1 = f1_score(
                 y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
-                y_pred=dataset[Menums.CALCULATED_THRESHOLD.value]
+                y_pred=dataset[ThresholdEnums.CALCULATED_THRESHOLD.value]
             )
             threshold_store.append(i)
             recall_store.append(recall)
@@ -59,10 +59,10 @@ class Calculator:
             self._reset_threshold(dataset)
         out = pd.DataFrame(
             {
-                Menums.THRESHOLD.value: threshold_store,
-                Menums.RECALL.value: recall_store,
-                Menums.PRECISION.value: precision_store,
-                Menums.F1.value: f1_store
+                ThresholdEnums.THRESHOLD.value: threshold_store,
+                ThresholdEnums.RECALL.value: recall_store,
+                ThresholdEnums.PRECISION.value: precision_store,
+                ThresholdEnums.F1.value: f1_store
             }
         )
         self._sort_thresholds(out)
@@ -82,18 +82,18 @@ class Calculator:
                 Please note that sorting is performed inplace.
 
         """
-        dataset[Menums.INRANGE.value] = 0
+        dataset[ThresholdEnums.INRANGE.value] = 0
         dataset.loc[
-            (dataset[Menums.RECALL.value] >= self.RECALL_LOWER_VALUE) &
-            (dataset[Menums.RECALL.value] <= self.RECALL_UPPER_VALUE),
-            Menums.INRANGE.value
+            (dataset[ThresholdEnums.RECALL.value] >= self.RECALL_LOWER_VALUE) &
+            (dataset[ThresholdEnums.RECALL.value] <= self.RECALL_UPPER_VALUE),
+            ThresholdEnums.INRANGE.value
         ] = 1
         dataset.sort_values(
             by=[
-                Menums.INRANGE.value,
-                Menums.RECALL.value
+                ThresholdEnums.INRANGE.value,
+                ThresholdEnums.RECALL.value
             ], ascending=False, inplace=True)
-        dataset.drop(columns=[Menums.INRANGE.value], inplace=True)
+        dataset.drop(columns=[ThresholdEnums.INRANGE.value], inplace=True)
 
     @staticmethod
     def _reset_threshold(dataset: pd.DataFrame) -> None:
@@ -106,4 +106,4 @@ class Calculator:
                 Please note that this method is performed inplace.
 
         """
-        dataset[Menums.CALCULATED_THRESHOLD.value] = 0
+        dataset[ThresholdEnums.CALCULATED_THRESHOLD.value] = 0

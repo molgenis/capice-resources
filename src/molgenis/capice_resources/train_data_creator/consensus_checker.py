@@ -3,7 +3,7 @@ import warnings
 import pandas as pd
 
 from molgenis.capice_resources.core import ColumnEnums
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
 class ConsensusChecker:
@@ -20,13 +20,15 @@ class ConsensusChecker:
         before_drop = merged_frame.shape[0]
         vkgl_subset = merged_frame.loc[
             merged_frame[
-                merged_frame[ColumnEnums.DATASET_SOURCE.value] == Menums.VKGL.value
+                merged_frame[ColumnEnums.DATASET_SOURCE.value] == TrainDataCreatorEnums.VKGL.value
                 ].index,
             :
         ]
         clinvar_subset = merged_frame.loc[
             merged_frame[
-                merged_frame[ColumnEnums.DATASET_SOURCE.value] == Menums.CLINVAR.value
+                merged_frame[
+                    ColumnEnums.DATASET_SOURCE.value
+                ] == TrainDataCreatorEnums.CLINVAR.value
                 ].index,
             :
         ]
@@ -54,7 +56,7 @@ class ConsensusChecker:
         """
         indices = merged_frame.merge(
             subset_frame,
-            on=Menums.further_processing_columns(),
+            on=TrainDataCreatorEnums.further_processing_columns(),
             suffixes=('_og', '_del'),
             how='left'
         )

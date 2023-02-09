@@ -8,7 +8,7 @@ from molgenis.capice_resources.core import Module, TSVFileEnums, ColumnEnums, \
 from molgenis.capice_resources.utilities import merge_dataset_rows, add_dataset_source
 from molgenis.capice_resources.process_vep.vep_processer import VEPProcesser
 from molgenis.capice_resources.process_vep.progress_printer import ProgressPrinter
-from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums
+from molgenis.capice_resources.process_vep import ProcessVEPEnums
 from molgenis.capice_resources.process_vep import CGDColumnEnums
 
 
@@ -104,15 +104,9 @@ class ProcessVEP(Module):
 
     def run_module(self, arguments):
         train_test = self._read_vep_data(arguments['train_test'])
-        validation_present = self._is_validation_present(arguments['validation'])
-        output = arguments['output']
         add_dataset_source(train_test, DatasetIdentifierEnums.TRAIN_TEST.value)
-        if validation_present:
-            validation = self._read_vep_data(arguments['validation'])
-            add_dataset_source(validation, DatasetIdentifierEnums.VALIDATION.value)
-            merged_datasets = merge_dataset_rows(train_test, validation)
-        else:
-            merged_datasets = train_test.copy(deep=True)
+        output = arguments['output']
+        merged_datasets = self.merge_datasets(train_test, arguments['validation'])
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
         build38 = arguments['assembly']
@@ -122,30 +116,42 @@ class ProcessVEP(Module):
             cgd,
             build38
         )
-        train_test, validation = self._split_data(merged_datasets, validation_present)
+        train_test, validation = self._split_data(merged_datasets)
         return {
             DatasetIdentifierEnums.TRAIN_TEST.value: train_test,
             DatasetIdentifierEnums.VALIDATION.value: validation,
             DatasetIdentifierEnums.OUTPUT.value: output
         }
 
-    @staticmethod
-    def _is_validation_present(validation_cli_argument: str | None) -> bool:
+    def merge_datasets(
+            self,
+            train_test: pd.DataFrame,
+            validation: os.PathLike[str] | None = None
+    ) -> pd.DataFrame:
         """
-        Function to check if the user supplied a validation dataset or just the train-test.
+        Function to obtain the train_test dataframe and the CLI validation argument to create
+        the merged dataset. Checks if validation is None, and if False,
+        reads in the validation dataset, adds the source identifier and merges with train-test.
+        If True, just returns the train_test as "merged".
 
         Args:
-            validation_cli_argument:
-                The CLI argument of "validation".
+            train_test:
+                pandas.DataFrame object of the train-test dataset.
+            validation:
+                Optional pathlike object of the validation cli argument.
 
         Returns:
-            bool:
-                True if the CLI of validation is supplied, else False.
+            dataframe:
+                Merged dataframe between train_test and validation (if validation is not None,
+                if validation is None just returns train_test).
+                Does set the dataset identifier for validation.
         """
-        if validation_cli_argument is None:
-            return False
-        else:
-            return True
+        merged_dataset = train_test
+        if validation is not None:
+            validation = self._read_vep_data(validation)
+            add_dataset_source(validation, DatasetIdentifierEnums.VALIDATION.value)
+            merged_dataset = merge_dataset_rows(train_test, validation)
+        return merged_dataset
 
     @staticmethod
     def _read_train_features(train_features_argument: os.PathLike[str]) -> list[str]:
@@ -176,7 +182,7 @@ class ProcessVEP(Module):
                 Loaded in pandas.DataFrame of the specified vep_file_argument, checked for the
                 presence of the GnomAD homozygosity counts column.
         """
-        return self._read_pandas_tsv(vep_file_argument, [Menums.GNOMAD_HN.value])
+        return self._read_pandas_tsv(vep_file_argument, [ProcessVEPEnums.GNOMAD_HN.value])
 
     def _read_cgd_data(self, cgd_file_argument: os.PathLike[str]) -> list[str]:
         """
@@ -293,22 +299,20 @@ class ProcessVEP(Module):
 
     @staticmethod
     def _split_data(
-            merged_data: pd.DataFrame,
-            validation_present: bool = True
+            merged_data: pd.DataFrame
     ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         """
         Method to split the merged train-test and validation back to the 2 separate datasets.
+        Self checks if validation is present within the dataset or not.
 
         Args:
             merged_data:
-                Merged pandas.DataFrame between train-test and validation.
-            validation_present:
-                Boolean argument to tell _split_data that validation is supplied in the CLI or not.
+                Merged pandas.DataFrame between train-test and (optionally) validation.
 
         Returns:
             tuple:
                 Tuple containing [0] the train-test dataframe and [1] the validation dataframe (
-                if validation_present is True, else None).
+                if validation is present in merged_data, else None).
         """
         train_test = merged_data.loc[
             merged_data[
@@ -318,7 +322,11 @@ class ProcessVEP(Module):
         ]
         train_test.reset_index(drop=True, inplace=True)
         train_test.drop(columns=ColumnEnums.DATASET_SOURCE.value, inplace=True)
-        if validation_present:
+        if (
+                DatasetIdentifierEnums.VALIDATION.value
+                in
+                merged_data[ColumnEnums.DATASET_SOURCE.value].values
+        ):
             validation = merged_data.loc[
                 merged_data[
                     merged_data[

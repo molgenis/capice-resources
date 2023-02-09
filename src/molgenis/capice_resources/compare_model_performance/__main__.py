@@ -9,8 +9,7 @@ from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifi
 from molgenis.capice_resources.core.errors import SampleSizeMismatchError
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
 from molgenis.capice_resources.compare_model_performance.annotator import Annotator
-from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums as \
-    Menums
+from molgenis.capice_resources.compare_model_performance import CompareModelPerformanceEnums
 from molgenis.capice_resources.compare_model_performance.consequence_tools import ConsequenceTools
 
 
@@ -162,8 +161,8 @@ class CompareModelPerformance(Module):
         annotator.add_and_process_impute_af(model_1)
         annotator.add_and_process_impute_af(model_2)
 
-        add_dataset_source(model_1, Menums.MODEL_1.value)
-        add_dataset_source(model_2, Menums.MODEL_2.value)
+        add_dataset_source(model_1, CompareModelPerformanceEnums.MODEL_1.value)
+        add_dataset_source(model_2, CompareModelPerformanceEnums.MODEL_2.value)
 
         plotter = Plotter(
             consequences,
@@ -320,7 +319,7 @@ class CompareModelPerformance(Module):
             VCFEnums.POS.lower,
             VCFEnums.REF.lower,
             VCFEnums.ALT.lower,
-            Menums.GENE_NAME.value
+            CompareModelPerformanceEnums.GENE_NAME.value
         ]
         self.data_validator.validate_pandas_dataframe(
             scores,
@@ -337,11 +336,24 @@ class CompareModelPerformance(Module):
             labels,
             labels_merge_columns
         )
-        scores[Menums.MERGE_COLUMN.value] = scores[scores_merge_columns].astype(
-            str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
-        labels[Menums.MERGE_COLUMN.value] = labels[labels_merge_columns].astype(
-            str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
-        return scores.merge(labels, on=Menums.MERGE_COLUMN.value, how='left')  # type: ignore
+
+        scores[
+            CompareModelPerformanceEnums.MERGE_COLUMN.value
+        ] = scores[scores_merge_columns].astype(str).agg(
+            VCFEnums.ID_SEPARATOR.value.join, axis=1
+        )
+
+        labels[
+            CompareModelPerformanceEnums.MERGE_COLUMN.value
+        ] = labels[labels_merge_columns].astype(str).agg(
+            VCFEnums.ID_SEPARATOR.value.join, axis=1
+        )
+
+        return scores.merge(
+            labels,
+            on=CompareModelPerformanceEnums.MERGE_COLUMN.value,
+            how='left'
+        )  # type: ignore
 
     def export(self, output) -> None:
         output_path = output[DatasetIdentifierEnums.OUTPUT.value]

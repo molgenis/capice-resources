@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from molgenis.capice_resources.core import ColumnEnums, VCFEnums
-from molgenis.capice_resources.process_vep import ProcessVEPEnums as Menums
+from molgenis.capice_resources.process_vep import ProcessVEPEnums
 
 
 class VEPProcesser:
@@ -92,8 +92,8 @@ class VEPProcesser:
         print('Dropping heterozygous variants in AR genes.')
         data.drop(
             data[
-                (data[Menums.GNOMAD_HN.value].notnull()) &
-                (data[Menums.GNOMAD_HN.value] == 0) &
+                (data[ProcessVEPEnums.GNOMAD_HN.value].notnull()) &
+                (data[ProcessVEPEnums.GNOMAD_HN.value] == 0) &
                 (data[ColumnEnums.SYMBOL.value].isin(cgd))
                 ].index, inplace=True
         )
@@ -121,7 +121,7 @@ class VEPProcesser:
         )
         data.drop(
             index=data[~data[ColumnEnums.SAMPLE_WEIGHT.value].isin(
-                Menums.SAMPLE_WEIGHTS.value)].index,
+                ProcessVEPEnums.SAMPLE_WEIGHTS.value)].index,
             inplace=True
         )
 

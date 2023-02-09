@@ -5,7 +5,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import VCFEnums
 from molgenis.capice_resources.utilities import add_dataset_source
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.utilities import apply_binarized_label
 
 
@@ -26,8 +26,8 @@ class ClinVarParser:
         self._obtain_class(clinvar_frame)
         self._obtain_gene(clinvar_frame)
         self._obtain_review(clinvar_frame)
-        add_dataset_source(clinvar_frame, Menums.CLINVAR.value)  # type: ignore
-        clinvar_frame_interest = clinvar_frame.loc[:, Menums.columns_of_interest()]
+        add_dataset_source(clinvar_frame, TrainDataCreatorEnums.CLINVAR.value)  # type: ignore
+        clinvar_frame_interest = clinvar_frame.loc[:, TrainDataCreatorEnums.columns_of_interest()]
         del clinvar_frame  # freeing up memory
         self._correct_class(clinvar_frame_interest)
         apply_binarized_label(clinvar_frame_interest)
@@ -42,7 +42,7 @@ class ClinVarParser:
                 The clinvar dataframe.
                 Performed inplace.
         """
-        self._process_column(clinvar_frame, Menums.CLASS.value, 'CLNSIG=')
+        self._process_column(clinvar_frame, TrainDataCreatorEnums.CLASS.value, 'CLNSIG=')
 
     def _obtain_gene(self, clinvar_frame: pd.DataFrame) -> None:
         """
@@ -53,7 +53,7 @@ class ClinVarParser:
                 The clinvar dataframe.
                 Performed inplace.
         """
-        self._process_column(clinvar_frame, Menums.GENE.value, 'GENEINFO=')
+        self._process_column(clinvar_frame, TrainDataCreatorEnums.GENE.value, 'GENEINFO=')
 
     def _obtain_review(self, clinvar_frame: pd.DataFrame) -> None:
         """
@@ -65,7 +65,7 @@ class ClinVarParser:
                 The clinvar dataframe.
                 Performed inplace.
         """
-        self._process_column(clinvar_frame, Menums.REVIEW.value, 'CLNREVSTAT=')
+        self._process_column(clinvar_frame, TrainDataCreatorEnums.REVIEW.value, 'CLNREVSTAT=')
         stars = {
             'criteria_provided,_conflicting_interpretations': -1,
             'no_assertion_provided': 0,
@@ -76,22 +76,22 @@ class ClinVarParser:
             'reviewed_by_expert_panel': 3,
             'practice_guideline': 4
         }
-        for status in clinvar_frame[Menums.REVIEW.value].unique():
+        for status in clinvar_frame[TrainDataCreatorEnums.REVIEW.value].unique():
             if status not in stars.keys():
                 warnings.warn(f'Found unknown review status: {status}')
 
         clinvar_frame.drop(
             index=clinvar_frame[
-                ~clinvar_frame[Menums.REVIEW.value].isin(stars.keys())
+                ~clinvar_frame[TrainDataCreatorEnums.REVIEW.value].isin(stars.keys())
             ].index, inplace=True
         )
 
-        clinvar_frame[Menums.REVIEW.value] = clinvar_frame[
-            Menums.REVIEW.value].map(stars)
-        clinvar_frame[Menums.REVIEW.value] = clinvar_frame[
-            Menums.REVIEW.value].astype(np.int64)
+        clinvar_frame[TrainDataCreatorEnums.REVIEW.value] = clinvar_frame[
+            TrainDataCreatorEnums.REVIEW.value].map(stars)
+        clinvar_frame[TrainDataCreatorEnums.REVIEW.value] = clinvar_frame[
+            TrainDataCreatorEnums.REVIEW.value].astype(np.int64)
         clinvar_frame.drop(
-            index=clinvar_frame[clinvar_frame[Menums.REVIEW.value] < 1].index,
+            index=clinvar_frame[clinvar_frame[TrainDataCreatorEnums.REVIEW.value] < 1].index,
             inplace=True
         )
 
@@ -136,16 +136,16 @@ class ClinVarParser:
                 'Benign/Likely_benign': 'LB',
                 'Pathogenic/Likely_pathogenic': 'LP'
             }
-        for c in clinvar_frame[Menums.CLASS.value].unique():
+        for c in clinvar_frame[TrainDataCreatorEnums.CLASS.value].unique():
             if c not in classes.keys():
                 clinvar_frame.drop(
                     index=clinvar_frame[
-                        clinvar_frame[Menums.CLASS.value] == c
+                        clinvar_frame[TrainDataCreatorEnums.CLASS.value] == c
                         ].index,
                     inplace=True
                 )
         for key, value in classes.items():
             clinvar_frame.loc[
-                clinvar_frame[clinvar_frame[Menums.CLASS.value] == key].index,
-                Menums.CLASS.value
+                clinvar_frame[clinvar_frame[TrainDataCreatorEnums.CLASS.value] == key].index,
+                TrainDataCreatorEnums.CLASS.value
             ] = value

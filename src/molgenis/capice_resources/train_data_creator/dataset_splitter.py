@@ -67,6 +67,5 @@ class SplitDatasets:
 
         correct_order_vcf_notation(train_test)
         correct_order_vcf_notation(validation)
-        # TODO: write test to ensure proper order
 
         return train_test, validation

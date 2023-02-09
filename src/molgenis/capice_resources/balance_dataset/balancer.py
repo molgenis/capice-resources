@@ -2,7 +2,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import ColumnEnums, AlleleFrequencyEnums
 from molgenis.capice_resources.utilities import split_consequences
-from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
+from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums
 from molgenis.capice_resources.balance_dataset.verbosity_printer import VerbosityPrinter
 
 
@@ -134,7 +134,7 @@ class Balancer:
                 f'Sampled total for consequence: {consequence}\n'
                 f'{counts}'
             )
-            processed_consequence[Menums.BALANCED_ON.value] = consequence
+            processed_consequence[BalanceDatasetEnums.BALANCED_ON.value] = consequence
             return_dataset = pd.concat(
                 [
                     return_dataset,

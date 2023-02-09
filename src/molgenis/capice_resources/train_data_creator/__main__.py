@@ -12,7 +12,7 @@ from molgenis.capice_resources.train_data_creator.filter import SVFilter
 from molgenis.capice_resources.train_data_creator.data_parsers.vkgl import VKGLParser
 from molgenis.capice_resources.train_data_creator.sample_weighter import SampleWeighter
 from molgenis.capice_resources.train_data_creator.dataset_splitter import SplitDatasets
-from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums as Menums
+from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.data_parsers.clinvar import ClinVarParser
 from molgenis.capice_resources.train_data_creator.consensus_checker import ConsensusChecker
 from molgenis.capice_resources.train_data_creator.duplicate_processor import DuplicateProcessor
@@ -73,10 +73,10 @@ class TrainDataCreator(Module):
         vkgl = self._read_pandas_tsv(
             arguments['input_vkgl'],
             [  # type: ignore
-                Menums.CHROMOSOME.value,
-                Menums.START.value,
-                Menums.SUPPORT.value,
-                Menums.CLASSIFICATION.value
+                TrainDataCreatorEnums.CHROMOSOME.value,
+                TrainDataCreatorEnums.START.value,
+                TrainDataCreatorEnums.SUPPORT.value,
+                TrainDataCreatorEnums.CLASSIFICATION.value
             ]
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
@@ -131,7 +131,7 @@ class TrainDataCreator(Module):
 
             frame[VCFEnums.ID.value] = frame[
                 [
-                    *Menums.further_processing_columns(),
+                    *TrainDataCreatorEnums.further_processing_columns(),
                     ColumnEnums.BINARIZED_LABEL.value,
                     ColumnEnums.SAMPLE_WEIGHT.value
                 ]
