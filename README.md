@@ -24,7 +24,11 @@ To test the individual modules, change directory to the specific module and run 
 
 ### balance_dataset
 
-balance_dataset is a module dedicated to balancing out a CAPICE train-test and/or validation 
+balance_dataset is a module dedicated to balancing out a CAPICE train-test and/or validation on a per-consequence per-allele frequency bin level.
+
+Will output 2 TSV files: one dataset file that is balanced and a remainder dataset file.
+
+For usage details, use `balance-dataset -h` or `python3 ./src/molgenis/capice_resources/balance_dataset -h`
 
 ### compare_model_features
 
