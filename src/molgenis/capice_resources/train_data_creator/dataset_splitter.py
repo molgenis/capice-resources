@@ -4,10 +4,12 @@ import pandas as pd
 
 from molgenis.capice_resources.core import ColumnEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows
+from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation
 
 
 class SplitDatasets:
     FRACTION_TO_VALIDATION = 0.5
+    HIGH_QUALITY_WEIGHT = 0.9
 
     def split(self, merged_frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -35,11 +37,11 @@ class SplitDatasets:
         benign_set = merged_frame[merged_frame[ColumnEnums.BINARIZED_LABEL.value] == 0]
         print(f'Amount of benign variants:{benign_set.shape[0]}')
         validation = pathogenic_set[
-            pathogenic_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
+            pathogenic_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
             ].sample(frac=self.FRACTION_TO_VALIDATION)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         if benign_set[
-            benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
+            benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
         ].shape[0] < validation.shape[0]:
             raise ValueError(
                 'Not enough benign variants to match pathogenic variants, unable to create '
@@ -48,7 +50,7 @@ class SplitDatasets:
         validation = merge_dataset_rows(
             validation,
             benign_set[
-                benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= 0.9
+                benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
                 ].sample(n=validation.shape[0]),
             ignore_index=False
         )
@@ -62,5 +64,9 @@ class SplitDatasets:
         train_test.drop(index=validation.index, inplace=True)
         validation.reset_index(drop=True, inplace=True)
         print(f'Train dataset made, number of samples: {train_test.shape[0]}')
+
+        correct_order_vcf_notation(train_test)
+        correct_order_vcf_notation(validation)
+        # TODO: write test to ensure proper order
 
         return train_test, validation

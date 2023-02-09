@@ -20,7 +20,9 @@ setup(
         'License :: LGPL-3.0',
         'Programming Language :: Python :: 3.10'
     ],
-    python_requires='>=3.10.*',
+    include_package_data=True,
+    package_data={"molgenis": ['.vcf']},  # Dirty fix, improve when switching to pyproject.toml (including MANIFEST.in)
+    python_requires='>=3.10',
     install_requires=[
         'pandas==1.5.2',
         'numpy==1.24.1',

@@ -2,7 +2,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from molgenis.capice_resources.core import ColumnEnums, PlottingEnums
-from molgenis.capice_resources.threshold_calculator import ThresholdEnums as Menums
+from molgenis.capice_resources.threshold_calculator import ThresholdEnums
 
 
 class ThresholdPlotter:
@@ -17,11 +17,13 @@ class ThresholdPlotter:
                 Full output dataframe from the ThresholdCalculator, containing all the recall,
                 F1 and precision scores.
         """
-        self.best_threshold = recall_data.loc[0, Menums.THRESHOLD.value]
-        self.recall = recall_data.loc[0, Menums.RECALL.value]
-        self.precision = recall_data.loc[0, Menums.F1.value]
-        self.f1 = recall_data.loc[0, Menums.RECALL.value]
-        self.figure = plt.figure(dpi=100)
+        self.best_threshold = recall_data.loc[0, ThresholdEnums.THRESHOLD.value]
+        self.recall = recall_data.loc[0, ThresholdEnums.RECALL.value]
+        self.precision = recall_data.loc[0, ThresholdEnums.F1.value]
+        self.f1 = recall_data.loc[0, ThresholdEnums.RECALL.value]
+        self.figure = plt.figure()
+        # Retina displays overwrite DPI after initialization
+        self.figure.set_dpi(PlottingEnums.DPI.value)
         self.figure.set_constrained_layout(PlottingEnums.CONSTRAINED_LAYOUT.value)
 
     def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:

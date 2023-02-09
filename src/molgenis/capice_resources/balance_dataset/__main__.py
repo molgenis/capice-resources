@@ -4,7 +4,7 @@ import pandas as pd
 
 from molgenis.capice_resources.core import Module, CommandLineInterface, \
     TSVFileEnums, AlleleFrequencyEnums, ColumnEnums, DatasetIdentifierEnums
-from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums as Menums
+from molgenis.capice_resources.balance_dataset import BalanceDatasetEnums
 from molgenis.capice_resources.balance_dataset.balancer import Balancer
 
 
@@ -79,8 +79,8 @@ class BalanceDataset(Module):
         balancer = Balancer(arguments['verbose'])
         balanced, remainder = balancer.balance(dataset)
         return {
-            Menums.BALANCED.value: balanced,
-            Menums.REMAINDER.value: remainder,
+            BalanceDatasetEnums.BALANCED.value: balanced,
+            BalanceDatasetEnums.REMAINDER.value: remainder,
             DatasetIdentifierEnums.OUTPUT.value: arguments['output']
         }
 
@@ -112,16 +112,16 @@ class BalanceDataset(Module):
         self.exporter.export_pandas_file(
             os.path.join(  # type: ignore
                 output[DatasetIdentifierEnums.OUTPUT.value],
-                Menums.BALANCED.value
+                BalanceDatasetEnums.BALANCED.value
             ) + TSVFileEnums.TSV_EXTENSIONS.value[0],
-            output[Menums.BALANCED.value]
+            output[BalanceDatasetEnums.BALANCED.value]
         )
         self.exporter.export_pandas_file(
             os.path.join(  # type: ignore
                 output[DatasetIdentifierEnums.OUTPUT.value],
-                Menums.REMAINDER.value
+                BalanceDatasetEnums.REMAINDER.value
             ) + TSVFileEnums.TSV_EXTENSIONS.value[0],
-            output[Menums.REMAINDER.value]
+            output[BalanceDatasetEnums.REMAINDER.value]
         )
 
 

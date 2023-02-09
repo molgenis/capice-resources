@@ -173,9 +173,9 @@ class Module(metaclass=ABCMeta):
                 break
         fh.close()
         return self.data_validator.validate_pandas_dataframe(
-            pd.read_csv(
+            pd.read_csv(  # type: ignore
                 path,
-                sep='\t',
+                sep=TSVFileEnums.TSV_SEPARATOR.value,
                 low_memory=False,
                 na_values=TSVFileEnums.NA_VALUES.value,
                 skiprows=skiprows
@@ -264,6 +264,7 @@ class ColumnEnums(Enum):
 
 class PlottingEnums(Enum):
     CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+    DPI = 100
 
 
 class AlleleFrequencyEnums(Enum):

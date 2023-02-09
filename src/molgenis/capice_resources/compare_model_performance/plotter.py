@@ -179,7 +179,7 @@ class Plotter:
             figure_size:
                 tuple containing the [0] figure width and [1] figure height.
         """
-        figure.set_dpi(100)
+        figure.set_dpi(PlottingEnums.DPI.value)
         figure.set_figwidth(figure_size[0])
         figure.set_figheight(figure_size[1])
         figure.suptitle(

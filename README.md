@@ -9,7 +9,7 @@ Repository for resource files for CAPICE and updating CAPICE model. It contains 
 - CAPICE (personal git branch for development)
 - [VIP](https://github.com/molgenis/vip) v4.12.2 (include both GRCh37 & GRCh38 during installation)
 - Python 3.10 or higher
-- [Singularity](https://sylabs.io/singularity/)
+- [Apptainer](https://apptainer.org/)
 
 ## Installation
 
@@ -21,6 +21,10 @@ _Please note that for each module to properly function, the installation has to 
 To test the individual modules, change directory to the specific module and run `pytest`.
 
 ## Modules:
+
+### balance_dataset
+
+balance_dataset is a module dedicated to balancing out a CAPICE train-test and/or validation 
 
 ### compare_model_features
 
@@ -47,17 +51,7 @@ The module `process_vep` is a module available to process the `train-test` and `
 The reason that this module requires both `train-test` and `validation` is so that duplicate entries between the supposed independently datasets are filtered out.
 Please note that the input supplied to VEP is created using module `train_data_creator`, as this module adds additional information required by this module.
 
-```commandline
-input=</path/to/input.vcf.gz>
-output=</path/to/output.tsv> # Please do not supply the output as gzip
-output_tmp="${output}.tmp"
-HEADER="CHROM\tPOS\tID\tREF\tALT\t"
-FORMAT="%CHROM\t%POS\t%ID\t%REF\t%ALT\t%CSQ\n"
-bcftools +split-vep -d -f "${FORMAT}" -A "tab" -o "${output_tmp}" "${input}"
-echo -e "${HEADER}$(bcftools +split-vep -l "${input}" | cut -f 2 | tr '\n' '\t' | sed 's/\t$//')" | cat - "${output_tmp}" > "${output}" && rm "${output_tmp}"
-gzip "${output}"
-```
-It is adviced to have this in a [script](https://github.com/molgenis/capice/blob/main/scripts/convert_vep_vcf_to_tsv_capice.sh).
+Use [this script](https://github.com/molgenis/capice/blob/main/scripts/convert_vep_vcf_to_tsv_capice.sh) to convert the VEP output VCF back to TSV.
 What this script does is it creates a temporary output file using `bcftools +split-vep`, duplicating each entry if more entries exist for that variant (for example due to transcripts) and separating by a tab.
 Then the `echo` call adds back the header to this temporary file and creates the final file.
 
@@ -220,7 +214,7 @@ is described in 1 step and a step later mentions the same filename, they both re
    19. Create new Singularity image of the pre-release (note: singularity images do function with apptainer):
        1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/singularity/def/capice-4.0.0.def)
        2. Update the defined capice version & filename.
-       3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def` (where `sif/capice-4.0.0.sif` is the output path. __Adjust the "Bootstrap" to "docker" within the CAPICE def__)
+       3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def` (where `sif/capice-4.0.0.sif` is the output path.)
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull origin main`).
 3. Download latest public GRCh37 [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
    ```shell
