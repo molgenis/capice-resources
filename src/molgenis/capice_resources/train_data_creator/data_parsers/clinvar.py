@@ -54,6 +54,10 @@ class ClinVarParser:
                 Performed inplace.
         """
         self._process_column(clinvar_frame, TrainDataCreatorEnums.GENE.value, 'GENEINFO=')
+        # For now, deleting the SYMBOL ID as VKGL does not yet export this
+        clinvar_frame[
+            TrainDataCreatorEnums.GENE.value
+        ] = clinvar_frame[TrainDataCreatorEnums.GENE.value].str.split(':', expand=True)[0]
 
     def _obtain_review(self, clinvar_frame: pd.DataFrame) -> None:
         """

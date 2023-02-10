@@ -22,11 +22,11 @@ class TestClinvarParser(unittest.TestCase):
         self.specific_testing_frame = pd.DataFrame(
             {
                 'INFO': [
-                    'FIRSTCOL=value1;CLNSIG=LP;GENEINFO=foo;'
+                    'FIRSTCOL=value1;CLNSIG=LP;GENEINFO=foo:69;'
                     'CLNREVSTAT=criteria_provided,_conflicting_interpretations;LASTCOL=value1',
-                    'FIRSTCOL=value2;CLNSIG=P;GENEINFO=bar;'
+                    'FIRSTCOL=value2;CLNSIG=P;GENEINFO=bar:42030;'
                     'CLNREVSTAT=reviewed_by_expert_panel;LASTCOL=value2',
-                    'FIRSTCOL=value3;CLNSIG=B;GENEINFO=baz;'
+                    'FIRSTCOL=value3;CLNSIG=B;GENEINFO=baz:6969420;'
                     'CLNREVSTAT=criteria_provided,_single_submitter;LASTCOL=value3'
                 ]
             }
