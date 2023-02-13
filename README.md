@@ -426,3 +426,13 @@ fig.savefig('/path/to/save_fig.png')
 
 You've likely downloaded a genome build 38, which has a different annotation for the chromosome.
 `train_data_creator` only supports build 37.
+
+## Acknowledgements
+Standing on the shoulders of giants. This project could not have possible without the existence of many other tools and resources. Among them we would like to thank the people behind the following projects:
+- [Ensembl Variant Effect Predictor (VEP)](https://grch38.ensembl.org/info/docs/tools/vep/index.html)
+- [Variant Interpretation Pipeline (VIP)](https://github.com/molgenis/vip) 
+- [phyloP](http://compgen.cshl.edu/phast) 
+- [Illumina SpliceAI](https://github.com/Illumina/SpliceAI)
+- [VKGL](https://vkgl.molgeniscloud.org/)
+- [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar)
+- [gnomAD](https://gnomad.broadinstitute.org/)
