@@ -13,16 +13,22 @@ errcho() { echo "$@" 1>&2; }
 
 readonly USAGE="Easy bash script to convert a GRCh37 VCF to GRCh38 VCF
 Usage:
-liftover_variants.sh -i <arg> -o <arg>
+liftover_variants.sh -p <arg> -i <arg> -o <arg> -c <arg> -r <arg>
+-p  required: The path to the Picard singularity image
 -i  required: the GRCh37 input VCF
 -o  required: the GRCh38 output VCF path+filename (except extension!)
+-c  required: the chain file
+-r  required: the reference sequence fasta for the TARGET build
 
 Example:
-bash liftover_variants.sh -i /path/to/GRCh37.vcf -o /path/to/GRCh38
+bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
 
 Requirements:
-Picard
-EasyBuild
+- Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
+- Picard singularity image
+
+Notes:
+In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 main() {
@@ -31,11 +37,14 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts i:o:h flag
+  while getopts p:i:o:c:r:h flag
   do
     case "${flag}" in
+      p) picard_path=${OPTARG};;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
+      c) chain_file=${OPTARG};;
+      r) reference=${OPTARG};;
       h)
         echo "${USAGE}"
         exit;;
@@ -53,6 +62,18 @@ digestCommandLine() {
 
 validateCommandLine() {
   local valid_command_line=true
+  if [ -z "${picard_path}" ]
+  then
+    valid_command_line=false
+    errcho "picard singularity image not set"
+  else
+     if [ ! -f "${picard_path}" ]
+     then
+       valid_command_line=false
+       errcho "picard singularity image does not exist"
+     fi
+  fi
+
   if [ -z "${input}" ]
   then
     valid_command_line=false
@@ -71,6 +92,30 @@ validateCommandLine() {
     errcho "output not set"
   fi
 
+  if [ -z "${chain_file}" ]
+  then
+    valid_command_line=false
+    errcho "chain file not set"
+  else
+     if [ ! -f "${chain_file}" ]
+     then
+       valid_command_line=false
+       errcho "chain_file file does not exist"
+     fi
+  fi
+
+  if [ -z "${reference}" ]
+  then
+    valid_command_line=false
+    errcho "reference file not set"
+  else
+     if [ ! -f "${reference}" ]
+     then
+       valid_command_line=false
+       errcho "reference file does not exist"
+     fi
+  fi
+
   if [ "${valid_command_line}" == false ];
   then
     errcho 'exiting.'
@@ -80,41 +125,28 @@ validateCommandLine() {
 
 
 runLiftover() {
-  echo "Loading Picard"
-
-  module load picard/2.20.5-Java-11-LTS
-  
-  local output="${output}.vcf"
   local rejected="${output}_rejected.vcf"
+  local output="${output}.vcf"
   local input="${input}"
 
   local args=()
 
-  args+=("${EBROOTPICARD}/picard.jar" "LiftoverVcf")
+  args+=("exec")
+  # args+=("--bind" "add your binds here")
+  args+=("${picard_path}")
+  args+=("java" "-jar")
+  args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
   args+=("I=${input}")
   args+=("O=${output}")
-  args+=("CHAIN=/apps/data/GRC/b37ToHg38.over.chain")
+  args+=("CHAIN=${chain_file}")
   args+=("REJECT=${rejected}")
-  args+=("R=/apps/data/GRC/GCA_000001405.15/GCA_000001405.15_GRCh38_full_plus_hs38d1_analysis_set.fna.gz")
+  args+=("R=${reference}")
 
-  echo "Running Picard"
-
-  java -jar "${args[@]}"
-
-  echo "Gzipping outputs"
+  apptainer "${args[@]}"
 
   gzip "${output}"
   gzip "${rejected}"
 
-  echo "Removing indexing file if made"
-  if [ -f "${output}.vcf.idx" ]
-  then
-    rm "${output}.vcf.idx"
-    echo "Indexing file removed"
-  fi
-
-  echo "Done"
 }
 
 main "$@"
-

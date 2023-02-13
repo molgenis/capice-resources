@@ -1,0 +1,34 @@
+os: linux
+dist: focal
+language: python
+python:
+- '3.10'
+cache: pip
+branches:
+  only:
+  - main
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+before_install:
+- pip install -U pip
+install:
+- pip install -e '.[test]'
+script:
+- coverage run -m pytest --junitxml=results.xml
+- coverage xml
+- sonar-scanner
+- mypy --ignore-missing-imports src/ tests/
+- flake8 src/ tests/
+addons:
+  sonarcloud:
+    organization: molgenis
+    token:
+      secure: SO7J+zJIN6CZNI8N3EsZXXKffmC90vyeG8ZwUmhesIOIUiy4fNP+nsuRhxWzxwg84KFcF8i/DcfAKA4HcZJsPV4qyz1TMTIFAK6H2puauvFTFNZU6eKS8P/iojtWOt5+I0VIQummI690f6iWeptOyqbRrtU8OBQKKz13zNSIJUo7QsKTJkRW+zB7TfPQ64NyqrVG7BUTLlDJS0FL2k6NVd1bBrymx6EwCHTvdSepm4RYkuf2dZBL/W4CdtChqKcJNlqEPbMiGpb16bb6cGBm8rCYdXGJVrU+OADLo2L1gTGsnPMTVVaXhKVRY9YuDLFL7ERFvEV+6LtvjWre+Ds0HVjopUAfcMRGLQq7XtM6fDX+DSLzuCcbxoqYTjib6t0SYxQMQEk9bGkRmPyQSJzV0mqEq8/wBxM0a00hZRjGA/wMo9Umk4ukc7KYJ5o4XN5sJRtO5sMTqT9Kcp6W1DY8vppdJ5A/V4yWcVx4/k5MuxJSzylq0RNRirHzezQxZU1w/2Yob+AunlfggYvO2TJsf8+6yVloeuHDed5MG3TGKMHraTPXE7YstMDT2PjceyBntUisZwXyD22ZtOnvsem1hotTITT8wKHAa9/aVr9xuOeJZVXF0hkt9MXVfNncOiU1+WtQJLd7g9QjULq2p0bjpxhloPDj3yNvgkd1mHYZnzY=
+deploy:
+  - provider: releases
+    token:
+      secure: dLjaEn+XqwH+/bbnXV2Oo7UZGh9aQCS1hOKNsQhMTYWEHfDQUzmAsgEKUnBBywP1G9WM7UCrqyvEE4AG5vt1++XP8w8VWgCyvk+lElGqCjzYVFSErIDdwN6v48nsskktzckQVlatEFl19JczWh4PSMi6zwn9Korn0E0V4wYQGkVrHxF6saFen7eF4RUK3gBOKL9sZrGWcVSfWSqjm6tcVZPDRH/Uo8U4clIVWICw8Sx6HBuGKdAX9DCDdAJ+T6cLPEN6oMx6yEpEyvvaDJrgqEmx6oJSBBJ7sMJyOOxxrs0VEPxKaztCE/nNK4oQAsKXCGC8jO1fcdSp7gE2oE79ejOaMLuWGLP9JibP7ebQaWnvQwXYO4ElPcQY9N0bIgwRrLI6lMTk/dxiiIRlMHZzHKs9wiw7lR+/yk/4POKyYJTvPhU3fVplD38GI8438CXBhG79+cl741A0umIiY8ta8MUv/bJucMYWf9WKtHJLwMlXrUxENjdgAL6qE3QPq6mCx941982lj07YqBF+aRVADC/bdmAHKbFT/GlywGpkPJFbWclRWq27Nyo58hzO/zStBZ58eLPBZD/Na7+yJDHmY7HjcxZ+UP0ZiB5iU7lwM0gd2EZ3rZSoHhdVfW72Vi2JprwUHgCZnugdRWnrRQU1DCweum0WdnKOdT+oYs3v+GM=
+    file: "bogus.file"
+    prerelease: true
+    on:
+      tags: true
+    edge: true # opt in to dpl v2
