@@ -54,6 +54,14 @@ class ClinVarParser:
                 Performed inplace.
         """
         self._process_column(clinvar_frame, TrainDataCreatorEnums.GENE.value, 'GENEINFO=')
+        # For now, deleting the SYMBOL ID as VKGL does not yet export this
+
+        # TODO: Please note that multiple SYMBOL per single entry are now discarded and
+        #  does require change in the (near) future for both train-data-creator and process-vep:
+        #  https://github.com/molgenis/capice-resources/issues/54
+        clinvar_frame[
+            TrainDataCreatorEnums.GENE.value
+        ] = clinvar_frame[TrainDataCreatorEnums.GENE.value].str.split(':', expand=True)[0]
 
     def _obtain_review(self, clinvar_frame: pd.DataFrame) -> None:
         """
