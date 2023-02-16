@@ -912,7 +912,12 @@ class Plotter:
             model_2_size: int
     ) -> bool:
         """
-        Method to check if both model_1_data is present and model_2_data is present. Creates
+        Method to check if both model_1_data is present and model_2_data is present.
+        Returns True if both model_1_size and model_2_size are not 0. If any of the 2 is 0,
+        returns False. This is to prevent ValueError
+        "ValueError: There must be exactly two hue levels to use `split`." raise from
+        Seaborn.Violinplot.
+
         Args:
             model_1_size:
                 The number of samples from the model 1 dataframe.
