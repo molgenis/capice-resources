@@ -1,5 +1,6 @@
 import unittest
 
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from molgenis.capice_resources.compare_model_performance.plotter import Plotter
@@ -76,6 +77,46 @@ class TestPlotter(unittest.TestCase):
             "Model 2 scores: path_model_2_scores\n"
             "Model 2 labels: path_model_2_labels\n"
         )
+
+    def test_consequence_not_present_for_one_of_two_models(self):
+        """
+        Test that ensures proper function of the violinplots when supplied with a dataframe
+        consisting of a singular consequence that is present for 1 model, but not the other.
+        """
+        test_case_model1 = pd.DataFrame(
+            {
+                "binarized_label": [1, 0, 1],
+                "score": [0.1, 0.1, 0.6],
+                "gnomAD_AF": [0.01, 0.02, 0.03],
+                "Consequence": ['Foo', 'Foo', 'Foo'],
+                "is_imputed": [True, True, False],
+                "dataset_source": ['model_1', 'model_1', 'model_1']
+            }
+        )
+        test_case_model1['score_diff'] = abs(
+            test_case_model1['score'] - test_case_model1['binarized_label']
+        )
+        test_case_model2 = pd.DataFrame(
+            {
+                "binarized_label": [0, 1],
+                "score": [0.8, 0.9],
+                "gnomAD_AF": [0.04, 0.05],
+                "Consequence": ['Bar', 'Bar'],
+                "is_imputed": [False, False],
+                "dataset_source": ['model_2', 'model_2']
+            }
+        )
+        test_case_model2['score_diff'] = abs(
+            test_case_model2['score'] - test_case_model2['binarized_label']
+        )
+        plotter = Plotter(
+            ['Foo', 'Bar'],
+            'path1',
+            'path2',
+            'path3',
+            'path4'
+        )
+        plotter.plot(test_case_model1, test_case_model2)
 
 
 if __name__ == '__main__':
