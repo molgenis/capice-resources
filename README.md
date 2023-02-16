@@ -279,7 +279,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     #SBATCH --error=/path/to/output/dir/capice_train_grch37.err
     #SBATCH --time=23:59:00
     #SBATCH --cpus-per-task=8
-    #SBATCH --mem=20gb
+    #SBATCH --mem=25gb
     #SBATCH --nodes=1
     #SBATCH --export=NONE
     #SBATCH --get-user-env=L60
@@ -297,7 +297,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     #SBATCH --error=/path/to/output/dir/capice_train_grch38.err
     #SBATCH --time=23:59:00
     #SBATCH --cpus-per-task=8
-    #SBATCH --mem=20gb
+    #SBATCH --mem=25gb
     #SBATCH --nodes=1
     #SBATCH --export=NONE
     #SBATCH --get-user-env=L60
