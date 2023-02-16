@@ -873,13 +873,14 @@ class Plotter:
 
         """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
+        split = self._assign_violinplot_split(model_1_size, model_2_size)
         sns.violinplot(
             data=pd.concat([model_1_data, model_2_data]),
             x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue=ColumnEnums.DATASET_SOURCE.value,
             ax=ax,
-            split=True,
+            split=split,
             bw=0.1,
             palette={
                 CompareModelPerformanceEnums.MODEL_1.value: 'red',
@@ -904,3 +905,30 @@ class Plotter:
             bbox_to_anchor=(1.0, 1.02),
             labelspacing=2
         )
+
+    @staticmethod
+    def _assign_violinplot_split(
+            model_1_size: int,
+            model_2_size: int
+    ) -> bool:
+        """
+        Method to check if both model_1_data is present and model_2_data is present.
+        Returns True if both model_1_size and model_2_size are not 0. If any of the 2 is 0,
+        returns False. This is to prevent ValueError
+        "ValueError: There must be exactly two hue levels to use `split`." raise from
+        Seaborn.Violinplot.
+
+        Args:
+            model_1_size:
+                The number of samples from the model 1 dataframe.
+            model_2_size:
+                The number of samples from the model 2 dataframe.
+
+        Returns:
+            bool
+                False if either model_1_size is 0 or model_2_size is 0, else True.
+        """
+        if model_1_size == 0 or model_2_size == 0:
+            return False
+        else:
+            return True
