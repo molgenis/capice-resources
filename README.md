@@ -171,7 +171,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        #SBATCH --job-name=CAPICE_POC_train
        #SBATCH --output=/path/to/output/dir/capice_poc_train.log
        #SBATCH --error=/path/to/output/dir/capice_poc_train.err
-       #SBATCH --time=1-00:59:00
+       #SBATCH --time=23:59:00
        #SBATCH --cpus-per-task=8
        #SBATCH --mem=16gb
        #SBATCH --nodes=1
@@ -277,7 +277,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     #SBATCH --job-name=capice_train_grch37
     #SBATCH --output=/path/to/output/dir/capice_train_grch37.log
     #SBATCH --error=/path/to/output/dir/capice_train_grch37.err
-    #SBATCH --time=1-00:59:00
+    #SBATCH --time=23:59:00
     #SBATCH --cpus-per-task=8
     #SBATCH --mem=20gb
     #SBATCH --nodes=1
@@ -295,7 +295,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     #SBATCH --job-name=capice_train_grch38
     #SBATCH --output=/path/to/output/dir/capice_train_grch38.log
     #SBATCH --error=/path/to/output/dir/capice_train_grch38.err
-    #SBATCH --time=1-00:59:00
+    #SBATCH --time=23:59:00
     #SBATCH --cpus-per-task=8
     #SBATCH --mem=20gb
     #SBATCH --nodes=1
