@@ -82,7 +82,3 @@ class VKGLParser:
 
         """
         vkgl_frame[TrainDataCreatorEnums.REVIEW.value] = 2
-        vkgl_frame.loc[
-            vkgl_frame[vkgl_frame[TrainDataCreatorEnums.SUPPORT.value] == 1].index,
-            TrainDataCreatorEnums.REVIEW.value
-        ] = 1

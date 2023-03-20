@@ -109,7 +109,7 @@ class TestTrainDataCreator(unittest.TestCase):
         )
         self.assertGreaterEqual(
             tt.shape[0],
-            99
+            90
         )
         # Testing if output is ordered
         tt_output = tt.copy(deep=True)

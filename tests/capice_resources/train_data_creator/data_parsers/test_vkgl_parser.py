@@ -90,7 +90,7 @@ class TestVKGLParser(unittest.TestCase):
         self.assertIn('review', test_case.columns)
         self.assertListEqual(
             list(test_case['review'].values),
-            [1, 2, 2, 2]
+            [2, 2, 2, 2]
         )
 
 

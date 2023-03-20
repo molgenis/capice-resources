@@ -76,9 +76,9 @@ class ClinVarParser:
         self._process_column(clinvar_frame, TrainDataCreatorEnums.REVIEW.value, 'CLNREVSTAT=')
         stars = {
             'criteria_provided,_conflicting_interpretations': -1,
-            'no_assertion_provided': 0,
-            'no_assertion_criteria_provided': 0,
-            'no_interpretation_for_the_single_variant': 0,
+            'no_assertion_provided': 1,
+            'no_assertion_criteria_provided': 1,
+            'no_interpretation_for_the_single_variant': 1,
             'criteria_provided,_single_submitter': 1,
             'criteria_provided,_multiple_submitters,_no_conflicts': 2,
             'reviewed_by_expert_panel': 3,

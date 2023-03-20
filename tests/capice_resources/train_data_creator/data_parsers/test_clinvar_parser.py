@@ -111,7 +111,7 @@ class TestClinvarParser(unittest.TestCase):
         with self.assertWarns(UserWarning) as w:
             self.parser._obtain_review(test_case)
         self.assertEqual('Found unknown review status: some_other_value', str(w.warning))
-        self.assertEqual(test_case.shape[0], 0)
+        self.assertEqual(test_case.shape[0], 1)
 
 
 if __name__ == '__main__':
