@@ -136,11 +136,12 @@ runLiftover() {
   args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
-  args+=("I=${input}")
-  args+=("O=${output}")
-  args+=("CHAIN=${chain_file}")
-  args+=("REJECT=${rejected}")
-  args+=("R=${reference}")
+  args+=("-I" "${input}")
+  args+=("-O" "${output}")
+  args+=("-C" "${chain_file}")
+  args+=("--REJECT" "${rejected}")
+  args+=("-R" "${reference}")
+  args+=("-WMC" "true")
 
   apptainer "${args[@]}"
 
