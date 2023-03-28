@@ -108,10 +108,10 @@ class Plotter:
         if model_2_label_path is None:
             model_2_label_path = model_1_label_path
 
-        figure_supertitle = f'Model 1 scores: {model_1_score_path}\n' \
-                            f'Model 1 labels: {model_1_label_path}\n' \
-                            f'Model 2 scores: {model_2_score_path}\n' \
-                            f'Model 2 labels: {model_2_label_path}\n'
+        figure_supertitle = f'Model 1 scores: {os.path.basename(model_1_score_path)}\n' \
+                            f'Model 1 labels: {os.path.basename(model_1_label_path)}\n' \
+                            f'Model 2 scores: {os.path.basename(model_2_score_path)}\n' \
+                            f'Model 2 labels: {os.path.basename(model_2_label_path)}\n'
 
         self._set_size_supertitle_layout(
             self.fig_auc,

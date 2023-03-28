@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #SBATCH --job-name=run_vep
-#SBATCH --time=10:00:00
+#SBATCH --time=5:59:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=3gb
 #SBATCH --nodes=1
