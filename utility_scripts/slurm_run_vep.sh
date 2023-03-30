@@ -15,10 +15,11 @@ errcho() { echo "$@"  1>&2; }
 # Usage.
 readonly USAGE="Run VEP script
 Usage:
-run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
+run_vep.sh -p <arg> -i <arg> -o <arg> [-b <arg>] [-a] [-g] [-f]
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
 -o    required: The directory and output filename.
+-b    optional: The apptainer/singularity additional --bind path(s).
 -a    optional: change the assembly from GRCh37 to GRCh38.
 -g    optional: enables the --per-gene flag for VEP.
 -f    optional: Force flag. Overwrites existing output.
@@ -44,7 +45,7 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts p:i:o:hafg flag
+  while getopts p:i:o:b:hafg flag
   do
     case "${flag}" in
       p)
@@ -54,6 +55,7 @@ digestCommandLine() {
         ;;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
+      b) bind=${OPTARG};;
       h)
         echo "${USAGE}"
         exit;;
@@ -86,6 +88,11 @@ validateCommandLine() {
       valid=false
       errcho "VEP 107.0 image does not exist"
     fi
+  fi
+
+  if [ -z ${bind} ]
+  then
+    bind=false
   fi
 
   if [ -z "${input}" ]
@@ -139,7 +146,10 @@ validateCommandLine() {
 runVep() {
   local args=()
   args+=("exec")
-  # args+=("--bind" "add your binds here")
+  if [[ ! "${bind}" == false ]]
+  then
+    args+=("--bind" "${bind}")
+  fi
   args+=("${vep_image}")
   args+=("vep")
   args+=("--input_file" "${input}")
