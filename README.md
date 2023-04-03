@@ -245,8 +245,8 @@ is described in 1 step and a step later mentions the same filename, they both re
    to reduce memory usage (at the cost of speed).
 8. Lift over not-annotated VCFs (output from `train-data-creator`) to GRCh38 using `liftover_variants.sh` (and the latest Picard image, available [here](https://download.molgeniscloud.org/downloads/vip/images/)):
    ```shell
-   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -b </additional,/apptainer,/binds> -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
-   sbatch --output=</path/to/validation_liftover_grch38.log> --error=</path/to/validation_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -b </additional,/apptainer,/binds> -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
+   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
+   sbatch --output=</path/to/validation_liftover_grch38.log> --error=</path/to/validation_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
    ```
    __IMPORTANT:__ Do not supply an extension as it doesn't produce a single file!
 9. Use the VEP singularity image to annotate the GRCh38 VCF files:
