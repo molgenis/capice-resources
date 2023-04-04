@@ -25,7 +25,7 @@ bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/G
 
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
-- Picard singularity image
+- Latest singularity image, available here: https://download.molgeniscloud.org/downloads/vip/images/
 
 Notes:
 In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
@@ -136,11 +136,12 @@ runLiftover() {
   args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
-  args+=("I=${input}")
-  args+=("O=${output}")
-  args+=("CHAIN=${chain_file}")
-  args+=("REJECT=${rejected}")
-  args+=("R=${reference}")
+  args+=("-I" "${input}")
+  args+=("-O" "${output}")
+  args+=("-C" "${chain_file}")
+  args+=("--REJECT" "${rejected}")
+  args+=("-R" "${reference}")
+  args+=("-WMC" "true")
 
   apptainer "${args[@]}"
 
