@@ -133,10 +133,6 @@ runLiftover() {
   local args=()
 
   args+=("exec")
-  if [ ! -z "${APPTAINER_BIND}" ]
-  then
-    args+=("--bind" "${APPTAINER_BIND}")
-  fi
   args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")

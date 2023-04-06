@@ -15,7 +15,7 @@ errcho() { echo "$@"  1>&2; }
 # Usage.
 readonly USAGE="Run VEP script
 Usage:
-run_vep.sh -p <arg> -i <arg> -o <arg> [-b <arg>] [-a] [-g] [-f]
+run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
 -o    required: The directory and output filename.
@@ -140,10 +140,6 @@ validateCommandLine() {
 runVep() {
   local args=()
   args+=("exec")
-  if [ ! -z "${APPTAINER_BIND}" ]
-  then
-    args+=("--bind" "${APPTAINER_BIND}")
-  fi
   args+=("${vep_image}")
   args+=("vep")
   args+=("--input_file" "${input}")
