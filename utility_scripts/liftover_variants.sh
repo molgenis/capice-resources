@@ -13,13 +13,16 @@ errcho() { echo "$@" 1>&2; }
 
 readonly USAGE="Easy bash script to convert a GRCh37 VCF to GRCh38 VCF
 Usage:
-liftover_variants.sh -p <arg> -i <arg> -o <arg> -c <arg> -r <arg> [-b <arg>]
+liftover_variants.sh -p <arg> -i <arg> -o <arg> -c <arg> -r <arg>
 -p  required: The path to the Picard singularity image
 -i  required: the GRCh37 input VCF
 -o  required: the GRCh38 output VCF path+filename (except extension!)
 -c  required: the chain file
 -r  required: the reference sequence fasta for the TARGET build
--b  optional: The apptainer/singularity additional --bind path(s)
+
+Please note that this script expects apptainer binds to be set correctly by the system administrator.
+Additional apptainer binds can be set by setting the environment variable APPTAINER_BIND.
+If using SLURM, please export this environment variable to the sbatch instance too.
 
 Example:
 bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
@@ -27,9 +30,6 @@ bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/G
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
 - Picard singularity image
-
-Notes:
-In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 main() {
@@ -38,7 +38,7 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts p:i:o:c:r:b:h flag
+  while getopts p:i:o:c:r:h flag
   do
     case "${flag}" in
       p) picard_path=${OPTARG};;
@@ -46,7 +46,6 @@ digestCommandLine() {
       o) output=${OPTARG};;
       c) chain_file=${OPTARG};;
       r) reference=${OPTARG};;
-      b) bind=${OPTARG};;
       h)
         echo "${USAGE}"
         exit;;
@@ -74,11 +73,6 @@ validateCommandLine() {
        valid_command_line=false
        errcho "picard singularity image does not exist"
      fi
-  fi
-
-  if [ -z ${bind} ]
-  then
-    bind=false
   fi
 
   if [ -z "${input}" ]
@@ -139,9 +133,9 @@ runLiftover() {
   local args=()
 
   args+=("exec")
-  if [[ ! "${bind}" == false ]]
+  if [ ! -z "${APPTAINER_BIND}" ]
   then
-    args+=("--bind" "${bind}")
+    args+=("--bind" "${APPTAINER_BIND}")
   fi
   args+=("${picard_path}")
   args+=("java" "-jar")

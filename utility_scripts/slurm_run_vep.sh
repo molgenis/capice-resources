@@ -19,10 +19,13 @@ run_vep.sh -p <arg> -i <arg> -o <arg> [-b <arg>] [-a] [-g] [-f]
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
 -o    required: The directory and output filename.
--b    optional: The apptainer/singularity additional --bind path(s).
 -a    optional: change the assembly from GRCh37 to GRCh38.
 -g    optional: enables the --per-gene flag for VEP.
 -f    optional: Force flag. Overwrites existing output.
+
+Please note that this script expects apptainer binds to be set correctly by the system administrator.
+Additional apptainer binds can be set by setting the environment variable APPTAINER_BIND.
+If using SLURM, please export this environment variable to the sbatch instance too.
 
 Example:
 run_vep.sh -p /path/to/vip -i some_file.vcf.gz -o some_file_vep.vcf.gz
@@ -30,9 +33,6 @@ run_vep.sh -p /path/to/vip -i some_file.vcf.gz -o some_file_vep.vcf.gz
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
 - VIP installment (https://github.com/molgenis/vip)
-
-Notes:
-In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 FORCE=false
@@ -45,7 +45,7 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts p:i:o:b:hafg flag
+  while getopts p:i:o:hafg flag
   do
     case "${flag}" in
       p)
@@ -55,7 +55,6 @@ digestCommandLine() {
         ;;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
-      b) bind=${OPTARG};;
       h)
         echo "${USAGE}"
         exit;;
@@ -88,11 +87,6 @@ validateCommandLine() {
       valid=false
       errcho "VEP 107.0 image does not exist"
     fi
-  fi
-
-  if [ -z ${bind} ]
-  then
-    bind=false
   fi
 
   if [ -z "${input}" ]
@@ -146,9 +140,9 @@ validateCommandLine() {
 runVep() {
   local args=()
   args+=("exec")
-  if [[ ! "${bind}" == false ]]
+  if [ ! -z "${APPTAINER_BIND}" ]
   then
-    args+=("--bind" "${bind}")
+    args+=("--bind" "${APPTAINER_BIND}")
   fi
   args+=("${vep_image}")
   args+=("vep")
