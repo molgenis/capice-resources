@@ -1,10 +1,12 @@
 import gc
 import os
 import gzip
+from datetime import datetime
 from importlib.resources import files
 
 import pandas as pd
 
+from molgenis.capice_resources import __version__
 from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums, VCFEnums, \
     ColumnEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows
@@ -24,6 +26,8 @@ class TrainDataCreator(Module):
             program='Train data creator',
             description='Creator of CAPICE train/test and validation datasets.'
         )
+        self.input_vkgl_filename = ''
+        self.input_clinvar_filename = ''
 
     @staticmethod
     def _create_module_specific_arguments(parser):
@@ -70,8 +74,10 @@ class TrainDataCreator(Module):
         }
 
     def run_module(self, arguments):
+        vkgl_arg = arguments['input_vkgl']
+        self.input_vkgl_filename = os.path.basename(vkgl_arg)
         vkgl = self._read_pandas_tsv(
-            arguments['input_vkgl'],
+            vkgl_arg,
             [  # type: ignore
                 TrainDataCreatorEnums.CHROMOSOME.value,
                 TrainDataCreatorEnums.START.value,
@@ -80,8 +86,10 @@ class TrainDataCreator(Module):
             ]
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
+        clinvar_arg = arguments['input_clinvar']
+        self.input_clinvar_filename = os.path.basename(clinvar_arg)
         clinvar = self._read_vcf_file(
-            arguments['input_clinvar']  # type: ignore
+            clinvar_arg  # type: ignore
         )
         parsed_clinvar = ClinVarParser().parse(clinvar)
         merge = merge_dataset_rows(parsed_clinvar, parsed_vkgl)
@@ -107,10 +115,26 @@ class TrainDataCreator(Module):
             DatasetIdentifierEnums.VALIDATION.value: validation
         }
 
-    def export(self, output):
-        fake_vcf_header = files(
+    def create_fake_vcf_header(self):
+        """
+        Method to create the fake VCF header and add train-data-creator specific metadata.
+        Also sets the correct VCF date.
+        Returns:
+            header
+                Returns a single string of the VCF header, each metadata point separated by \\n with
+                the final metadata point ending in \\n.
+        """
+        header = files(
             'molgenis.capice_resources.train_data_creator.resources'
-        ).joinpath('fake_vcf_header.txt').read_text()
+        ).joinpath('fake_vcf_header.txt').read_text().strip().split('\n')
+        header.append(f'##CAPICE-Resources_version={__version__}')
+        header.append(f'##Used_ClinVar_File={self.input_clinvar_filename}')
+        header.append(f'##Used_VKGL_File={self.input_vkgl_filename}')
+        header.append(f'##fileDate={datetime.now().strftime("%Y%m%d")}\n')
+        return '\n'.join(header)
+
+    def export(self, output):
+        fake_vcf_header = self.create_fake_vcf_header()
         for types in [
             DatasetIdentifierEnums.TRAIN_TEST.value,
             DatasetIdentifierEnums.VALIDATION.value

@@ -24,4 +24,3 @@
 ##contig=<ID=X,assembly=b37,length=155270560>
 ##contig=<ID=Y,length=59373566,assembly=b37>
 ##contig=<ID=MT,length=16569,assembly=b37>
-##fileDate=20200320'
