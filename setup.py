@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
     name='capice-resources',
-    version='5.0.0',
+    version='5.0.1',
     packages=find_namespace_packages('src', exclude=['tests']),
     package_dir={"": "src"},
     url='https://github.com/molgenis/capice-resources/',
