@@ -45,18 +45,6 @@ class TestUtilities(unittest.TestCase):
             [0, 1, 1, 0]
         )
 
-    def test_unsupported_contig(self):
-        test_case = pd.DataFrame(
-            {
-                '#CHROM': [1, 'MT', 5, 3, 3, 'Y', 'X', 'FOOBAR'],
-                'POS': [100, 200, 300, 500, 400, 1000, 12000, 100]
-            }
-        )
-        with self.assertWarns(UserWarning) as context:
-            correct_order_vcf_notation(test_case)
-        self.assertNotIn('FOOBAR', list(test_case['#CHROM']))
-        self.assertEqual('Removing unsupported contig for 1 variant(s).', str(context.warning))
-
 
 if __name__ == '__main__':
     unittest.main()

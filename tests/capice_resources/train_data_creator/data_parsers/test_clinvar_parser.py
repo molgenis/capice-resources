@@ -113,6 +113,20 @@ class TestClinvarParser(unittest.TestCase):
         self.assertEqual('Found unknown review status: some_other_value', str(w.warning))
         self.assertEqual(test_case.shape[0], 0)
 
+    def test_unsupported_contig(self):
+        test_case = pd.concat([pd.DataFrame(
+            {
+                '#CHROM': ['1', 'MT', 'FOOBAR'],
+                'POS': [1, 2, 3],
+                'REF': ['A', 'C', 'G'],
+                'ALT': ['T', 'G', 'C']
+            }
+        ), self.specific_testing_frame], axis=1)
+        with self.assertWarns(UserWarning) as c:
+            observed = self.parser.parse(test_case)
+        self.assertNotIn('FOOBAR', list(observed['#CHROM'].values))
+        self.assertEqual('Removing unsupported contig for 1 variant(s).', str(c.warning))
+
 
 if __name__ == '__main__':
     unittest.main()
