@@ -18,6 +18,7 @@ def check_unsupported_contigs(loaded_dataset: pd.DataFrame, column_name: str) ->
         column_name:
             The column name to check upon.
     """
+    # Ensuring that the order is set to string so that any alt contigs do not get unnoticed.
     loaded_dataset['contigs'] = loaded_dataset[column_name].astype(str)
     loaded_dataset.loc[loaded_dataset[loaded_dataset['contigs'] == 'X'].index, 'contigs'] = '23'
     loaded_dataset.loc[loaded_dataset[loaded_dataset['contigs'] == 'Y'].index, 'contigs'] = '24'
@@ -40,7 +41,6 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
             Please note that this ordering is performed inplace.
 
     """
-    # Ensuring that the order is set to string so that any alt contigs do not get unnoticed.
     pseudo_vcf['order'] = pseudo_vcf[VCFEnums.CHROM.vcf_name]
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'X'].index, 'order'] = 23
     pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'Y'].index, 'order'] = 24
