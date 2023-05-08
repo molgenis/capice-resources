@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -15,10 +17,16 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
             Please note that this ordering is performed inplace.
 
     """
-    pseudo_vcf['order'] = pseudo_vcf[VCFEnums.CHROM.vcf_name]
-    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'X'].index, 'order'] = 23
-    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'Y'].index, 'order'] = 24
-    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'MT'].index, 'order'] = 25
+    # Ensuring that the order is set to string so that any alt contigs do not get unnoticed.
+    pseudo_vcf['order'] = pseudo_vcf[VCFEnums.CHROM.vcf_name].astype(str)
+    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'X'].index, 'order'] = '23'
+    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'Y'].index, 'order'] = '24'
+    pseudo_vcf.loc[pseudo_vcf[pseudo_vcf['order'] == 'MT'].index, 'order'] = '25'
+    present_orders = np.array(range(1, 26)).astype(str)
+    alt_contigs = pseudo_vcf[~pseudo_vcf['order'].isin(present_orders)]
+    if alt_contigs.shape[0] > 0:
+        warnings.warn(f'Removing unsupported contig for {alt_contigs.shape[0]} variant(s).')
+        pseudo_vcf.drop(index=alt_contigs.index, inplace=True)
     pseudo_vcf['order'] = pseudo_vcf['order'].astype(int)
     pseudo_vcf.sort_values(by=['order', VCFEnums.POS.value], inplace=True)
     pseudo_vcf.drop(columns='order', inplace=True)
