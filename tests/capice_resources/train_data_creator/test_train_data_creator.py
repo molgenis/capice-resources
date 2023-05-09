@@ -94,8 +94,8 @@ class TestTrainDataCreator(unittest.TestCase):
         Test to ensure that proper filenames are set within the VCF metadata.
         """
         files = [
-            '##Used_VKGL_File=smol_vkgl.tsv.gz',
-            '##Used_ClinVar_File=smol_clinvar.vcf.gz'
+            '##Used_VKGL_File=smol_vkgl_may2023.tsv.gz',
+            '##Used_ClinVar_File=smol_clinvar_20230508.vcf.gz'
         ]
         intersect = set(vcf_header).intersection(set(files))
         self.assertEqual(len(intersect), 2, msg=f'Present files in header: {intersect}')
@@ -107,12 +107,12 @@ class TestTrainDataCreator(unittest.TestCase):
             '-v', os.path.join(
                         get_testing_resources_dir(),
                         'train_data_creator',
-                        'smol_vkgl.tsv.gz'
+                        'smol_vkgl_may2023.tsv.gz'
                         ),
             '-c', os.path.join(
                         get_testing_resources_dir(),
                         'train_data_creator',
-                        'smol_clinvar.vcf.gz'
+                        'smol_clinvar_20230508.vcf.gz'
                         ),
             '-o', output_directory
         ]
@@ -145,14 +145,14 @@ class TestTrainDataCreator(unittest.TestCase):
                         count += 1
                     else:
                         break
-            self.assertEqual(count, 30)
+            self.assertEqual(count, 31)
 
         self.subtest_vcf_header(vcf_file_header)
 
         tt = pd.read_csv(  # type: ignore
             filepath_train_test,
             sep='\t',
-            skiprows=30,
+            skiprows=31,
             na_values='.'
         )
         self.assertGreaterEqual(
@@ -169,7 +169,7 @@ class TestTrainDataCreator(unittest.TestCase):
         val = pd.read_csv(  # type: ignore
             filepath_validation,
             sep='\t',
-            skiprows=30,
+            skiprows=31,
             na_values='.'
         )
         self.assertGreaterEqual(
@@ -184,6 +184,26 @@ class TestTrainDataCreator(unittest.TestCase):
         val_output = val.copy(deep=True)
         correct_order_vcf_notation(val)
         pandas.testing.assert_frame_equal(val, val_output)
+
+    def test_vkgl_date_incorrect(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_2022may.tsv.gz'
+        self.assertRaises(IOError, module._validate_vkgl_date)
+
+    def test_vkgl_date_missing(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus.tsv.gz'
+        self.assertRaises(IOError, module._validate_vkgl_date)
+
+    def test_clinvar_date_incorrect(self):
+        module = TrainDataCreator()
+        module.input_clinvar_filename = 'clinvar_08052023.vcf.gz'
+        self.assertRaises(IOError, module._validate_clinvar_date)
+
+    def test_clinvar_date_missing(self):
+        module = TrainDataCreator()
+        module.input_clinvar_filename = 'clinvar.vcf.gz'
+        self.assertRaises(IOError, module._validate_clinvar_date)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
 ##fileformat=VCFv4.2
+##reference=GRCh37
 ##contig=<ID=1,length=249250621,assembly=b37>
-##contig=<ID=2,assembly=b37,length=243199373>
-##contig=<ID=3,assembly=b37,length=198022430>
+##contig=<ID=2,length=243199373,assembly=b37>
+##contig=<ID=3,length=198022430,assembly=b37>
 ##contig=<ID=4,length=191154276,assembly=b37>
 ##contig=<ID=5,length=180915260,assembly=b37>
 ##contig=<ID=6,length=171115067,assembly=b37>

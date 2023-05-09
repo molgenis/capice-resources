@@ -74,8 +74,15 @@ class TrainDataCreator(Module):
         }
 
     def run_module(self, arguments):
+        # Obtaining and further validating CLI
         vkgl_arg = arguments['input_vkgl']
         self.input_vkgl_filename = os.path.basename(vkgl_arg)
+        self._validate_vkgl_date()
+        clinvar_arg = arguments['input_clinvar']
+        self.input_clinvar_filename = os.path.basename(clinvar_arg)
+        self._validate_clinvar_date()
+
+        # Parsing
         vkgl = self._read_pandas_tsv(
             vkgl_arg,
             [  # type: ignore
@@ -86,8 +93,7 @@ class TrainDataCreator(Module):
             ]
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
-        clinvar_arg = arguments['input_clinvar']
-        self.input_clinvar_filename = os.path.basename(clinvar_arg)
+
         clinvar = self._read_vcf_file(
             clinvar_arg  # type: ignore
         )
@@ -114,6 +120,60 @@ class TrainDataCreator(Module):
             DatasetIdentifierEnums.TRAIN_TEST.value: train_test,
             DatasetIdentifierEnums.VALIDATION.value: validation
         }
+
+    def _validate_vkgl_date(self) -> None:
+        """
+        Method to validate that the supplied VKGL file contains the file date.
+
+        Raises:
+            IOError:
+                IOError is raised when the VKGL file does not adhere
+                to the standard datetime format.
+        """
+        date_in_filename = self.input_vkgl_filename.split('_')[-1].split('.')[0]
+        # Check for the "old" format of MMMYYYY
+        old_valid = self._check_date_format(date_in_filename, '%b%Y')
+        # The "new" format of YYYYMM
+        new_valid = self._check_date_format(date_in_filename, '%Y%m')
+        if not new_valid and not old_valid:
+            raise IOError('Supplied VKGL file does not contain standard datetime format!')
+
+    def _validate_clinvar_date(self) -> None:
+        """
+        Method to validate that the supplied ClinVar file contains the file date.
+
+        Raises:
+            IOError:
+                IOError is raised when the ClinVar file does not adhere
+                to the standard datetime format.
+        """
+        date_in_filename = self.input_clinvar_filename.split('_')[-1].split('.')[0]
+        date_valid = self._check_date_format(date_in_filename, '%Y%m%d')
+        if not date_valid:
+            raise IOError('Supplied ClinVar file does not contain the standard datetime format!')
+
+    @staticmethod
+    def _check_date_format(date_string: str, format_string: str) -> bool:
+        """
+        Function to check date_string for format_string.
+        Returns True if date_string adheres to format_string, else returns False.
+
+        Args:
+            date_string:
+                String of the date to be checked.
+            format_string:
+                datetime string of the format the date_string should be in.
+
+        Returns:
+            bool
+                Returns boolean True if date_string adheres to format_string, else returns False.
+        """
+        return_value = True
+        try:
+            datetime.strptime(date_string, format_string)
+        except ValueError:
+            return_value = False
+        return return_value
 
     def create_fake_vcf_header(self):
         """

@@ -11,7 +11,11 @@ class TestClinvarParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
-            os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_clinvar.vcf.gz'),
+            os.path.join(
+                get_testing_resources_dir(),
+                'train_data_creator',
+                'smol_clinvar_20230508.vcf.gz'
+            ),
             sep='\t',
             skiprows=27,
             low_memory=False
