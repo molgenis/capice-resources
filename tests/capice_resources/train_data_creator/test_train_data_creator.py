@@ -195,6 +195,16 @@ class TestTrainDataCreator(unittest.TestCase):
         module.input_vkgl_filename = 'vkgl_public_consensus.tsv.gz'
         self.assertRaises(IOError, module._validate_vkgl_date)
 
+    def test_vkgl_date_old_correct(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_may2023.tsv'
+        module._validate_vkgl_date()
+
+    def test_vkgl_date_new_correct(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_202305.tsv'
+        module._validate_vkgl_date()
+
     def test_clinvar_date_incorrect(self):
         module = TrainDataCreator()
         module.input_clinvar_filename = 'clinvar_08052023.vcf.gz'
