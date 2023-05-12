@@ -243,7 +243,7 @@ is described in 1 step and a step later mentions the same filename, they both re
    ```
    __IMPORTANT:__ If memory causes issues, `--buffer_size 500` (or something similar) can be used 
    to reduce memory usage (at the cost of speed).
-8. Lift over not-annotated VCFs (output from `train-data-creator`) to GRCh38 using `liftover_variants.sh` (and the latest Picard image, available [here](https://download.molgeniscloud.org/downloads/vip/images/)):
+8. Lift over not-annotated VCFs (output from `train-data-creator`) to GRCh38 using `liftover_variants.sh` (and the latest Picard image, available [here](https://download.molgeniscloud.org/downloads/vip/images/utils)):
    ```shell
    APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> --export=APPTAINER_BIND ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
    APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/validation_liftover_grch38.log> --error=</path/to/validation_liftover_grch38.err> --export=APPTAINER_BIND ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>

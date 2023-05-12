@@ -29,7 +29,7 @@ bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/G
 
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
-- Picard singularity image, available here: https://download.molgeniscloud.org/downloads/vip/images/
+- Picard singularity image, available here: https://download.molgeniscloud.org/downloads/vip/images/utils
 "
 
 main() {
