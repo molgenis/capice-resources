@@ -64,6 +64,46 @@ class TestConsensusChecker(unittest.TestCase):
         self.consensus_checker.check_consensus_clinvar_vkgl_match(copy_variants_passed)
         pd.testing.assert_frame_equal(copy_variants_passed, self.variants_passed)
 
+    def test_mixed_dtypes_consensus_mismatch(self):
+        """
+        Tests that if 2 frames of different dtypes are appended, containing consensus mismatch,
+        still gets processed properly.
+        """
+        clinvar_frame = pd.DataFrame(
+            {
+                '#CHROM': [1, 1],
+                'POS': [100, 200],
+                'REF': ['C', 'T'],
+                'ALT': ['G', 'A'],
+                'gene': ['foo', 'bar'],
+                'dataset_source': ['CLINVAR', 'CLINVAR'],
+                'binarized_label': [1.0, 0.0],
+                'unique_id': ['uid1', 'uid2']
+            }
+        )
+        vkgl_frame = pd.DataFrame(
+            {
+                '#CHROM': [1, 'X'],
+                'POS': [100, 200],
+                'REF': ['C', 'T'],
+                'ALT': ['G', 'A'],
+                'gene': ['foo', 'baz'],
+                'dataset_source': ['VKGL', 'VKGL'],
+                'binarized_label': [0.0, 0.0],
+                'unique_id': ['uid3', 'uid4']
+            }
+        )
+        test_case = pd.concat([clinvar_frame, vkgl_frame], axis=0, ignore_index=True)
+        with self.assertWarns(UserWarning) as cm:
+            self.consensus_checker.check_consensus_clinvar_vkgl_match(
+                test_case)
+        self.assertEqual(
+            'Removed 1 variant(s) due to mismatch in consensus',
+            str(cm.warning)
+        )
+        self.assertNotIn('uid1', test_case['unique_id'].values)
+        self.assertNotIn('uid3', test_case['unique_id'].values)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,7 +2,7 @@ import warnings
 
 import pandas as pd
 
-from molgenis.capice_resources.core import ColumnEnums
+from molgenis.capice_resources.core import ColumnEnums, VCFEnums
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 
 
@@ -18,11 +18,22 @@ class ConsensusChecker:
 
         """
         before_drop = merged_frame.shape[0]
+
+        # For consistency reasons creating a new merge_column to ensure proper function in the merge
+        merged_frame[TrainDataCreatorEnums.MERGE_COLUMN.value] = merged_frame[
+            TrainDataCreatorEnums.further_processing_columns()
+        ].astype(str).agg(VCFEnums.ID_SEPARATOR.value.join, axis=1)
+        columns_to_check = [
+            TrainDataCreatorEnums.MERGE_COLUMN.value,
+            ColumnEnums.DATASET_SOURCE.value,
+            ColumnEnums.BINARIZED_LABEL.value
+        ]
+
         vkgl_subset = merged_frame.loc[
             merged_frame[
                 merged_frame[ColumnEnums.DATASET_SOURCE.value] == TrainDataCreatorEnums.VKGL.value
                 ].index,
-            :
+            columns_to_check
         ]
         clinvar_subset = merged_frame.loc[
             merged_frame[
@@ -30,10 +41,13 @@ class ConsensusChecker:
                     ColumnEnums.DATASET_SOURCE.value
                 ] == TrainDataCreatorEnums.CLINVAR.value
                 ].index,
-            :
+            columns_to_check
         ]
         self._perform_check(merged_frame, vkgl_subset)
         self._perform_check(merged_frame, clinvar_subset)
+
+        merged_frame.drop(columns=TrainDataCreatorEnums.MERGE_COLUMN.value, inplace=True)
+
         after_drop = merged_frame.shape[0]
         div = int((before_drop - after_drop) / 2)
         if div > 0:
@@ -56,7 +70,7 @@ class ConsensusChecker:
         """
         indices = merged_frame.merge(
             subset_frame,
-            on=TrainDataCreatorEnums.further_processing_columns(),
+            on=TrainDataCreatorEnums.MERGE_COLUMN.value,
             suffixes=('_og', '_del'),
             how='left'
         )

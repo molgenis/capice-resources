@@ -88,13 +88,15 @@ class TrainDataCreator(Module):
         del clinvar, parsed_clinvar, vkgl, parsed_vkgl
         gc.collect()
 
-        ConsensusChecker().check_consensus_clinvar_vkgl_match(merge)
-
         DuplicateProcessor().process(merge)
 
         SampleWeighter().apply_sample_weight(merge)
 
         SVFilter().filter(merge)
+
+        # Since ConsensusChecker is very intensive, performing this last with the least
+        # amount of possible samples.
+        ConsensusChecker().check_consensus_clinvar_vkgl_match(merge)
 
         train_test, validation = SplitDatasets().split(merge)
 

@@ -16,6 +16,7 @@ class TrainDataCreatorEnums(Enum):
     CLINVAR = 'CLINVAR'
     REVIEW = 'review'
     GENE = 'gene'
+    MERGE_COLUMN = 'merge_column'
 
     @classmethod
     def columns_of_interest(cls) -> list[str]:
