@@ -17,6 +17,9 @@ class DuplicateProcessor:
         """
         print('Dropping duplicates.')
         merged_frame.drop_duplicates(
-            subset=TrainDataCreatorEnums.further_processing_columns(),
+            subset=[
+                *TrainDataCreatorEnums.further_processing_columns(),
+                TrainDataCreatorEnums.CLASS.value
+            ],
             inplace=True
         )
