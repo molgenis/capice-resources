@@ -38,7 +38,7 @@ class SplitDatasets:
         print(f'Amount of benign variants:{benign_set.shape[0]}')
         validation = pathogenic_set[
             pathogenic_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
-            ].sample(frac=self.FRACTION_TO_VALIDATION)
+            ].sample(frac=self.FRACTION_TO_VALIDATION, random_state=4)
         print(f'Sampled: {validation.shape[0]} high confidence pathogenic variants.')
         if benign_set[
             benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
@@ -51,7 +51,7 @@ class SplitDatasets:
             validation,
             benign_set[
                 benign_set[ColumnEnums.SAMPLE_WEIGHT.value] >= self.HIGH_QUALITY_WEIGHT
-                ].sample(n=validation.shape[0]),
+                ].sample(n=validation.shape[0], random_state=4),
             ignore_index=False
         )
 
