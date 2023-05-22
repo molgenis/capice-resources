@@ -94,7 +94,7 @@ class TrainDataCreator(Module):
 
         SampleWeighter().apply_sample_weight(merge)
 
-        SVFilter().filter(merge)
+        #SVFilter().filter(merge)
 
         train_test, validation = SplitDatasets().split(merge)
 
