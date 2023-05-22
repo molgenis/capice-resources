@@ -6,7 +6,8 @@ import pandas as pd
 from molgenis.capice_resources.core import VCFEnums
 from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
-from molgenis.capice_resources.train_data_creator.utilities import apply_binarized_label
+from molgenis.capice_resources.train_data_creator.utilities import apply_binarized_label, \
+    check_unsupported_contigs
 
 
 class ClinVarParser:
@@ -23,6 +24,8 @@ class ClinVarParser:
                 Fully parsed and processed ClinVar dataframe, adhering to all the standard
                 columns and equalized to VKGL.
         """
+        print('Parsing ClinVar')
+        check_unsupported_contigs(clinvar_frame, '#CHROM')
         self._obtain_class(clinvar_frame)
         self._obtain_gene(clinvar_frame)
         self._obtain_review(clinvar_frame)

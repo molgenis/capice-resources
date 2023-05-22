@@ -93,6 +93,23 @@ class TestVKGLParser(unittest.TestCase):
             [1, 2, 2, 2]
         )
 
+    def test_unsupported_contig(self):
+        test_case = pd.DataFrame(
+            {
+                'chromosome': ['1', 'MT', 'FOOBAR'],
+                'start': [100, 200, 300],
+                'ref': ['A', 'C', 'G'],
+                'alt': ['T', 'G', 'C'],
+                'gene': ['foo', 'bar', 'baz'],
+                'classification': ['LB', 'LP', 'P'],
+                'support': ['4 labs', '3 labs', '2 labs']
+            }
+        )
+        with self.assertWarns(UserWarning) as c:
+            observed = self.parser.parse(test_case)
+        self.assertNotIn('FOOBAR', list(observed['#CHROM'].values))
+        self.assertEqual('Removing unsupported contig for 1 variant(s).', str(c.warning))
+
 
 if __name__ == '__main__':
     unittest.main()
