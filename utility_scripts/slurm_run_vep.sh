@@ -23,15 +23,16 @@ run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
 -g    optional: enables the --per-gene flag for VEP.
 -f    optional: Force flag. Overwrites existing output.
 
+Please note that this script expects apptainer binds to be set correctly by the system administrator.
+Additional apptainer binds can be set by setting the environment variable APPTAINER_BIND.
+If using SLURM, please export this environment variable to the sbatch instance too.
+
 Example:
 run_vep.sh -p /path/to/vip -i some_file.vcf.gz -o some_file_vep.vcf.gz
 
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
 - VIP installment (https://github.com/molgenis/vip)
-
-Notes:
-In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
 "
 
 FORCE=false
@@ -139,7 +140,6 @@ validateCommandLine() {
 runVep() {
   local args=()
   args+=("exec")
-  # args+=("--bind" "add your binds here")
   args+=("${vep_image}")
   args+=("vep")
   args+=("--input_file" "${input}")
