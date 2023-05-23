@@ -1,11 +1,13 @@
 import os
 import gzip
 import unittest
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pandas as pd
 import pandas.testing
 
+from molgenis.capice_resources import __version__
 from tests.capice_resources.testing_utilities import get_testing_resources_dir, \
     check_and_remove_directory
 from molgenis.capice_resources.train_data_creator.__main__ import TrainDataCreator
@@ -58,6 +60,46 @@ class TestTrainDataCreator(unittest.TestCase):
             ]
         )
 
+    def subtest_vcf_header(self, vcf_header: list[str]) -> None:
+        """
+        Subtest to the component test of train-data-creator, to test if the VCF header contains
+        the proper information.
+        """
+        self.subtest_vcf_header_datetime(vcf_header)
+        self.subtest_vcf_header_version(vcf_header)
+        self.subtest_vcf_header_filenames(vcf_header)
+
+    def subtest_vcf_header_datetime(self, vcf_header: list[str]) -> None:
+        """
+        Test to ensure the date is set correctly.
+        Testing with today and tomorrow to prevent errors to be raised during midnight testing
+        """
+        today = datetime.now()
+        time_format = '%Y%m%d'
+        possible_dates = [
+            f'##fileDate={today.strftime(time_format)}',
+            f'##fileDate={(today + timedelta(days=1)).strftime(time_format)}'
+        ]
+        intersect = set(vcf_header).intersection(set(possible_dates))
+        self.assertEqual(len(intersect), 1)
+
+    def subtest_vcf_header_version(self, vcf_header: list[str]) -> None:
+        """
+        Test to ensure the CAPICE-resources metadata line is set correctly
+        """
+        self.assertIn(f'##CAPICE-Resources_version={__version__}', vcf_header)
+
+    def subtest_vcf_header_filenames(self, vcf_header: list[str]) -> None:
+        """
+        Test to ensure that proper filenames are set within the VCF metadata.
+        """
+        files = [
+            '##Used_VKGL_File=smol_vkgl_may2023.tsv.gz',
+            '##Used_ClinVar_File=smol_clinvar_20230508.vcf.gz'
+        ]
+        intersect = set(vcf_header).intersection(set(files))
+        self.assertEqual(len(intersect), 2, msg=f'Present files in header: {intersect}')
+
     @patch(
         'sys.argv',
         [
@@ -65,12 +107,12 @@ class TestTrainDataCreator(unittest.TestCase):
             '-v', os.path.join(
                         get_testing_resources_dir(),
                         'train_data_creator',
-                        'smol_vkgl.tsv.gz'
+                        'smol_vkgl_may2023.tsv.gz'
                         ),
             '-c', os.path.join(
                         get_testing_resources_dir(),
                         'train_data_creator',
-                        'smol_clinvar.vcf.gz'
+                        'smol_clinvar_20230508.vcf.gz'
                         ),
             '-o', output_directory
         ]
@@ -86,25 +128,31 @@ class TestTrainDataCreator(unittest.TestCase):
         TrainDataCreator().run()
         filepath_train_test = os.path.join(self.output_directory, 'train_test.vcf.gz')
         filepath_validation = os.path.join(self.output_directory, 'validation.vcf.gz')
-        for file in [filepath_train_test, filepath_validation]:
+        vcf_file_header = []
+        for i, file in enumerate([filepath_train_test, filepath_validation]):
             filename = os.path.basename(file)
             self.assertIn(
                 filename,
                 os.listdir(self.output_directory),
                 msg=f'{filename} not found in {self.output_directory}'
             )
-            n_header_lines = 0
+            count = 0
             with gzip.open(file, 'rt') as fh:
                 for line in fh:
                     if line.startswith('##'):
-                        n_header_lines += 1
+                        if i == 0:
+                            vcf_file_header.append(line.strip())
+                        count += 1
                     else:
                         break
-            self.assertEqual(n_header_lines, 27)
+            self.assertEqual(count, 31)
+
+        self.subtest_vcf_header(vcf_file_header)
+
         tt = pd.read_csv(  # type: ignore
             filepath_train_test,
             sep='\t',
-            skiprows=27,
+            skiprows=31,
             na_values='.'
         )
         self.assertGreaterEqual(
@@ -121,7 +169,7 @@ class TestTrainDataCreator(unittest.TestCase):
         val = pd.read_csv(  # type: ignore
             filepath_validation,
             sep='\t',
-            skiprows=27,
+            skiprows=31,
             na_values='.'
         )
         self.assertGreaterEqual(
@@ -136,6 +184,36 @@ class TestTrainDataCreator(unittest.TestCase):
         val_output = val.copy(deep=True)
         correct_order_vcf_notation(val)
         pandas.testing.assert_frame_equal(val, val_output)
+
+    def test_vkgl_date_incorrect(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_2022may.tsv.gz'
+        self.assertRaises(IOError, module._validate_vkgl_date)
+
+    def test_vkgl_date_missing(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus.tsv.gz'
+        self.assertRaises(IOError, module._validate_vkgl_date)
+
+    def test_vkgl_date_old_correct(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_may2023.tsv'
+        module._validate_vkgl_date()
+
+    def test_vkgl_date_new_correct(self):
+        module = TrainDataCreator()
+        module.input_vkgl_filename = 'vkgl_public_consensus_202305.tsv'
+        module._validate_vkgl_date()
+
+    def test_clinvar_date_incorrect(self):
+        module = TrainDataCreator()
+        module.input_clinvar_filename = 'clinvar_08052023.vcf.gz'
+        self.assertRaises(IOError, module._validate_clinvar_date)
+
+    def test_clinvar_date_missing(self):
+        module = TrainDataCreator()
+        module.input_clinvar_filename = 'clinvar.vcf.gz'
+        self.assertRaises(IOError, module._validate_clinvar_date)
 
 
 if __name__ == '__main__':

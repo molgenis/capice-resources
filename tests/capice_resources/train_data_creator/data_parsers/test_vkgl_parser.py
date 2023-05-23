@@ -12,7 +12,11 @@ class TestVKGLParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
-            os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_vkgl.tsv.gz'),
+            os.path.join(
+                get_testing_resources_dir(),
+                'train_data_creator',
+                'smol_vkgl_may2023.tsv.gz'
+            ),
             sep='\t'
         )
         cls.parser = VKGLParser()  # type: ignore
