@@ -11,7 +11,11 @@ class TestClinvarParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
-            os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_clinvar.vcf.gz'),
+            os.path.join(
+                get_testing_resources_dir(),
+                'train_data_creator',
+                'smol_clinvar_20230508.vcf.gz'
+            ),
             sep='\t',
             skiprows=27,
             low_memory=False
@@ -112,6 +116,20 @@ class TestClinvarParser(unittest.TestCase):
             self.parser._obtain_review(test_case)
         self.assertEqual('Found unknown review status: some_other_value', str(w.warning))
         self.assertEqual(test_case.shape[0], 1)
+
+    def test_unsupported_contig(self):
+        test_case = pd.concat([pd.DataFrame(
+            {
+                '#CHROM': ['1', 'MT', 'FOOBAR'],
+                'POS': [1, 2, 3],
+                'REF': ['A', 'C', 'G'],
+                'ALT': ['T', 'G', 'C']
+            }
+        ), self.specific_testing_frame], axis=1)
+        with self.assertWarns(UserWarning) as c:
+            observed = self.parser.parse(test_case)
+        self.assertNotIn('FOOBAR', list(observed['#CHROM'].values))
+        self.assertEqual('Removing unsupported contig for 1 variant(s).', str(c.warning))
 
 
 if __name__ == '__main__':

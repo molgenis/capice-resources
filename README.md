@@ -95,7 +95,7 @@ For this script the user must ensure paths and variables are set correctly!
 **IMPORTANT:** Unless mentioned otherwise, filenames refer to the same file. So if an output filename
 is described in 1 step and a step later mentions the same filename, they both refer to the same file.
 
-**IMPORTANT 2:** Bash scripts have been adjusted to function with "apptainer". If using singularity: change "apptainer" synthax within scripts to "singularity". Also make sure to set the `--bind` correctly.
+**IMPORTANT 2:** Bash scripts have been adjusted to function with "apptainer". If using singularity: change "apptainer" synthax within scripts to "singularity". `APPTAINER_BIND` can be ignored if system is properly set up for apptainer bind paths.
 
 1. Update the CAPICE tool: 
    1. Make new branch for [CAPICE](https://github.com/molgenis/capice) and checkout this branch locally.
@@ -130,7 +130,7 @@ is described in 1 step and a step later mentions the same filename, they both re
    7. Run the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
       on the train input. (note: use `-t` when using the conversion tool)
       ```shell
-      bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
+      APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
       ```
    8. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
       ```shell
@@ -185,10 +185,10 @@ is described in 1 step and a step later mentions the same filename, they both re
        And run it (`sbatch <scriptname>`).
    13. Run BCF tools for the other files:
        ```shell
-       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i predict_input.vcf.gz -o predict_input.tsv.gz
-       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i breakends_vep.vcf.gz -o breakends_vep.tsv.gz
-       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i edge_cases_vep.vcf.gz -o edge_cases_vep.tsv.gz
-       bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
+       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i predict_input.vcf.gz -o predict_input.tsv.gz
+       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i breakends_vep.vcf.gz -o breakends_vep.tsv.gz
+       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i edge_cases_vep.vcf.gz -o edge_cases_vep.tsv.gz
+       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
        ```
    14. Move the files to capice
        ```shell
@@ -220,10 +220,10 @@ is described in 1 step and a step later mentions the same filename, they both re
        2. Update the defined capice version & filename.
        3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def` (where `sif/capice-4.0.0.sif` is the output path.)
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull origin main`).
-3. Download latest public GRCh37 [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets. 
+3. Download latest public GRCh37 [VKGL](https://vkgl.molgeniscloud.org/menu/main/background) and [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/) datasets (please note that these filenames are stored in the train-test and validation VCF, so file dates in the name of the files improves reproducibility). 
    ```shell
    wget https://downloads.molgeniscloud.org/downloads/VKGL/VKGL_public_consensus_<date>.tsv
-   wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz
+   wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar_<date>.vcf.gz
    ```
 4. Use `train-data-creator` to create a train-test and validation VCFs:  
    ```shell
@@ -238,29 +238,29 @@ is described in 1 step and a step later mentions the same filename, they both re
 6. Update `./utility_scripts/slurm_run_vep.sh` with the new VEP command.
 7. Run the VEP singularity image on both the train-test & validation VCF files (separately!):
    ```shell
-   sbatch --output=</path/to/train_test_vep.log> --error=</path/to/train_test_vep.err> ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/train_test.vcf.gz> -o </path/to/train_test_vep.vcf.gz>
-   sbatch --output=</path/to/validation_vep.log> --error=</path/to/validation_vep.err> ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/validation.vcf.gz> -o </path/to/validation_vep.vcf.gz>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/train_test_vep.log> --error=</path/to/train_test_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/train_test.vcf.gz> -o </path/to/train_test_vep.vcf.gz>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/validation_vep.log> --error=</path/to/validation_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/validation.vcf.gz> -o </path/to/validation_vep.vcf.gz>
    ```
    __IMPORTANT:__ If memory causes issues, `--buffer_size 500` (or something similar) can be used 
    to reduce memory usage (at the cost of speed).
-8. Lift over not-annotated VCFs (output from `train-data-creator`) to GRCh38 using `liftover_variants.sh`:
+8. Lift over not-annotated VCFs (output from `train-data-creator`) to GRCh38 using `liftover_variants.sh` (and the latest Picard image, available [here](https://download.molgeniscloud.org/downloads/vip/images/utils)):
    ```shell
-   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38>
-   sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/train_test_liftover_grch38.log> --error=</path/to/train_test_liftover_grch38.err> --export=APPTAINER_BIND ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/train_test.vcf.gz> -o </path/to/train_test_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/validation_liftover_grch38.log> --error=</path/to/validation_liftover_grch38.err> --export=APPTAINER_BIND ./utility_scripts/liftover_variants.sh -p </path/to/picard_image.sif> -i </path/to/validation.vcf.gz> -o </path/to/validation_grch38> -c </path/to/chain_file.over.chain> -r </path/to/reference_fasta.fna.gz>
    ```
    __IMPORTANT:__ Do not supply an extension as it doesn't produce a single file!
 9. Use the VEP singularity image to annotate the GRCh38 VCF files:
    ```shell
-   sbatch --output=</path/to/train_test_grch38_vep.log> --error=</path/to/train_test_grch38_vep.err> ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -a -i </path/to/train_test_grch38.vcf.gz> -o </path/to/train_test_grch38_vep.vcf.gz>
-   sbatch --output=</path/to/validation_grch38_vep.log> --error=</path/to/validation_grch38_vep.err> ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -a -i </path/to/validation_grch38.vcf.gz> -o </path/to/validation_grch38_vep.vcf.gz>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/train_test_grch38_vep.log> --error=</path/to/train_test_grch38_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -a -i </path/to/train_test_grch38.vcf.gz> -o </path/to/train_test_grch38_vep.vcf.gz>
+   APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/validation_grch38_vep.log> --error=</path/to/validation_grch38_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -a -i </path/to/validation_grch38.vcf.gz> -o </path/to/validation_grch38_vep.vcf.gz>
    ```
 10. Convert VEP annotated train-test & validation VCFs (separately!) back to TSV using 
     [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`):
     ```shell
-    bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/train_test_vep.vcf.gz> -o </path/to/train_test_vep.tsv.gz>
-    bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/validation_vep.vcf.gz> -o </path/to/validation_vep.tsv.gz>
-    bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/train_test_grch38_vep.vcf.gz> -o </path/to/train_test_grch38_vep.tsv.gz>
-    bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/validation_grch38_vep.vcf.gz> -o </path/to/validation_grch38_vep.tsv.gz>
+    APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/train_test_vep.vcf.gz> -o </path/to/train_test_vep.tsv.gz>
+    APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/validation_vep.vcf.gz> -o </path/to/validation_vep.tsv.gz>
+    APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/train_test_grch38_vep.vcf.gz> -o </path/to/train_test_grch38_vep.tsv.gz>
+    APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i </path/to/validation_grch38_vep.vcf.gz> -o </path/to/validation_grch38_vep.tsv.gz>
     ```
 11. Process train-test & validation TSVs (ensure `-a` is added for GRCh38):
     ```shell

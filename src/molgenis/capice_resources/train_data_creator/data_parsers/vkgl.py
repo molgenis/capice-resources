@@ -5,7 +5,7 @@ from molgenis.capice_resources.core import VCFEnums
 from molgenis.capice_resources.utilities import add_dataset_source
 from molgenis.capice_resources.train_data_creator import TrainDataCreatorEnums
 from molgenis.capice_resources.train_data_creator.utilities import correct_order_vcf_notation, \
-    apply_binarized_label
+    apply_binarized_label, check_unsupported_contigs
 
 
 class VKGLParser:
@@ -22,6 +22,8 @@ class VKGLParser:
                 Fully parsed and processed VKGL dataframe, adhering to all the standard
                 columns and equalized to ClinVar.
         """
+        print('Parsing VKGL')
+        check_unsupported_contigs(vkgl_frame, 'chromosome')
         self._correct_column_names(vkgl_frame)
         self._correct_support(vkgl_frame)
         correct_order_vcf_notation(vkgl_frame)

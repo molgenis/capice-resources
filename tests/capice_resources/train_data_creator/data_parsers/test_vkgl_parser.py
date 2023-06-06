@@ -12,7 +12,11 @@ class TestVKGLParser(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.dataset = pd.read_csv(  # type: ignore
-            os.path.join(get_testing_resources_dir(), 'train_data_creator', 'smol_vkgl.tsv.gz'),
+            os.path.join(
+                get_testing_resources_dir(),
+                'train_data_creator',
+                'smol_vkgl_may2023.tsv.gz'
+            ),
             sep='\t'
         )
         cls.parser = VKGLParser()  # type: ignore
@@ -92,6 +96,23 @@ class TestVKGLParser(unittest.TestCase):
             list(test_case['review'].values),
             [2, 2, 2, 2]
         )
+
+    def test_unsupported_contig(self):
+        test_case = pd.DataFrame(
+            {
+                'chromosome': ['1', 'MT', 'FOOBAR'],
+                'start': [100, 200, 300],
+                'ref': ['A', 'C', 'G'],
+                'alt': ['T', 'G', 'C'],
+                'gene': ['foo', 'bar', 'baz'],
+                'classification': ['LB', 'LP', 'P'],
+                'support': ['4 labs', '3 labs', '2 labs']
+            }
+        )
+        with self.assertWarns(UserWarning) as c:
+            observed = self.parser.parse(test_case)
+        self.assertNotIn('FOOBAR', list(observed['#CHROM'].values))
+        self.assertEqual('Removing unsupported contig for 1 variant(s).', str(c.warning))
 
 
 if __name__ == '__main__':

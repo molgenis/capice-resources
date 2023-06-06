@@ -1,10 +1,12 @@
 import gc
 import os
 import gzip
+from datetime import datetime
 from importlib.resources import files
 
 import pandas as pd
 
+from molgenis.capice_resources import __version__
 from molgenis.capice_resources.core import Module, TSVFileEnums, DatasetIdentifierEnums, VCFEnums, \
     ColumnEnums
 from molgenis.capice_resources.utilities import merge_dataset_rows
@@ -24,6 +26,8 @@ class TrainDataCreator(Module):
             program='Train data creator',
             description='Creator of CAPICE train/test and validation datasets.'
         )
+        self.input_vkgl_filename = ''
+        self.input_clinvar_filename = ''
 
     @staticmethod
     def _create_module_specific_arguments(parser):
@@ -70,8 +74,17 @@ class TrainDataCreator(Module):
         }
 
     def run_module(self, arguments):
+        # Obtaining and further validating CLI
+        vkgl_arg = arguments['input_vkgl']
+        self.input_vkgl_filename = os.path.basename(vkgl_arg)
+        self._validate_vkgl_date()
+        clinvar_arg = arguments['input_clinvar']
+        self.input_clinvar_filename = os.path.basename(clinvar_arg)
+        self._validate_clinvar_date()
+
+        # Parsing
         vkgl = self._read_pandas_tsv(
-            arguments['input_vkgl'],
+            vkgl_arg,
             [  # type: ignore
                 TrainDataCreatorEnums.CHROMOSOME.value,
                 TrainDataCreatorEnums.START.value,
@@ -80,8 +93,9 @@ class TrainDataCreator(Module):
             ]
         )
         parsed_vkgl = VKGLParser().parse(vkgl)
+
         clinvar = self._read_vcf_file(
-            arguments['input_clinvar']  # type: ignore
+            clinvar_arg  # type: ignore
         )
         parsed_clinvar = ClinVarParser().parse(clinvar)
         merge = merge_dataset_rows(parsed_clinvar, parsed_vkgl)
@@ -107,10 +121,80 @@ class TrainDataCreator(Module):
             DatasetIdentifierEnums.VALIDATION.value: validation
         }
 
-    def export(self, output):
-        fake_vcf_header = files(
+    def _validate_vkgl_date(self) -> None:
+        """
+        Method to validate that the supplied VKGL file contains the file date.
+
+        Raises:
+            IOError:
+                IOError is raised when the VKGL file does not adhere
+                to the standard datetime format.
+        """
+        date_in_filename = self.input_vkgl_filename.split('_')[-1].split('.')[0]
+        # Check for the "old" format of MMMYYYY
+        old_valid = self._check_date_format(date_in_filename, '%b%Y')
+        # The "new" format of YYYYMM
+        new_valid = self._check_date_format(date_in_filename, '%Y%m')
+        if not new_valid and not old_valid:
+            raise IOError('Supplied VKGL file does not contain standard datetime format!')
+
+    def _validate_clinvar_date(self) -> None:
+        """
+        Method to validate that the supplied ClinVar file contains the file date.
+
+        Raises:
+            IOError:
+                IOError is raised when the ClinVar file does not adhere
+                to the standard datetime format.
+        """
+        date_in_filename = self.input_clinvar_filename.split('_')[-1].split('.')[0]
+        date_valid = self._check_date_format(date_in_filename, '%Y%m%d')
+        if not date_valid:
+            raise IOError('Supplied ClinVar file does not contain the standard datetime format!')
+
+    @staticmethod
+    def _check_date_format(date_string: str, format_string: str) -> bool:
+        """
+        Function to check date_string for format_string.
+        Returns True if date_string adheres to format_string, else returns False.
+
+        Args:
+            date_string:
+                String of the date to be checked.
+            format_string:
+                datetime string of the format the date_string should be in.
+
+        Returns:
+            bool
+                Returns boolean True if date_string adheres to format_string, else returns False.
+        """
+        return_value = True
+        try:
+            datetime.strptime(date_string, format_string)
+        except ValueError:
+            return_value = False
+        return return_value
+
+    def create_fake_vcf_header(self):
+        """
+        Method to create the fake VCF header and add train-data-creator specific metadata.
+        Also sets the correct VCF date.
+        Returns:
+            header
+                Returns a single string of the VCF header, each metadata point separated by \\n with
+                the final metadata point ending in \\n.
+        """
+        header = files(
             'molgenis.capice_resources.train_data_creator.resources'
-        ).joinpath('fake_vcf_header.txt').read_text()
+        ).joinpath('fake_vcf_header.txt').read_text().strip().split('\n')
+        header.append(f'##CAPICE-Resources_version={__version__}')
+        header.append(f'##Used_ClinVar_File={self.input_clinvar_filename}')
+        header.append(f'##Used_VKGL_File={self.input_vkgl_filename}')
+        header.append(f'##fileDate={datetime.now().strftime("%Y%m%d")}\n')
+        return '\n'.join(header)
+
+    def export(self, output):
+        fake_vcf_header = self.create_fake_vcf_header()
         for types in [
             DatasetIdentifierEnums.TRAIN_TEST.value,
             DatasetIdentifierEnums.VALIDATION.value

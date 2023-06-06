@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
 from setuptools import setup, find_namespace_packages
+from src.molgenis.capice_resources import __version__
 with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(
     name='capice-resources',
-    version='5.0.0.dev0',
+    version=__version__,
     packages=find_namespace_packages('src', exclude=['tests']),
     package_dir={"": "src"},
-    url='https://capice.molgeniscloud.org/',
+    url='https://github.com/molgenis/capice-resources/',
     license='LGPL-3.0',
     author='Molgenis',
     author_email='molgenis-support@umcg.nl',

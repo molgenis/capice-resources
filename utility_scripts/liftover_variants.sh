@@ -20,15 +20,16 @@ liftover_variants.sh -p <arg> -i <arg> -o <arg> -c <arg> -r <arg>
 -c  required: the chain file
 -r  required: the reference sequence fasta for the TARGET build
 
+Please note that this script expects apptainer binds to be set correctly by the system administrator.
+Additional apptainer binds can be set by setting the environment variable APPTAINER_BIND.
+If using SLURM, please export this environment variable to the sbatch instance too.
+
 Example:
 bash liftover_variants.sh -p /path/to/picard_singularity_image.sif -i /path/to/GRCh37.vcf -o /path/to/GRCh38 -c /path/to/chain_file.chain -r /path/to/reference.fna.gz
 
 Requirements:
 - Apptainer (although Singularity should work too, please change the script and adjust apptainer to singularity)
-- Picard singularity image
-
-Notes:
-In case you have specific binds in order for your image to work, adjust this script at the commented out bind flag.
+- Picard singularity image, available here: https://download.molgeniscloud.org/downloads/vip/images/utils
 "
 
 main() {
@@ -132,15 +133,15 @@ runLiftover() {
   local args=()
 
   args+=("exec")
-  # args+=("--bind" "add your binds here")
   args+=("${picard_path}")
   args+=("java" "-jar")
   args+=("/opt/picard/lib/picard.jar" "LiftoverVcf")
-  args+=("I=${input}")
-  args+=("O=${output}")
-  args+=("CHAIN=${chain_file}")
-  args+=("REJECT=${rejected}")
-  args+=("R=${reference}")
+  args+=("-I" "${input}")
+  args+=("-O" "${output}")
+  args+=("-C" "${chain_file}")
+  args+=("--REJECT" "${rejected}")
+  args+=("-R" "${reference}")
+  args+=("-WMC" "true")
 
   apptainer "${args[@]}"
 
