@@ -177,7 +177,7 @@ runVep() {
   if [[ "${ASSEMBLY}" == "GRCh37" ]]
   then
     args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh37/spliceai_scores.masked.snv.hg19.vcf.gz,indel=${resources_directory}GRCh37/spliceai_scores.masked.indel.hg19.vcf.gz")
-    args+=("--custom" "${resources_directory}GRCh37/gnomad.total.r2.1.1.sites.stripped.vcf.gz,gnomAD,vcf,exact,0,AF,HN")
+    args+=("--custom" "${resources_directory}GRCh37/gnomad.total.r2.1.1.sites.stripped.patch1.vcf.gz,gnomAD,vcf,exact,0,AF,HN")
     args+=("--custom" "${resources_directory}GRCh37/hg19.100way.phyloP100way.bw,phyloP,bigwig,exact,0")
   else
     args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
