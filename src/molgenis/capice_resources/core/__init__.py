@@ -263,7 +263,8 @@ class ColumnEnums(Enum):
 
 
 class PlottingEnums(Enum):
-    CONSTRAINED_LAYOUT = {'w_pad': 0.2, 'h_pad': 0.2}
+    CONSTRAINED_LAYOUT_W_PAD = 0.2
+    CONSTRAINED_LAYOUT_H_PAD = 0.2
     DPI = 100
 
 

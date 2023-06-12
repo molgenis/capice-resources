@@ -24,7 +24,11 @@ class ThresholdPlotter:
         self.figure = plt.figure()
         # Retina displays overwrite DPI after initialization
         self.figure.set_dpi(PlottingEnums.DPI.value)
-        self.figure.set_constrained_layout(PlottingEnums.CONSTRAINED_LAYOUT.value)
+        self.figure.set_layout_engine(
+            'constrained',
+            h_pad=PlottingEnums.CONSTRAINED_LAYOUT_H_PAD.value,
+            w_pad=PlottingEnums.CONSTRAINED_LAYOUT_W_PAD.value
+        )
 
     def plot_threshold(self, validation_score_data: pd.DataFrame) -> plt.Figure:
         """
