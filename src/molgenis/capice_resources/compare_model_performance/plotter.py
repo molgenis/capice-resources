@@ -184,7 +184,11 @@ class Plotter:
         figure.suptitle(
             f'Model 1 vs Model 2 {figure_supertitle}'
         )
-        figure.set_constrained_layout(PlottingEnums.CONSTRAINED_LAYOUT.value)
+        figure.set_layout_engine(
+            'constrained',
+            h_pad=PlottingEnums.CONSTRAINED_LAYOUT_H_PAD.value,
+            w_pad=PlottingEnums.CONSTRAINED_LAYOUT_W_PAD.value
+        )
 
     def _set_nrows_and_ncols(self) -> None:
         """
