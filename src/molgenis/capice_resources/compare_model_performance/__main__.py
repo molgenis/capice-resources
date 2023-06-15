@@ -281,6 +281,7 @@ class CompareModelPerformance(Module):
             merge = pd.concat([scores, labels], axis=1)
         else:
             merge = self._attempt_mismatch_merge(scores, labels, force_merge)
+        merge = merge.loc[:, ~merge.columns.duplicated()]
         return merge
 
     def _attempt_mismatch_merge(

@@ -889,11 +889,18 @@ class Plotter:
             benign_present = False
         if not benign_present:
             model_1_data = pd.concat(
-                [model_1_data, pd.DataFrame({ColumnEnums.BINARIZED_LABEL.value: [0.0]})]
+                [
+                    model_1_data,
+                    pd.DataFrame(
+                        {
+                            ColumnEnums.BINARIZED_LABEL.value: [0.0]
+                        }
+                    )
+                ], ignore_index=True
             )
         sns.violinplot(
             # sort_values to ensure that x axis tick 0 is always binarized_label 0 (benign)
-            data=pd.concat([model_1_data, model_2_data]).sort_values(
+            data=pd.concat([model_1_data, model_2_data], ignore_index=True).sort_values(
                 by=ColumnEnums.BINARIZED_LABEL.value
             ),
             x=ColumnEnums.BINARIZED_LABEL.value,
