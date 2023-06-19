@@ -878,8 +878,31 @@ class Plotter:
         """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
         split = self._assign_violinplot_split(model_1_size, model_2_size)
+        # Sadly, due to the nature of Seaborn, no other option than adding a fake "benign variant"
+        # is possible, removing the variant after plotting.
+        benign_present = True
+        if (
+                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0] == 0 and
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0] == 0
+        ):
+            # hacky wacky
+            benign_present = False
+        if not benign_present:
+            model_1_data = pd.concat(
+                [
+                    model_1_data,
+                    pd.DataFrame(
+                        {
+                            ColumnEnums.BINARIZED_LABEL.value: [0.0]
+                        }
+                    )
+                ], ignore_index=True
+            )
         sns.violinplot(
-            data=pd.concat([model_1_data, model_2_data]),
+            # sort_values to ensure that x axis tick 0 is always binarized_label 0 (benign)
+            data=pd.concat([model_1_data, model_2_data], ignore_index=True).sort_values(
+                by=ColumnEnums.BINARIZED_LABEL.value
+            ),
             x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue=ColumnEnums.DATASET_SOURCE.value,
@@ -892,6 +915,11 @@ class Plotter:
             },
             legend=False
         )
+        if not benign_present:
+            model_1_data.drop(
+                index=model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0].index,
+                inplace=True
+            )
         labels = self._create_boxplot_label(
             model_1_data, model_1_size, model_2_data, model_2_size, return_tuple=True
         )
@@ -899,7 +927,7 @@ class Plotter:
         blue_patch = mpatches.Patch(color='blue', label=labels[1])
         ax.set_ylim(0.0, 1.0)
         ax.set_xlim(-0.5, 1.5)
-        ax.set_xticks([0.0, 1.0])
+        ax.set_xticks((0.0, 1.0))
         ax.set_xticklabels(['benign', 'pathogenic'])
         ax.set_xlabel('label')
         ax.set_title(title)
