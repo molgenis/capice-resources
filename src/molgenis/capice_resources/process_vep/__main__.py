@@ -124,6 +124,14 @@ class ProcessVEP(Module):
         train_features = self._read_train_features(arguments['features'])
         cgd = self._read_cgd_data(arguments['genes'])
         build38 = arguments['assembly']
+        previous_iteration = arguments['train_test_previous_iteration']
+        if previous_iteration is not None:
+            previous_iteration_dataset = self._read_pandas_tsv(
+                previous_iteration,
+                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            )
+        else:
+            previous_iteration_dataset = None
         self._process_vep(
             merged_datasets,
             train_features,
@@ -131,9 +139,14 @@ class ProcessVEP(Module):
             build38
         )
         train_test, validation = self._split_data(merged_datasets)
+        validation_filtered = self._process_previous_iteration(
+            validation,
+            previous_iteration_dataset
+        )
         return {
             DatasetIdentifierEnums.TRAIN_TEST.value: train_test,
             DatasetIdentifierEnums.VALIDATION.value: validation,
+            DatasetIdentifierEnums.VALIDATION_FILTERED.value: validation_filtered,
             DatasetIdentifierEnums.OUTPUT.value: output
         }
 
@@ -166,6 +179,52 @@ class ProcessVEP(Module):
             add_dataset_source(validation, DatasetIdentifierEnums.VALIDATION.value)
             merged_dataset = merge_dataset_rows(train_test, validation)
         return merged_dataset
+
+    @staticmethod
+    def _process_previous_iteration(
+            validation_dataset: pd.DataFrame,
+            previous_iteration_dataset: pd.DataFrame | None
+    ) -> pd.DataFrame | None:
+        """
+        Method to generate the validation_filtered file
+
+        Args:
+            validation_dataset:
+                Pandas DataFrame object of the (semi) final validation dataset that is in need of
+                being filtered on the train-test of the previous iteration model, for an unbiased
+                comparison plots.
+            previous_iteration_dataset:
+                (Optional) Pandas DataFrame object of the VEP annotated dataset used to make the
+                previous iteration model to compare the new iteration model to.
+
+        Returns:
+            validation_filtered:
+                Pandas DataFrame object of the input validation_dataset filtered on
+                previous_iteration_dataset, if the argument is not None. If the
+                previous_iteration_dataset is None, output will also be None.
+        """
+        if previous_iteration_dataset is None:
+            return None
+        else:
+            validation_dataset[ColumnEnums.DATASET_SOURCE.value] = DatasetIdentifierEnums.VALIDATION.value
+            validation_dataset[ColumnEnums.PROCESSING_COLUMN.value] = validation_dataset[
+                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            ].astype(str).agg('!'.join, axis=1)
+            previous_iteration_dataset[ColumnEnums.DATASET_SOURCE.value] = DatasetIdentifierEnums.TRAIN_TEST.value
+            previous_iteration_dataset[ColumnEnums.PROCESSING_COLUMN.value] = previous_iteration_dataset[
+                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            ].astype(str).agg('!'.join, axis=1)
+            merge = merge_dataset_rows(validation_dataset, previous_iteration_dataset)
+            merge.drop_duplicates(subset=ColumnEnums.PROCESSING_COLUMN.value, inplace=True)
+            merge.drop(
+                columns=[ColumnEnums.PROCESSING_COLUMN.value, ColumnEnums.DATASET_SOURCE.value],
+                inplace=True
+            )
+            return merge.loc[
+                merge[
+                    merge[ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value].index,
+                :
+            ].reset_index(drop=True)
 
     @staticmethod
     def _read_train_features(train_features_argument: os.PathLike[str]) -> list[str]:
@@ -363,43 +422,21 @@ class ProcessVEP(Module):
                 train-test dataframe and validation and its validation dataframe.
 
         """
-        self._export_train_test(
-            output[DatasetIdentifierEnums.TRAIN_TEST.value],
-            output[DatasetIdentifierEnums.OUTPUT.value]  # type: ignore
+        output_path = DatasetIdentifierEnums.OUTPUT.value
+        self.exporter.export_pandas_file(
+            path=os.path.join(output_path, 'train_test.tsv.gz'),
+            pandas_object=output[DatasetIdentifierEnums.TRAIN_TEST.value]
         )
         if output[DatasetIdentifierEnums.VALIDATION.value] is not None:
-            self._export_validation(
-                output[DatasetIdentifierEnums.VALIDATION.value],
-                output[DatasetIdentifierEnums.OUTPUT.value]  # type: ignore
+            self.exporter.export_pandas_file(
+                path=os.path.join(output_path, 'validation.tsv.gz'),
+                pandas_object=output[DatasetIdentifierEnums.VALIDATION.value]
             )
-
-    def _export_train_test(self, train_test: pd.DataFrame, output_path: os.PathLike[str]) -> None:
-        """
-        Exporter specific to train-test.
-
-        Args:
-            train_test:
-                The train-test dataframe, fully processed and ready to be exported.
-            output_path:
-                The output PATH in which the train-test tsv should be placed. Should not contain
-                any filenames yet.
-
-        """
-        self.exporter.export_pandas_file(os.path.join(output_path, 'train_test.tsv.gz'), train_test)
-
-    def _export_validation(self, validation: pd.DataFrame, output_path: os.PathLike) -> None:
-        """
-        Exporter specific to validation.
-
-        Args:
-            validation:
-                The validation dataframe, fully processed and ready to be exported.
-            output_path:
-                The output PATH in which the train-test tsv should be placed. Should not contain
-                any filenames yet.
-
-        """
-        self.exporter.export_pandas_file(os.path.join(output_path, 'validation.tsv.gz'), validation)
+        if output[DatasetIdentifierEnums.VALIDATION_FILTERED.value] is not None:
+            self.exporter.export_pandas_file(
+                path=os.path.join(output_path, 'validation_filtered.tsv.gz'),
+                pandas_object=output[DatasetIdentifierEnums.VALIDATION_FILTERED.value]
+            )
 
 
 def main():
