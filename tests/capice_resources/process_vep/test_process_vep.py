@@ -75,17 +75,13 @@ class TestProcessVEP(unittest.TestCase):
         the 2 output datasets contains at least a considerable amount of samples.
         """
         self.processor.run()
+        output_path = os.path.join(get_testing_resources_dir(), 'process_vep', 'output')
         for expected_output_file in ['train_test.tsv.gz', 'validation.tsv.gz']:
             self.assertIn(
                 expected_output_file,
-                os.listdir(
-                    os.path.join(
-                        get_testing_resources_dir(),
-                        'process_vep',
-                        'output'
-                    )
-                )
+                os.listdir(output_path)
             )
+        self.assertNotIn('validation_filtered.tsv.gz', os.listdir(output_path))
         observed = pd.read_csv(  # type: ignore
             os.path.join(get_testing_resources_dir(), 'process_vep', 'output', 'validation.tsv.gz'),
             sep='\t'
@@ -127,6 +123,7 @@ class TestProcessVEP(unittest.TestCase):
             low_memory=False
         )
         self.assertNotIn('validation.tsv.gz', os.listdir(output_directory))
+        self.assertNotIn('validation_filtered.tsv.gz', os.listdir(output_directory))
         self.assertGreaterEqual(observed.shape[0], 10000)
         self.assertNotIn('dataset_source', observed.columns)
 
@@ -150,6 +147,107 @@ class TestProcessVEP(unittest.TestCase):
         observed = self.processor.parse_and_validate_cli()
         self.assertIn('assembly', observed.keys())
         self.assertTrue(observed['assembly'])
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-t', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_test_vep.tsv.gz'),
+            '-v', os.path.join(get_testing_resources_dir(), 'process_vep', 'validation_vep.tsv.gz'),
+            '-f', os.path.join(get_testing_resources_dir(), 'process_vep', 'train_features.json'),
+            '-o', os.path.join(get_testing_resources_dir(), 'process_vep', 'output'),
+            '-g', os.path.join(get_testing_resources_dir(), 'process_vep', 'CGD.txt.gz'),
+            '-r', os.path.join(get_testing_resources_dir(), 'process_vep',
+                               'train_test_vep_previous_iteration.tsv.gz')
+
+        ]
+    )
+    def test_integration_filtered_validation(self):
+        """
+        Integration test to see if the filtered validation file gets produced properly and exported
+        properly.
+        """
+        self.processor.run()
+        output_path = os.path.join(get_testing_resources_dir(), 'process_vep', 'output')
+        self.assertIn('train_test.tsv.gz', os.listdir(output_path))
+        self.assertIn('validation.tsv.gz', os.listdir(output_path))
+        self.assertIn('validation_filtered.tsv.gz', os.listdir(output_path))
+        filtered_validation = pd.read_csv(
+            os.path.join(output_path, 'validation_filtered.tsv.gz'),
+            sep='\t'
+        )
+        previous_iteration_tt = pd.read_csv(
+            os.path.join(
+                get_testing_resources_dir(),
+                'process_vep',
+                'train_test_vep_previous_iteration.tsv.gz'
+            ),
+            sep='\t'
+        )
+        for identifier in previous_iteration_tt['ID'].values:
+            self.assertNotIn(identifier, filtered_validation['ID'].values)
+
+    def test_filtered_validation_pass(self):
+        """
+        Test to see if the new filter to filter out train-test variants of previous models
+        functions properly.
+        """
+        test_validation = pd.DataFrame(
+            {
+                'CHROM': [1, 2, 3, 4, 'X'],
+                'POS': [100, 200, 300, 400, 500],
+                'REF': ['A', 'C', 'T', 'G', 'GC'],
+                'ALT': ['C', 'A', 'G', 'T', 'CA'],
+                'SYMBOL': ['FOO1', 'FOO2', 'FOO3', 'FOO4', 'FOO5'],
+                'UniqueID': ['id1', 'id2', 'id3', 'id4', 'id5']
+            }
+        )
+        test_previous_iteration = pd.DataFrame(
+            {
+                'CHROM': [1, 2, 4, 'X', 6],
+                'POS': [100, 300, 400, 500, 600],
+                'REF': ['A', 'A', 'G', 'C', 'GC'],
+                'ALT': ['C', 'T', 'T', 'A', 'CA'],
+                'SYMBOL': ['FOO1', 'FOO2', 'FOO4', 'FOO2', 'FOO6']
+            }
+        )
+        observed = self.processor._process_previous_iteration(
+            test_validation,
+            test_previous_iteration
+        )
+        # Checking if the 2 identifiers that are duplicates are removed
+        self.assertNotIn('id1', observed['UniqueID'].values)
+        self.assertNotIn('id4', observed['UniqueID'].values)
+        # Checking if the remainder of the identifiers are still present
+        for identifier in ['id2', 'id3', 'id5']:
+            self.assertIn(identifier, observed['UniqueID'].values)
+        # Checking if observed has the right amount of samples
+        self.assertEqual(observed.shape[0], 3)
+        # Checking if the original validation is unaltered
+        self.assertEqual(test_validation.shape[0], 5)
+
+    def test_filtered_validation_none_pass(self):
+        """
+        Test to see if None gets returned with input None to the validation filter.
+        """
+        test_validation = pd.DataFrame(
+            {
+                'CHROM': [1, 2, 3, 4, 'X'],
+                'POS': [100, 200, 300, 400, 500],
+                'REF': ['A', 'C', 'T', 'G', 'GC'],
+                'ALT': ['C', 'A', 'G', 'T', 'CA'],
+                'SYMBOL': ['FOO1', 'FOO2', 'FOO3', 'FOO4', 'FOO5'],
+                'UniqueID': ['id1', 'id2', 'id3', 'id4', 'id5']
+            }
+        )
+        test_previous_iteration = None
+        observed = self.processor._process_previous_iteration(
+            test_validation,
+            test_previous_iteration
+        )
+        self.assertIsNone(observed)
+        # Checking if validation remains unaltered
+        self.assertEqual(test_validation.shape[0], 5)
 
 
 if __name__ == '__main__':

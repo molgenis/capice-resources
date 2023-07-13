@@ -215,16 +215,21 @@ class ProcessVEP(Module):
                 ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
             ].astype(str).agg('!'.join, axis=1)
             merge = merge_dataset_rows(validation_dataset, previous_iteration_dataset)
-            merge.drop_duplicates(subset=ColumnEnums.PROCESSING_COLUMN.value, inplace=True)
-            merge.drop(
-                columns=[ColumnEnums.PROCESSING_COLUMN.value, ColumnEnums.DATASET_SOURCE.value],
-                inplace=True
+            merge.drop_duplicates(
+                subset=ColumnEnums.PROCESSING_COLUMN.value,
+                inplace=True,
+                keep=False
             )
-            return merge.loc[
+            validation_filtered = merge.loc[
                 merge[
                     merge[ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value].index,
                 :
             ].reset_index(drop=True)
+            validation_filtered.drop(
+                columns=[ColumnEnums.PROCESSING_COLUMN.value, ColumnEnums.DATASET_SOURCE.value],
+                inplace=True
+            )
+            return validation_filtered
 
     @staticmethod
     def _read_train_features(train_features_argument: os.PathLike[str]) -> list[str]:
@@ -422,7 +427,7 @@ class ProcessVEP(Module):
                 train-test dataframe and validation and its validation dataframe.
 
         """
-        output_path = DatasetIdentifierEnums.OUTPUT.value
+        output_path = output[DatasetIdentifierEnums.OUTPUT.value]
         self.exporter.export_pandas_file(
             path=os.path.join(output_path, 'train_test.tsv.gz'),
             pandas_object=output[DatasetIdentifierEnums.TRAIN_TEST.value]
