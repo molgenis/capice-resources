@@ -69,6 +69,14 @@ class ProcessVEP(Module):
             action='store_true',
             help='Flag to enable GRCh38 mode.'
         )
+        optional.add_argument(
+            '-r',
+            '--train-test-previous-iteration',
+            type=str,
+            help='VEP annotated train-test file of the model of the previous iteration model to '
+                 'perform comparison to. '
+                 'If supplied, "validation_filtered.tsv.gz" will also be exported to -o / --output.'
+        )
         return parser
 
     def _validate_module_specific_arguments(self, parser):
@@ -92,6 +100,11 @@ class ProcessVEP(Module):
         output_argument = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
+        pi_data_argument = self.input_validator.validate_input_command_line_interface_file(
+            parser.get_argument('train_test_previous_iteration'),
+            TSVFileEnums.TSV_EXTENSIONS.value,
+            can_be_optional=True
+        )
         assembly_flag = parser.get_argument('assembly')
         return {
             **train_test,
@@ -99,7 +112,8 @@ class ProcessVEP(Module):
             **train_features,
             **genes_argument,
             **output_argument,
-            **assembly_flag
+            **assembly_flag,
+            **pi_data_argument
         }
 
     def run_module(self, arguments):
@@ -315,11 +329,11 @@ class ProcessVEP(Module):
                 if validation is present in merged_data, else None).
         """
         train_test = merged_data.loc[
-            merged_data[
-                merged_data[
-                    ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.TRAIN_TEST.value
-            ].index, :
-        ]
+                     merged_data[
+                         merged_data[
+                             ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.TRAIN_TEST.value
+                         ].index, :
+                     ]
         train_test.reset_index(drop=True, inplace=True)
         train_test.drop(columns=ColumnEnums.DATASET_SOURCE.value, inplace=True)
         if (
@@ -328,11 +342,11 @@ class ProcessVEP(Module):
                 merged_data[ColumnEnums.DATASET_SOURCE.value].values
         ):
             validation = merged_data.loc[
-                merged_data[
-                    merged_data[
-                        ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value
-                ].index, :
-            ]
+                         merged_data[
+                             merged_data[
+                                 ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value
+                             ].index, :
+                         ]
             validation.reset_index(drop=True, inplace=True)
             validation.drop(columns=ColumnEnums.DATASET_SOURCE.value, inplace=True)
         else:
