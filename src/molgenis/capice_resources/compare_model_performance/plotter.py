@@ -22,7 +22,8 @@ class Plotter:
             process_consequences: list[str] | bool,
             model_1_score_path: os.PathLike,
             model_1_label_path: os.PathLike,
-            model_2_score_path: os.PathLike,
+            model_2_present: bool,
+            model_2_score_path: os.PathLike | None,
             model_2_label_path: os.PathLike | None,
     ):
         """
@@ -36,8 +37,10 @@ class Plotter:
                 The path to the model 1 score file.
             model_1_label_path:
                 The path to the model 1 label file.
+            model_2_present:
+                Whenever model 2 data is supplied (True) or not (False).
             model_2_score_path:
-                The path to the model 2 score file.
+                (Optional) The path to the model 2 score file.
             model_2_label_path:
                 (Optional) The path to the model 2 label file.
         """
@@ -51,15 +54,16 @@ class Plotter:
         self.fig_score_dist_vio = plt.figure()
         self.fig_score_diff_box = plt.figure()
         self.fig_score_diff_vio = plt.figure()
-        self._prepare_figure_supertitle_and_size(
-            model_1_score_path,
-            model_1_label_path,
-            model_2_score_path,
-            model_2_label_path
-        )
+        self.model_2_present = model_2_present
+        self.model_1_score_path = model_1_score_path
+        self.model_1_label_path = model_1_label_path
+        self.model_2_score_path = model_2_score_path
+        self.model_2_label_path = model_2_label_path
+        self._prepare_figure_supertitle_and_size()
         self.n_rows = 1
         self.n_cols = 1
         self._set_nrows_and_ncols()
+        self.x_lim = self._set_x_lim()
 
     @staticmethod
     def _set_figure_size(process_consequences: list[str] | bool) -> tuple[int, int]:
@@ -82,36 +86,24 @@ class Plotter:
             return 10, 15
 
     def _prepare_figure_supertitle_and_size(
-            self,
-            model_1_score_path,
-            model_1_label_path,
-            model_2_score_path,
-            model_2_label_path
+            self
     ) -> None:
         """
         Preparatory function to set the super title and image size to each of the figures.
-
-        Args:
-            model_1_score_path:
-                The path to the model 1 score file.
-            model_1_label_path:
-                The path to the model 1 label file.
-            model_2_score_path:
-                The path to the model 2 score file.
-            model_2_label_path:
-                (Optional) The path to the model 2 label file.
         """
         print('Preparing plot figures.')
         figsize = self._set_figure_size(self.process_consequences)
         print('Preparing plots.')
 
-        if model_2_label_path is None:
-            model_2_label_path = model_1_label_path
+        figure_supertitle = f'Model 1 scores: {os.path.basename(self.model_1_score_path)}\n' \
+                            f'Model 1 labels: {os.path.basename(self.model_1_label_path)}\n'
 
-        figure_supertitle = f'Model 1 scores: {os.path.basename(model_1_score_path)}\n' \
-                            f'Model 1 labels: {os.path.basename(model_1_label_path)}\n' \
-                            f'Model 2 scores: {os.path.basename(model_2_score_path)}\n' \
-                            f'Model 2 labels: {os.path.basename(model_2_label_path)}\n'
+        if self.model_2_present:
+            if self.model_2_label_path is None:
+                self.model_2_label_path = self.model_1_label_path
+
+            figure_supertitle += f'Model 2 scores: {os.path.basename(self.model_2_score_path)}\n' \
+                                 f'Model 2 labels: {os.path.basename(self.model_2_label_path)}\n'
 
         self._set_size_supertitle_layout(
             self.fig_auc,
@@ -211,10 +203,22 @@ class Plotter:
         else:
             print('Creating single plot per figure.\n')
 
+    def _set_x_lim(self):
+        """
+        Function to set the xlim based on whenever model 2 data is available or not.
+
+        Since model 1 data is always plotted on X=0,
+        center around X=0 when model 2 data isn't present.
+        """
+        if self.model_2_present:
+            return 0.0, 1.0
+        else:
+            return -0.5, 0.5
+
     def plot(
             self,
             merged_model_1_data: pd.DataFrame,
-            merged_model_2_data: pd.DataFrame
+            merged_model_2_data: pd.DataFrame | None
     ) -> dict[str, plt.Figure]:
         """
         Main function of the plotter class.
@@ -223,7 +227,8 @@ class Plotter:
             merged_model_1_data:
                 Merged frame of the model 1 data. Contains both the score and labels frames.
             merged_model_2_data:
-                Merged frame of the model 2 data. Contains both the score and labels frames.
+                (Optional) Merged frame of the model 2 data.
+                Contains both the score and labels frames.
 
         Returns:
             dict:
@@ -347,7 +352,7 @@ class Plotter:
         ax_roc.plot(fpr_model_1, tpr_model_1, color='red', label=f'Model 1 (AUC={auc_model_1})')
         ax_roc.plot(fpr_model_2, tpr_model_2, color='blue', label=f'Model 2 (AUC={auc_model_2})')
         ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
-        ax_roc.set_xlim([0.0, 1.0])
+        ax_roc.set_xlim(self.x_lim)
         ax_roc.set_ylim([0.0, 1.0])
         ax_roc.set_xlabel('False Positive Rate')
         ax_roc.set_ylabel('True Positive Rate')

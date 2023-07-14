@@ -62,12 +62,12 @@ class CompareModelPerformance(Module):
                  'Leading for per-consequence performance metrics.'
         )
 
-        required.add_argument(
+        optional.add_argument(
             '-b',
             '--scores-model-2',
             type=str,
-            required=True,
-            help='Input location of the file containing the scores for model 2. '
+            help='Optional input location of the file containing the scores for model 2. '
+                 'If not defined, will just plot statistics for arguments given for model 1. '
                  'Column `Consequence` is required to be present in either the score file or '
                  'the label file (or both). '
                  'Has to contain the `score` column and '
@@ -80,7 +80,9 @@ class CompareModelPerformance(Module):
             type=str,
             help='Optional input location of the file containing the labels for model 2. '
                  'Must be supplied in either TSV or gzipped TSV format! '
-                 'If not defined, uses file given through -l/--labels/--labels-model-1 for model 2.'
+                 'If not defined, '
+                 'uses file given through -l/--labels/--labels-model-1 for model 2. '
+                 'Raises error when -b/--scores-model-2 is not supplied.'
         )
 
         required.add_argument(
