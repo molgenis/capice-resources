@@ -128,7 +128,7 @@ class ProcessVEP(Module):
         if previous_iteration is not None:
             previous_iteration_dataset = self._read_pandas_tsv(
                 previous_iteration,
-                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+                ['CHROM', 'POS', 'REF', 'ALT', 'Gene', 'SYMBOL_SOURCE']
             )
         else:
             previous_iteration_dataset = None
