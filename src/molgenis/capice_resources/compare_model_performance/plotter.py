@@ -44,7 +44,7 @@ class Plotter:
             model_2_label_path:
                 (Optional) The path to the model 2 label file.
         """
-        self.calculator = PerformanceCalculator()
+        self.calculator = PerformanceCalculator(model_2_present)
         self.process_consequences = process_consequences
         self.index = 1
         self.fig_auc = plt.figure()
@@ -234,6 +234,8 @@ class Plotter:
             dict:
                 Dictionary containing [key] figure name and [value] the figure itself.
         """
+        if not self.model_2_present:
+            merged_model_2_data = pd.DataFrame(columns=merged_model_1_data.columns)
         m1_samples = merged_model_1_data.shape[0]
         m2_samples = merged_model_2_data.shape[0]
 
