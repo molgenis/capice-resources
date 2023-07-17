@@ -248,6 +248,7 @@ class VCFEnums(Enum):
 class DatasetIdentifierEnums(Enum):
     TRAIN_TEST = 'train_test'
     VALIDATION = 'validation'
+    VALIDATION_FILTERED = 'validation_filtered'
     OUTPUT = 'output'
 
 
@@ -260,6 +261,7 @@ class ColumnEnums(Enum):
     GNOMAD_AF = 'gnomAD_AF'
     CONSEQUENCE = 'Consequence'
     IMPUTED = 'is_imputed'
+    PROCESSING_COLUMN = 'processing_columns'
 
 
 class PlottingEnums(Enum):
