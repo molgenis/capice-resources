@@ -184,8 +184,8 @@ class TestProcessVEP(unittest.TestCase):
             ),
             sep='\t'
         )
-        for identifier in previous_iteration_tt['ID'].values:
-            self.assertNotIn(identifier, filtered_validation['ID'].values)
+        for identifier in previous_iteration_tt['ID'].values.tolist():
+            self.assertNotIn(identifier, filtered_validation['ID'].values.tolist())
 
     def test_filtered_validation_pass(self):
         """
@@ -198,7 +198,8 @@ class TestProcessVEP(unittest.TestCase):
                 'POS': [100, 200, 300, 400, 500],
                 'REF': ['A', 'C', 'T', 'G', 'GC'],
                 'ALT': ['C', 'A', 'G', 'T', 'CA'],
-                'SYMBOL': ['FOO1', 'FOO2', 'FOO3', 'FOO4', 'FOO5'],
+                'Gene': [1, 2, 3, 4, 5],
+                'SYMBOL_SOURCE': ['EntrezGene'] * 5,
                 'UniqueID': ['id1', 'id2', 'id3', 'id4', 'id5']
             }
         )
@@ -208,7 +209,8 @@ class TestProcessVEP(unittest.TestCase):
                 'POS': [100, 300, 400, 500, 600],
                 'REF': ['A', 'A', 'G', 'C', 'GC'],
                 'ALT': ['C', 'T', 'T', 'A', 'CA'],
-                'SYMBOL': ['FOO1', 'FOO2', 'FOO4', 'FOO2', 'FOO6']
+                'Gene': [1, 2, 4, 2, 6],
+                'SYMBOL_SOURCE': ['EntrezGene'] * 5
             }
         )
         observed = self.processor._process_previous_iteration(
@@ -236,7 +238,8 @@ class TestProcessVEP(unittest.TestCase):
                 'POS': [100, 200, 300, 400, 500],
                 'REF': ['A', 'C', 'T', 'G', 'GC'],
                 'ALT': ['C', 'A', 'G', 'T', 'CA'],
-                'SYMBOL': ['FOO1', 'FOO2', 'FOO3', 'FOO4', 'FOO5'],
+                'Gene': [1, 2, 3, 4, 5],
+                'SYMBOL_SOURCE': ['EntrezGene'] * 5,
                 'UniqueID': ['id1', 'id2', 'id3', 'id4', 'id5']
             }
         )

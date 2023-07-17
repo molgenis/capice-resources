@@ -206,13 +206,21 @@ class ProcessVEP(Module):
         if previous_iteration_dataset is None:
             return None
         else:
-            validation_dataset[ColumnEnums.DATASET_SOURCE.value] = DatasetIdentifierEnums.VALIDATION.value
-            validation_dataset[ColumnEnums.PROCESSING_COLUMN.value] = validation_dataset[
-                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            validation_dataset[
+                ColumnEnums.DATASET_SOURCE.value
+            ] = DatasetIdentifierEnums.VALIDATION.value
+            validation_dataset[
+                ColumnEnums.PROCESSING_COLUMN.value
+            ] = validation_dataset[
+                ['CHROM', 'POS', 'REF', 'ALT', 'Gene', 'SYMBOL_SOURCE']
             ].astype(str).agg('!'.join, axis=1)
-            previous_iteration_dataset[ColumnEnums.DATASET_SOURCE.value] = DatasetIdentifierEnums.TRAIN_TEST.value
-            previous_iteration_dataset[ColumnEnums.PROCESSING_COLUMN.value] = previous_iteration_dataset[
-                ['CHROM', 'POS', 'REF', 'ALT', 'SYMBOL']
+            previous_iteration_dataset[
+                ColumnEnums.DATASET_SOURCE.value
+            ] = DatasetIdentifierEnums.TRAIN_TEST.value
+            previous_iteration_dataset[
+                ColumnEnums.PROCESSING_COLUMN.value
+            ] = previous_iteration_dataset[
+                ['CHROM', 'POS', 'REF', 'ALT', 'Gene', 'SYMBOL_SOURCE']
             ].astype(str).agg('!'.join, axis=1)
             merge = merge_dataset_rows(validation_dataset, previous_iteration_dataset)
             merge.drop_duplicates(
@@ -222,7 +230,9 @@ class ProcessVEP(Module):
             )
             validation_filtered = merge.loc[
                 merge[
-                    merge[ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value].index,
+                    merge[
+                        ColumnEnums.DATASET_SOURCE.value
+                    ] == DatasetIdentifierEnums.VALIDATION.value].index,
                 :
             ].reset_index(drop=True)
             validation_filtered.drop(
@@ -395,7 +405,8 @@ class ProcessVEP(Module):
         train_test = merged_data.loc[
                      merged_data[
                          merged_data[
-                             ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.TRAIN_TEST.value
+                             ColumnEnums.DATASET_SOURCE.value
+                         ] == DatasetIdentifierEnums.TRAIN_TEST.value
                          ].index, :
                      ]
         train_test.reset_index(drop=True, inplace=True)
@@ -408,7 +419,8 @@ class ProcessVEP(Module):
             validation = merged_data.loc[
                          merged_data[
                              merged_data[
-                                 ColumnEnums.DATASET_SOURCE.value] == DatasetIdentifierEnums.VALIDATION.value
+                                 ColumnEnums.DATASET_SOURCE.value
+                             ] == DatasetIdentifierEnums.VALIDATION.value
                              ].index, :
                          ]
             validation.reset_index(drop=True, inplace=True)
