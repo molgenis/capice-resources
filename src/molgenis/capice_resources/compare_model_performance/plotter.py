@@ -352,7 +352,13 @@ class Plotter:
         # Plotting ROCs
         ax_roc = self.fig_roc.add_subplot(1, 1, 1)
         ax_roc.plot(fpr_model_1, tpr_model_1, color='red', label=f'Model 1 (AUC={auc_model_1})')
-        ax_roc.plot(fpr_model_2, tpr_model_2, color='blue', label=f'Model 2 (AUC={auc_model_2})')
+        if self.model_2_present:
+            ax_roc.plot(
+                fpr_model_2,
+                tpr_model_2,
+                color='blue',
+                label=f'Model 2 (AUC={auc_model_2})'
+            )
         ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
         ax_roc.set_xlim(self.x_lim)
         ax_roc.set_ylim([0.0, 1.0])
@@ -360,8 +366,8 @@ class Plotter:
         ax_roc.set_ylabel('True Positive Rate')
         ax_roc.legend(loc='lower right')
 
-    @staticmethod
     def _create_af_bins_plotlabels(
+            self,
             bin_label: str,
             model_1_size: int,
             model_1_auc: float,
@@ -385,11 +391,15 @@ class Plotter:
                 Model 2: {auc} (n: {sample_size})
                 {\n}
         """
-        if model_1_size == model_2_size:
-            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
+        label = f'{bin_label}\nModel 1: {model_1_auc}'
+        if self.model_2_present:
+            if model_1_size == model_2_size:
+                label += f'\nModel 2: {model_2_auc}\nn: {model_1_size}'
+            else:
+                label += f' (n: {model_1_size})\nModel 2: {model_2_auc} (n: {model_2_size})'
         else:
-            return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\n' \
-                   f'Model 2: {model_2_auc} (n: {model_2_size})'
+            label += f'\nn: {model_1_size}'
+        return label
 
     @staticmethod
     def _subset_af_bin(
@@ -468,13 +478,14 @@ class Plotter:
             align='edge',
             color='red'
         )
-        ax.bar(
-            x_index,
-            auc_m2,
-            width,
-            align='edge',
-            color='blue'
-        )
+        if self.model_2_present:
+            ax.bar(
+                x_index,
+                auc_m2,
+                width,
+                align='edge',
+                color='blue'
+            )
         ax.plot(
             np.NaN,
             np.NaN,
@@ -575,12 +586,13 @@ class Plotter:
             color='red',
             label='= Model 1'
         )
-        ax_afb.plot(
-            np.NaN,
-            np.NaN,
-            color='blue',
-            label='= Model 2'
-        )
+        if self.model_2_present:
+            ax_afb.plot(
+                np.NaN,
+                np.NaN,
+                color='blue',
+                label='= Model 2'
+            )
         ax_afb.set_xticks(list(range(0, len(bins))), bin_labels, rotation=45)
         ax_afb.set_xlabel('Allele frequency Bin')
         ax_afb.set_ylabel('AUC')
@@ -644,7 +656,8 @@ class Plotter:
         )
 
         ax_auc.bar(1, model_1_auc, color='red', label=labels[0])
-        ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
+        if self.model_2_present:
+            ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
 
         if math.isnan(model_1_auc):
             ax_auc.text(
@@ -820,20 +833,31 @@ class Plotter:
 
         """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax.boxplot(
-            [
+        boxplot_data = [
                 model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
-                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
-            ],
-            labels=[
-                'Model 1\nBenign',
-                'Model 2\nBenign',
-                'Model 1\nPathogenic',
-                'Model 2\nPathogenic'
+                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot]
             ]
-        )
+        boxplot_labels = [
+                'Model 1\nBenign',
+                'Model 1\nPathogenic'
+            ]
+        if self.model_2_present:
+            boxplot_data.insert(
+                1,
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot]
+            )
+            boxplot_data.append(
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot]
+            )
+            boxplot_labels.insert(
+                1,
+                'Model 2\nBenign'
+            )
+            boxplot_labels.append(
+                'Model 2\nPathogenic'
+            )
+
+        ax.boxplot(boxplot_data, labels=boxplot_labels)
         ax.plot(
             np.NaN,
             np.NaN,
@@ -905,11 +929,13 @@ class Plotter:
                     )
                 ], ignore_index=True
             )
+        if self.model_2_present:
+            violinplot_data = pd.concat([model_1_data, model_2_data], ignore_index=True)
+        else:
+            violinplot_data = model_1_data
         sns.violinplot(
             # sort_values to ensure that x axis tick 0 is always binarized_label 0 (benign)
-            data=pd.concat([model_1_data, model_2_data], ignore_index=True).sort_values(
-                by=ColumnEnums.BINARIZED_LABEL.value
-            ),
+            data=violinplot_data.sort_values(by=ColumnEnums.BINARIZED_LABEL.value),
             x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue=ColumnEnums.DATASET_SOURCE.value,
