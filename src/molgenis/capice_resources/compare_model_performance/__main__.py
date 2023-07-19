@@ -154,12 +154,6 @@ class CompareModelPerformance(Module):
         )
         consequence_tools = ConsequenceTools()
         consequences = consequence_tools.has_consequence(model_1, model_2)
-        if consequences:
-            consequence_tools.validate_consequence_samples_equal(
-                model_1,
-                model_2,
-                consequences
-            )
 
         annotator = Annotator()
         annotator.add_score_difference(model_1)
@@ -169,6 +163,12 @@ class CompareModelPerformance(Module):
         add_dataset_source(model_1, CompareModelPerformanceEnums.MODEL_1.value)
 
         if self.model_2_present:
+            if consequences:
+                consequence_tools.validate_consequence_samples_equal(
+                    model_1,
+                    model_2,
+                    consequences
+                )
             annotator.add_score_difference(model_2)
             annotator.add_and_process_impute_af(model_2)
             add_dataset_source(model_2, CompareModelPerformanceEnums.MODEL_2.value)
@@ -184,9 +184,34 @@ class CompareModelPerformance(Module):
         plots = plotter.plot(model_1, model_2)
         return {**plots, DatasetIdentifierEnums.OUTPUT.value: arguments['output']}
 
-    def _set_model_2_presence(self, model_2_argument: str | None) -> None:
-        if model_2_argument is None:
-            self.model_2_present = False
+    def _set_model_2_presence(
+            self,
+            model_2_score_argument: str | None,
+            model_2_label_argument: str | None
+    ) -> None:
+        """
+        Function to se the boolean value if model 2 is supplied in CLI or not.
+        Also checks if model_2_score_argument is given when model_2_label_argument is given and
+        not None, raises IOError when incorrect.
+
+        Args:
+            model_2_score_argument:
+                The CLI argument for the scores of model 2.
+            model_2_label_argument:
+                The CLI argument for the labels of model 2.
+
+        Raises:
+            IOError:
+                IOError is raised when model_2_label_argument is not None,
+                but model_2_score_argument is None.
+        """
+        if model_2_score_argument is None:
+            if model_2_label_argument is None:
+                self.model_2_present = False
+            else:
+                raise IOError(
+                    'Model 2 label argument is supplied, while model 2 score argument is not.'
+                )
         else:
             self.model_2_present = True
 
@@ -217,13 +242,13 @@ class CompareModelPerformance(Module):
         """
         scores_model_1 = self._read_pandas_tsv(
             scores1_argument,
-            [  # type: ignore
+            [
                 ColumnEnums.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
             labels1_argument,
-            [  # type: ignore
+            [
                 ColumnEnums.BINARIZED_LABEL.value,
                 ColumnEnums.GNOMAD_AF.value
             ]
@@ -245,10 +270,27 @@ class CompareModelPerformance(Module):
             labels2_argument: os.PathLike | Path | str,
             model_1_merge: pd.DataFrame
     ) -> pd.DataFrame:
+        """
+        Function to fully process the model 2 score and label arguments, if present.
+
+        Args:
+            scores2_argument:
+                The CLI argument for the model 2 scores.
+            labels2_argument:
+                The CLI argument for the model 2 labels.
+            model_1_merge:
+                The scores and labels merged dataframe for model 1.
+
+        Returns:
+            DataFrame:
+                Always returns a pandas.DataFrame, either with scores and labels of model 2 merged,
+                scores of model 2 merged with labels of model 1 or an empty dataframe containing
+                the columns of model 1 merged frame.
+        """
         if self.model_2_present:
             scores_model_2 = self._read_pandas_tsv(
                 scores2_argument,
-                [  # type: ignore
+                [
                     ColumnEnums.SCORE.value
                 ]
             )
@@ -370,7 +412,7 @@ class CompareModelPerformance(Module):
             labels,
             on=CompareModelPerformanceEnums.MERGE_COLUMN.value,
             how='left'
-        )  # type: ignore
+        )
 
     def export(self, output) -> None:
         output_path = output[DatasetIdentifierEnums.OUTPUT.value]

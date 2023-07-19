@@ -20,11 +20,11 @@ class Plotter:
     def __init__(
             self,
             process_consequences: list[str] | bool,
-            model_1_score_path: os.PathLike,
-            model_1_label_path: os.PathLike,
+            model_1_score_path: os.PathLike[str] | str,
+            model_1_label_path: os.PathLike[str] | str,
             model_2_present: bool,
-            model_2_score_path: os.PathLike | None,
-            model_2_label_path: os.PathLike | None,
+            model_2_score_path: os.PathLike[str] | str | None,
+            model_2_label_path: os.PathLike[str] | str | None,
     ):
         """
         Init of the Plotter class.
