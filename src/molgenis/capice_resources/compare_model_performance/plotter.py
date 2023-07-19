@@ -44,7 +44,7 @@ class Plotter:
             model_2_label_path:
                 (Optional) The path to the model 2 label file.
         """
-        self.calculator = PerformanceCalculator(model_2_present)
+        self.calculator = PerformanceCalculator(not model_2_present)
         self.process_consequences = process_consequences
         self.index = 1
         self.fig_auc = plt.figure()
@@ -211,9 +211,9 @@ class Plotter:
         center around X=0 when model 2 data isn't present.
         """
         if self.model_2_present:
-            return 0.0, 1.0
+            return 0.0, 3.0
         else:
-            return -0.5, 0.5
+            return 0.0, 2.0
 
     def plot(
             self,
@@ -360,7 +360,7 @@ class Plotter:
                 label=f'Model 2 (AUC={auc_model_2})'
             )
         ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
-        ax_roc.set_xlim(self.x_lim)
+        ax_roc.set_xlim([0.0, 1.0])
         ax_roc.set_ylim([0.0, 1.0])
         ax_roc.set_xlabel('False Positive Rate')
         ax_roc.set_ylabel('True Positive Rate')
@@ -471,11 +471,17 @@ class Plotter:
 
         """
         width = 0.3
+        if self.model_2_present:
+            model_1_x_index = x_index - width
+            align = 'edge'
+        else:
+            model_1_x_index = x_index
+            align = 'center'
         ax.bar(
-            x_index - width,
+            model_1_x_index,
             auc_m1,
             width,
-            align='edge',
+            align=align,
             color='red'
         )
         if self.model_2_present:
@@ -655,21 +661,28 @@ class Plotter:
             model_1_auc, model_1_size, model_2_auc, model_2_size
         )
 
+        xticks = [1]
+        xticklabels = ['Model 1']
+        not_available_x_index = 1.0
+
         ax_auc.bar(1, model_1_auc, color='red', label=labels[0])
         if self.model_2_present:
             ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
+            xticks.append(2)
+            xticklabels.append('Model 2')
+            not_available_x_index = 1.5
 
         if math.isnan(model_1_auc):
             ax_auc.text(
-                1.5, 0.5, "Not available",
+                not_available_x_index, 0.5, "Not available",
                 fontsize='x-large',
                 horizontalalignment='center',
                 verticalalignment='center'
             )
 
         ax_auc.set_title(title)
-        ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
-        ax_auc.set_xlim(0.0, 3.0)
+        ax_auc.set_xticks(xticks, xticklabels)
+        ax_auc.set_xlim(self.x_lim)
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc=CMPPlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
@@ -759,14 +772,14 @@ class Plotter:
             title
         )
 
-    @staticmethod
     def _create_boxplot_label(
+            self,
             model_1_data: pd.DataFrame,
             model_1_size: int,
             model_2_data: pd.DataFrame,
             model_2_size: int,
-            return_tuple: bool = False
-    ) -> str | tuple[str, str]:
+            return_iterable: bool = False
+    ) -> str | list[str, str]:
         """
         Generic function to create a boxplot label.
 
@@ -779,8 +792,8 @@ class Plotter:
                 The dataframe of the score and label data of model 2.
             model_2_size:
                 The amount of samples in model_2_data.
-            return_tuple:
-                Whenever the result should be returned as tuple (True) or single string (False)
+            return_iterable:
+                Whenever the result should be returned as iterable (True) or single string (False)
         Returns:
             out:
                 Tuple (in case return_tuple=True) containing [0] the label for model 1 and [1]
@@ -792,11 +805,14 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
-        return_value = (
-            f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}',
-            f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
-        )
-        if return_tuple:
+        return_value = [
+            f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}'
+        ]
+        if self.model_2_present:
+            return_value.append(
+                f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+            )
+        if return_iterable:
             return return_value
         else:
             return '\n\n'.join(return_value)
@@ -954,10 +970,11 @@ class Plotter:
                 inplace=True
             )
         labels = self._create_boxplot_label(
-            model_1_data, model_1_size, model_2_data, model_2_size, return_tuple=True
+            model_1_data, model_1_size, model_2_data, model_2_size, return_iterable=True
         )
-        red_patch = mpatches.Patch(color='red', label=labels[0])
-        blue_patch = mpatches.Patch(color='blue', label=labels[1])
+        handles = [mpatches.Patch(color='red', label=labels[0])]
+        if self.model_2_present:
+            handles.append(mpatches.Patch(color='blue', label=labels[1]))
         ax.set_ylim(0.0, 1.0)
         ax.set_xlim(-0.5, 1.5)
         ax.set_xticks((0.0, 1.0))
@@ -965,7 +982,7 @@ class Plotter:
         ax.set_xlabel('label')
         ax.set_title(title)
         ax.legend(
-            handles=[red_patch, blue_patch],
+            handles=handles,
             loc=CMPPlottingEnums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             labelspacing=2

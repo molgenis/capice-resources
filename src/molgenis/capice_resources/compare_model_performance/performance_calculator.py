@@ -75,7 +75,7 @@ class PerformanceCalculator:
                       "pass pos_label explicitly."
             try:
                 fpr, tpr = self._calculate_fpr_tpr(dataset)
-                return fpr, tpr, np.nan
+                return fpr, tpr, self._calculate_auc(dataset)
             except ValueError as e:
                 if str(e) != message:
                     raise
