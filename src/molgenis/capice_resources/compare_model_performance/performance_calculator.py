@@ -1,6 +1,7 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from numpy import ndarray
 from sklearn.metrics import roc_curve, roc_auc_score
 
 from molgenis.capice_resources.core import ColumnEnums
@@ -59,7 +60,7 @@ class PerformanceCalculator:
     def calculate_roc(
             self,
             dataset: pd.DataFrame
-    ) -> tuple[ndarray, ndarray, float]:
+    ) -> tuple[Any, Any, float]:
         """
         Method to calculate the False Positive Rate (FPR), True Positive Rate (TPR) and Area
         Under Curve (AUC) for a given dataframe containing the SCORE and Binarized_label columns.

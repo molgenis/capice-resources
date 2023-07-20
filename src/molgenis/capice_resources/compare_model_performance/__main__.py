@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional, Any
 
 import pandas as pd
 
@@ -175,6 +176,8 @@ class CompareModelPerformance(Module):
             annotator.add_score_difference(model_2)
             annotator.add_and_process_impute_af(model_2)
             add_dataset_source(model_2, CompareModelPerformanceEnums.MODEL_2.value)
+        else:
+            model_2 = pd.DataFrame(columns=model_1.columns)
 
         plotter = Plotter(
             process_consequences=consequences,
@@ -189,8 +192,8 @@ class CompareModelPerformance(Module):
 
     def _set_model_2_presence(
             self,
-            model_2_score_argument: str | None,
-            model_2_label_argument: str | None
+            model_2_score_argument: Optional[str],
+            model_2_label_argument: Optional[str]
     ) -> None:
         """
         Function to se the boolean value if model 2 is supplied in CLI or not.
@@ -220,10 +223,10 @@ class CompareModelPerformance(Module):
 
     def _read_and_parse_input_data(
             self,
-            scores1_argument: os.PathLike | Path | str,
-            labels1_argument: os.PathLike | Path | str,
-            scores2_argument: os.PathLike | Path | str | None,
-            labels2_argument: os.PathLike | Path | str | None
+            scores1_argument: os.PathLike[str] | Path | str,
+            labels1_argument: os.PathLike[str] | Path | str,
+            scores2_argument: Optional[os.PathLike[str] | Path | str],
+            labels2_argument: Optional[os.PathLike[str] | Path | str]
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Function to read and parse the scores and labels arguments.
@@ -269,8 +272,8 @@ class CompareModelPerformance(Module):
 
     def _process_model_2_merge(
             self,
-            scores2_argument: os.PathLike | Path | str,
-            labels2_argument: os.PathLike | Path | str,
+            scores2_argument: Optional[os.PathLike[str] | Path | str],
+            labels2_argument: Optional[os.PathLike[str] | Path | str],
             model_1_merge: pd.DataFrame
     ) -> pd.DataFrame:
         """
@@ -417,12 +420,12 @@ class CompareModelPerformance(Module):
             how='left'
         )
 
-    def export(self, output) -> None:
+    def export(self, output: dict[str, Any]) -> None:
         output_path = output[DatasetIdentifierEnums.OUTPUT.value]
         for filename, figure in output.items():
             if filename == DatasetIdentifierEnums.OUTPUT.value:
                 continue
-            figure.savefig(os.path.join(output_path, filename + '.png'))  # type: ignore
+            figure.savefig(os.path.join(output_path, filename + '.png'))
 
 
 def main():

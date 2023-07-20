@@ -1,5 +1,6 @@
 import math
 import os
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -23,8 +24,8 @@ class Plotter:
             model_1_score_path: os.PathLike[str] | str,
             model_1_label_path: os.PathLike[str] | str,
             model_2_present: bool,
-            model_2_score_path: os.PathLike[str] | str | None,
-            model_2_label_path: os.PathLike[str] | str | None,
+            model_2_score_path: Optional[os.PathLike[str] | str],
+            model_2_label_path: Optional[os.PathLike[str] | str],
     ):
         """
         Init of the Plotter class.
@@ -56,14 +57,26 @@ class Plotter:
         self.fig_score_diff_box = plt.figure()
         self.fig_score_diff_vio = plt.figure()
         self.model_2_present = model_2_present
-        self.model_1_score_path = model_1_score_path
-        self.model_1_label_path = model_1_label_path
-        self.model_2_score_path = model_2_score_path
-        self.model_2_label_path = model_2_label_path
+        self.model_1_score_path = self._get_basename_from_path(model_1_score_path)
+        self.model_1_label_path = self._get_basename_from_path(model_1_label_path)
+        self.model_2_score_path = self._get_basename_from_path(model_2_score_path)
+        self.model_2_label_path = self._get_basename_from_path(model_2_label_path)
         self._prepare_figure_supertitle_and_size()
         self.n_rows = 1
         self.n_cols = 1
         self._set_nrows_and_ncols()
+
+    @staticmethod
+    def _get_basename_from_path(
+            path: Optional[os.PathLike[str] | str]
+    ) -> str:
+        """
+        Function to circumvent mypy taking issue with Optional[str] and os.path.basename()
+        """
+        if path:
+            return os.path.basename(path)
+        else:
+            return ''
 
     @staticmethod
     def _set_figure_size(process_consequences: list[str] | bool) -> tuple[int, int]:
@@ -209,7 +222,7 @@ class Plotter:
     def plot(
             self,
             merged_model_1_data: pd.DataFrame,
-            merged_model_2_data: pd.DataFrame | None
+            merged_model_2_data: pd.DataFrame
     ) -> dict[str, plt.Figure]:
         """
         Main function of the plotter class.
@@ -218,15 +231,14 @@ class Plotter:
             merged_model_1_data:
                 Merged frame of the model 1 data. Contains both the score and labels frames.
             merged_model_2_data:
-                (Optional) Merged frame of the model 2 data.
+                Merged frame of the model 2 data.
                 Contains both the score and labels frames.
+                Can be empty.
 
         Returns:
             dict:
                 Dictionary containing [key] figure name and [value] the figure itself.
         """
-        if not self.model_2_present:
-            merged_model_2_data = pd.DataFrame(columns=merged_model_1_data.columns)
         m1_samples = merged_model_1_data.shape[0]
         m2_samples = merged_model_2_data.shape[0]
 
@@ -605,7 +617,7 @@ class Plotter:
             model_1_size: int,
             model_2_auc: float,
             model_2_size: int
-    ) -> tuple[str, str, str | None]:
+    ) -> tuple[str, str, Optional[str]]:
         """
         Creates the label for specifically AUC (sub)plots
 
@@ -774,7 +786,7 @@ class Plotter:
             model_2_data: pd.DataFrame,
             model_2_size: int,
             return_iterable: bool = False
-    ) -> str | list[str, str]:
+    ) -> str | list[str]:
         """
         Generic function to create a boxplot label.
 
