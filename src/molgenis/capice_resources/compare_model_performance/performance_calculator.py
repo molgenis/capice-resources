@@ -11,8 +11,8 @@ class PerformanceCalculator:
         """
         Args:
             ignore_zero_sample_error:
-                Boolean value to ignore the "ValueError: Found array with 0 sample(s) while minimum
-                of 1 is required" (True to ignore) in case of a singular model comparison.
+                Boolean value to ignore the errors raised by "roc_curve" and "roc_auc_score"
+                when the functions are supplied with empty dataframes or emtpy series.
         """
         self.ignore_zero_sample_error = ignore_zero_sample_error
 
@@ -29,6 +29,10 @@ class PerformanceCalculator:
             float:
                 Rounded float of the Area Under Curve on 4 decimals.
                 Will be NaN if ignore_zero_sample_error is set to True in initialization.
+        Raises:
+            ValueError:
+                ValueError is raised when upon initialization ignore_zero_sample_error is set to
+                False or if the ValueError message does not match a "zero sample error".
         """
         if self.ignore_zero_sample_error:
             try:
@@ -68,6 +72,10 @@ class PerformanceCalculator:
             tuple:
                 Tuple containing [0] False Positive Rate (numpy.array) [1] True Positive Rate (
                 np.array) and [2] Area Under Curve (float, rounded to 4 decimals).
+        Raises:
+            ValueError:
+                ValueError is raised when upon initialization ignore_zero_sample_error is set to
+                False or if the ValueError message does not match a "zero sample error".
         """
         if self.ignore_zero_sample_error:
             message = "y_true takes value in {} and pos_label is not specified: " \

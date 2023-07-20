@@ -29,6 +29,7 @@ class TestPlotter(unittest.TestCase):
             consequences,
             'path_model_1_scores',
             'path_model_1_labels',
+            True,
             'path_model_2_scores',
             'path_model_2_labels'
         )
@@ -59,6 +60,7 @@ class TestPlotter(unittest.TestCase):
             False,
             'path_model_1_scores',
             'path_model_1_labels',
+            True,
             'path_model_2_scores',
             'path_model_2_labels'
         )
@@ -113,6 +115,7 @@ class TestPlotter(unittest.TestCase):
             ['Foo', 'Bar'],
             'path1',
             'path2',
+            True,
             'path3',
             'path4'
         )

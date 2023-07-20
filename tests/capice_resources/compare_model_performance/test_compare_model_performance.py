@@ -64,11 +64,11 @@ class TestCompareModelPerformance(unittest.TestCase):
         (as the error is raised before anything is done with the frame)
         """
         module = CompareModelPerformance()
+        module.force_merge = False
         with self.assertRaises(SampleSizeMismatchError) as e:
             module._merge_scores_and_labes(
                 pd.DataFrame({'foo': ['bar', 'baz']}),
-                pd.DataFrame({'bar': ['foo']}),
-                force_merge=False
+                pd.DataFrame({'bar': ['foo']})
             )
         self.assertEqual(
             str(e.exception),
@@ -82,6 +82,7 @@ class TestCompareModelPerformance(unittest.TestCase):
         "labels" is preserved after the merge (mimicking the binarized_label column).
         """
         module = CompareModelPerformance()
+        module.force_merge = True
         scores = pd.DataFrame(
             {
                  'chr': [1, 2, 3, 4],
@@ -101,7 +102,7 @@ class TestCompareModelPerformance(unittest.TestCase):
                 'SuperUniqueLabelColumn': [1, 0, 0]
             }
         )
-        observed = module._merge_scores_and_labes(scores, labels, force_merge=True)
+        observed = module._merge_scores_and_labes(scores, labels)
         self.assertIn('CHROM', observed.columns)
         self.assertIn('SuperUniqueLabelColumn', observed.columns)
 

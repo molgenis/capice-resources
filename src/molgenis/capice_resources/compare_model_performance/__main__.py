@@ -144,7 +144,10 @@ class CompareModelPerformance(Module):
         path_labels_model_2 = arguments['labels_model_2']
         self.force_merge = arguments['force_merge']
 
-        self._set_model_2_presence(path_scores_model_2)
+        self._set_model_2_presence(
+            path_scores_model_2,
+            path_labels_model_2
+        )
 
         model_1, model_2 = self._read_and_parse_input_data(
             path_scores_model_1,

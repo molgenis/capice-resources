@@ -44,6 +44,7 @@ class Plotter:
             model_2_label_path:
                 (Optional) The path to the model 2 label file.
         """
+        # Not because ignore_zero_sample_error is the inverse of model_2_present
         self.calculator = PerformanceCalculator(not model_2_present)
         self.process_consequences = process_consequences
         self.index = 1
@@ -63,7 +64,6 @@ class Plotter:
         self.n_rows = 1
         self.n_cols = 1
         self._set_nrows_and_ncols()
-        self.x_lim = self._set_x_lim()
 
     @staticmethod
     def _set_figure_size(process_consequences: list[str] | bool) -> tuple[int, int]:
@@ -202,18 +202,6 @@ class Plotter:
             )
         else:
             print('Creating single plot per figure.\n')
-
-    def _set_x_lim(self):
-        """
-        Function to set the xlim based on whenever model 2 data is available or not.
-
-        Since model 1 data is always plotted on X=0,
-        center around X=0 when model 2 data isn't present.
-        """
-        if self.model_2_present:
-            return 0.0, 3.0
-        else:
-            return 0.0, 2.0
 
     def plot(
             self,
@@ -664,6 +652,7 @@ class Plotter:
         xticks = [1]
         xticklabels = ['Model 1']
         not_available_x_index = 1.0
+        xlim = (0.0, 2.0)
 
         ax_auc.bar(1, model_1_auc, color='red', label=labels[0])
         if self.model_2_present:
@@ -671,6 +660,7 @@ class Plotter:
             xticks.append(2)
             xticklabels.append('Model 2')
             not_available_x_index = 1.5
+            xlim = (0.0, 3.0)
 
         if math.isnan(model_1_auc):
             ax_auc.text(
@@ -682,7 +672,7 @@ class Plotter:
 
         ax_auc.set_title(title)
         ax_auc.set_xticks(xticks, xticklabels)
-        ax_auc.set_xlim(self.x_lim)
+        ax_auc.set_xlim(xlim)
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc=CMPPlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
