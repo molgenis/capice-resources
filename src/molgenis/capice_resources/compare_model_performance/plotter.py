@@ -149,8 +149,8 @@ class Plotter:
 
         print('Plot figures prepared.\n')
 
-    @staticmethod
     def _set_size_supertitle_layout(
+            self,
             figure: plt.Figure,
             figure_supertitle: str,
             figure_size: tuple[int, int]
@@ -173,8 +173,11 @@ class Plotter:
         figure.set_dpi(PlottingEnums.DPI.value)
         figure.set_figwidth(figure_size[0])
         figure.set_figheight(figure_size[1])
+        supertitle = 'Model 1'
+        if self.model_2_present:
+            supertitle += ' vs Model 2'
         figure.suptitle(
-            f'Model 1 vs Model 2 {figure_supertitle}'
+            f'{supertitle} {figure_supertitle}'
         )
         figure.set_layout_engine(
             'constrained',
@@ -369,15 +372,17 @@ class Plotter:
             If sample sizes match:
                 {bin_label}
                 Model 1: {auc}
-                Model 2: {auc}
+                [Model 2: {auc}]
                 {sample_size}
                 {\n}
 
             If not:
                 {bin_label}
                 Model 1: {auc} (n: {sample_size})
-                Model 2: {auc} (n: {sample_size})
+                [Model 2: {auc} (n: {sample_size})]
                 {\n}
+
+            [] means optional. Will not appear if model 2 data is not supplied.
         """
         label = f'{bin_label}\nModel 1: {model_1_auc}'
         if self.model_2_present:
