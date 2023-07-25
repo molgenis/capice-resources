@@ -1,5 +1,6 @@
 import math
 import os
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -20,10 +21,11 @@ class Plotter:
     def __init__(
             self,
             process_consequences: list[str] | bool,
-            model_1_score_path: os.PathLike,
-            model_1_label_path: os.PathLike,
-            model_2_score_path: os.PathLike,
-            model_2_label_path: os.PathLike | None,
+            model_1_score_path: os.PathLike[str] | str,
+            model_1_label_path: os.PathLike[str] | str,
+            model_2_present: bool,
+            model_2_score_path: Optional[os.PathLike[str] | str],
+            model_2_label_path: Optional[os.PathLike[str] | str],
     ):
         """
         Init of the Plotter class.
@@ -36,12 +38,15 @@ class Plotter:
                 The path to the model 1 score file.
             model_1_label_path:
                 The path to the model 1 label file.
+            model_2_present:
+                Whenever model 2 data is supplied (True) or not (False).
             model_2_score_path:
-                The path to the model 2 score file.
+                (Optional) The path to the model 2 score file.
             model_2_label_path:
                 (Optional) The path to the model 2 label file.
         """
-        self.calculator = PerformanceCalculator()
+        # Not because ignore_zero_sample_error is the inverse of model_2_present
+        self.calculator = PerformanceCalculator(not model_2_present)
         self.process_consequences = process_consequences
         self.index = 1
         self.fig_auc = plt.figure()
@@ -51,15 +56,27 @@ class Plotter:
         self.fig_score_dist_vio = plt.figure()
         self.fig_score_diff_box = plt.figure()
         self.fig_score_diff_vio = plt.figure()
-        self._prepare_figure_supertitle_and_size(
-            model_1_score_path,
-            model_1_label_path,
-            model_2_score_path,
-            model_2_label_path
-        )
+        self.model_2_present = model_2_present
+        self.model_1_score_path = self._get_basename_from_path(model_1_score_path)
+        self.model_1_label_path = self._get_basename_from_path(model_1_label_path)
+        self.model_2_score_path = self._get_basename_from_path(model_2_score_path)
+        self.model_2_label_path = self._get_basename_from_path(model_2_label_path)
+        self._prepare_figure_supertitle_and_size()
         self.n_rows = 1
         self.n_cols = 1
         self._set_nrows_and_ncols()
+
+    @staticmethod
+    def _get_basename_from_path(
+            path: Optional[os.PathLike[str] | str]
+    ) -> str:
+        """
+        Function to circumvent mypy taking issue with Optional[str] and os.path.basename()
+        """
+        if path:
+            return os.path.basename(path)
+        else:
+            return ''
 
     @staticmethod
     def _set_figure_size(process_consequences: list[str] | bool) -> tuple[int, int]:
@@ -82,36 +99,24 @@ class Plotter:
             return 10, 15
 
     def _prepare_figure_supertitle_and_size(
-            self,
-            model_1_score_path,
-            model_1_label_path,
-            model_2_score_path,
-            model_2_label_path
+            self
     ) -> None:
         """
         Preparatory function to set the super title and image size to each of the figures.
-
-        Args:
-            model_1_score_path:
-                The path to the model 1 score file.
-            model_1_label_path:
-                The path to the model 1 label file.
-            model_2_score_path:
-                The path to the model 2 score file.
-            model_2_label_path:
-                (Optional) The path to the model 2 label file.
         """
         print('Preparing plot figures.')
         figsize = self._set_figure_size(self.process_consequences)
         print('Preparing plots.')
 
-        if model_2_label_path is None:
-            model_2_label_path = model_1_label_path
+        figure_supertitle = f'Model 1 scores: {os.path.basename(self.model_1_score_path)}\n' \
+                            f'Model 1 labels: {os.path.basename(self.model_1_label_path)}\n'
 
-        figure_supertitle = f'Model 1 scores: {os.path.basename(model_1_score_path)}\n' \
-                            f'Model 1 labels: {os.path.basename(model_1_label_path)}\n' \
-                            f'Model 2 scores: {os.path.basename(model_2_score_path)}\n' \
-                            f'Model 2 labels: {os.path.basename(model_2_label_path)}\n'
+        if self.model_2_present:
+            if self.model_2_label_path is None:
+                self.model_2_label_path = self.model_1_label_path
+
+            figure_supertitle += f'Model 2 scores: {os.path.basename(self.model_2_score_path)}\n' \
+                                 f'Model 2 labels: {os.path.basename(self.model_2_label_path)}\n'
 
         self._set_size_supertitle_layout(
             self.fig_auc,
@@ -157,8 +162,8 @@ class Plotter:
 
         print('Plot figures prepared.\n')
 
-    @staticmethod
     def _set_size_supertitle_layout(
+            self,
             figure: plt.Figure,
             figure_supertitle: str,
             figure_size: tuple[int, int]
@@ -181,8 +186,11 @@ class Plotter:
         figure.set_dpi(PlottingEnums.DPI.value)
         figure.set_figwidth(figure_size[0])
         figure.set_figheight(figure_size[1])
+        supertitle = 'Model 1'
+        if self.model_2_present:
+            supertitle += ' vs Model 2'
         figure.suptitle(
-            f'Model 1 vs Model 2 {figure_supertitle}'
+            f'{supertitle} {figure_supertitle}'
         )
         figure.set_layout_engine(
             'constrained',
@@ -223,7 +231,9 @@ class Plotter:
             merged_model_1_data:
                 Merged frame of the model 1 data. Contains both the score and labels frames.
             merged_model_2_data:
-                Merged frame of the model 2 data. Contains both the score and labels frames.
+                Merged frame of the model 2 data.
+                Contains both the score and labels frames.
+                Can be empty.
 
         Returns:
             dict:
@@ -345,7 +355,13 @@ class Plotter:
         # Plotting ROCs
         ax_roc = self.fig_roc.add_subplot(1, 1, 1)
         ax_roc.plot(fpr_model_1, tpr_model_1, color='red', label=f'Model 1 (AUC={auc_model_1})')
-        ax_roc.plot(fpr_model_2, tpr_model_2, color='blue', label=f'Model 2 (AUC={auc_model_2})')
+        if self.model_2_present:
+            ax_roc.plot(
+                fpr_model_2,
+                tpr_model_2,
+                color='blue',
+                label=f'Model 2 (AUC={auc_model_2})'
+            )
         ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
         ax_roc.set_xlim([0.0, 1.0])
         ax_roc.set_ylim([0.0, 1.0])
@@ -353,8 +369,8 @@ class Plotter:
         ax_roc.set_ylabel('True Positive Rate')
         ax_roc.legend(loc='lower right')
 
-    @staticmethod
     def _create_af_bins_plotlabels(
+            self,
             bin_label: str,
             model_1_size: int,
             model_1_auc: float,
@@ -368,21 +384,27 @@ class Plotter:
             If sample sizes match:
                 {bin_label}
                 Model 1: {auc}
-                Model 2: {auc}
+                [Model 2: {auc}]
                 {sample_size}
                 {\n}
 
             If not:
                 {bin_label}
                 Model 1: {auc} (n: {sample_size})
-                Model 2: {auc} (n: {sample_size})
+                [Model 2: {auc} (n: {sample_size})]
                 {\n}
+
+            [] means optional. Will not appear if model 2 data is not supplied.
         """
-        if model_1_size == model_2_size:
-            return f'{bin_label}\nModel 1: {model_1_auc}\nModel 2: {model_2_auc}\nn: {model_1_size}'
+        label = f'{bin_label}\nModel 1: {model_1_auc}'
+        if self.model_2_present:
+            if model_1_size == model_2_size:
+                label += f'\nModel 2: {model_2_auc}\nn: {model_1_size}'
+            else:
+                label += f' (n: {model_1_size})\nModel 2: {model_2_auc} (n: {model_2_size})'
         else:
-            return f'{bin_label}\nModel 1: {model_1_auc} (n: {model_1_size})\n' \
-                   f'Model 2: {model_2_auc} (n: {model_2_size})'
+            label += f'\nn: {model_1_size}'
+        return label
 
     @staticmethod
     def _subset_af_bin(
@@ -454,20 +476,27 @@ class Plotter:
 
         """
         width = 0.3
+        if self.model_2_present:
+            model_1_x_index = x_index - width
+            align = 'edge'
+        else:
+            model_1_x_index = x_index
+            align = 'center'
         ax.bar(
-            x_index - width,
+            model_1_x_index,
             auc_m1,
             width,
-            align='edge',
+            align=align,
             color='red'
         )
-        ax.bar(
-            x_index,
-            auc_m2,
-            width,
-            align='edge',
-            color='blue'
-        )
+        if self.model_2_present:
+            ax.bar(
+                x_index,
+                auc_m2,
+                width,
+                align='edge',
+                color='blue'
+            )
         ax.plot(
             np.NaN,
             np.NaN,
@@ -568,12 +597,13 @@ class Plotter:
             color='red',
             label='= Model 1'
         )
-        ax_afb.plot(
-            np.NaN,
-            np.NaN,
-            color='blue',
-            label='= Model 2'
-        )
+        if self.model_2_present:
+            ax_afb.plot(
+                np.NaN,
+                np.NaN,
+                color='blue',
+                label='= Model 2'
+            )
         ax_afb.set_xticks(list(range(0, len(bins))), bin_labels, rotation=45)
         ax_afb.set_xlabel('Allele frequency Bin')
         ax_afb.set_ylabel('AUC')
@@ -587,7 +617,7 @@ class Plotter:
             model_1_size: int,
             model_2_auc: float,
             model_2_size: int
-    ) -> tuple[str, str, str | None]:
+    ) -> tuple[str, str, Optional[str]]:
         """
         Creates the label for specifically AUC (sub)plots
 
@@ -636,20 +666,30 @@ class Plotter:
             model_1_auc, model_1_size, model_2_auc, model_2_size
         )
 
+        xticks = [1]
+        xticklabels = ['Model 1']
+        not_available_x_index = 1.0
+        xlim = (0.0, 2.0)
+
         ax_auc.bar(1, model_1_auc, color='red', label=labels[0])
-        ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
+        if self.model_2_present:
+            ax_auc.bar(2, model_2_auc, color='blue', label=labels[1])
+            xticks.append(2)
+            xticklabels.append('Model 2')
+            not_available_x_index = 1.5
+            xlim = (0.0, 3.0)
 
         if math.isnan(model_1_auc):
             ax_auc.text(
-                1.5, 0.5, "Not available",
+                not_available_x_index, 0.5, "Not available",
                 fontsize='x-large',
                 horizontalalignment='center',
                 verticalalignment='center'
             )
 
         ax_auc.set_title(title)
-        ax_auc.set_xticks([1, 2], ['Model 1', 'Model 2'])
-        ax_auc.set_xlim(0.0, 3.0)
+        ax_auc.set_xticks(xticks, xticklabels)
+        ax_auc.set_xlim(xlim)
         ax_auc.set_ylim(0.0, 1.0)
         ax_auc.legend(loc=CMPPlottingEnums.LOC.value, bbox_to_anchor=(1.0, 1.02), title=labels[2])
 
@@ -739,14 +779,14 @@ class Plotter:
             title
         )
 
-    @staticmethod
     def _create_boxplot_label(
+            self,
             model_1_data: pd.DataFrame,
             model_1_size: int,
             model_2_data: pd.DataFrame,
             model_2_size: int,
-            return_tuple: bool = False
-    ) -> str | tuple[str, str]:
+            return_iterable: bool = False
+    ) -> str | list[str]:
         """
         Generic function to create a boxplot label.
 
@@ -759,8 +799,8 @@ class Plotter:
                 The dataframe of the score and label data of model 2.
             model_2_size:
                 The amount of samples in model_2_data.
-            return_tuple:
-                Whenever the result should be returned as tuple (True) or single string (False)
+            return_iterable:
+                Whenever the result should be returned as iterable (True) or single string (False)
         Returns:
             out:
                 Tuple (in case return_tuple=True) containing [0] the label for model 1 and [1]
@@ -772,11 +812,14 @@ class Plotter:
         n_patho_m1 = model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
         n_benign_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0].shape[0]
         n_patho_m2 = model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1].shape[0]
-        return_value = (
-            f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}',
-            f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
-        )
-        if return_tuple:
+        return_value = [
+            f'Model 1:\nT: {model_1_size}\nB: {n_benign_m1}\nP: {n_patho_m1}'
+        ]
+        if self.model_2_present:
+            return_value.append(
+                f'Model 2:\nT: {model_2_size}\nB: {n_benign_m2}\nP: {n_patho_m2}'
+            )
+        if return_iterable:
             return return_value
         else:
             return '\n\n'.join(return_value)
@@ -813,20 +856,31 @@ class Plotter:
 
         """
         ax = plot_figure.add_subplot(self.n_rows, self.n_cols, self.index)
-        ax.boxplot(
-            [
+        boxplot_data = [
                 model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot],
-                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
-                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot],
-            ],
-            labels=[
-                'Model 1\nBenign',
-                'Model 2\nBenign',
-                'Model 1\nPathogenic',
-                'Model 2\nPathogenic'
+                model_1_data[model_1_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot]
             ]
-        )
+        boxplot_labels = [
+                'Model 1\nBenign',
+                'Model 1\nPathogenic'
+            ]
+        if self.model_2_present:
+            boxplot_data.insert(
+                1,
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 0][column_to_plot]
+            )
+            boxplot_data.append(
+                model_2_data[model_2_data[ColumnEnums.BINARIZED_LABEL.value] == 1][column_to_plot]
+            )
+            boxplot_labels.insert(
+                1,
+                'Model 2\nBenign'
+            )
+            boxplot_labels.append(
+                'Model 2\nPathogenic'
+            )
+
+        ax.boxplot(boxplot_data, labels=boxplot_labels)
         ax.plot(
             np.NaN,
             np.NaN,
@@ -898,11 +952,13 @@ class Plotter:
                     )
                 ], ignore_index=True
             )
+        if self.model_2_present:
+            violinplot_data = pd.concat([model_1_data, model_2_data], ignore_index=True)
+        else:
+            violinplot_data = model_1_data
         sns.violinplot(
             # sort_values to ensure that x axis tick 0 is always binarized_label 0 (benign)
-            data=pd.concat([model_1_data, model_2_data], ignore_index=True).sort_values(
-                by=ColumnEnums.BINARIZED_LABEL.value
-            ),
+            data=violinplot_data.sort_values(by=ColumnEnums.BINARIZED_LABEL.value),
             x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue=ColumnEnums.DATASET_SOURCE.value,
@@ -921,10 +977,11 @@ class Plotter:
                 inplace=True
             )
         labels = self._create_boxplot_label(
-            model_1_data, model_1_size, model_2_data, model_2_size, return_tuple=True
+            model_1_data, model_1_size, model_2_data, model_2_size, return_iterable=True
         )
-        red_patch = mpatches.Patch(color='red', label=labels[0])
-        blue_patch = mpatches.Patch(color='blue', label=labels[1])
+        handles = [mpatches.Patch(color='red', label=labels[0])]
+        if self.model_2_present:
+            handles.append(mpatches.Patch(color='blue', label=labels[1]))
         ax.set_ylim(0.0, 1.0)
         ax.set_xlim(-0.5, 1.5)
         ax.set_xticks((0.0, 1.0))
@@ -932,7 +989,7 @@ class Plotter:
         ax.set_xlabel('label')
         ax.set_title(title)
         ax.legend(
-            handles=[red_patch, blue_patch],
+            handles=handles,
             loc=CMPPlottingEnums.LOC.value,
             bbox_to_anchor=(1.0, 1.02),
             labelspacing=2

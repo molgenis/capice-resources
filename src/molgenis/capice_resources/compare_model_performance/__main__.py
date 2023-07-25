@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional, Any
 
 import pandas as pd
 
@@ -17,7 +18,8 @@ class CompareModelPerformance(Module):
     def __init__(self):
         super().__init__(
             program='Compare model performance',
-            description='Compares the performance of 2 different XGBoost style models. '
+            description='Calculate the performance of a singular CAPICE model or '
+                        'compare the performance of 2 CAPICE models. '
                         'Please note that model 1 is leading for '
                         'the per-consequence performance measurements. '
                         'If the size of the label file does not match the size of the scores file, '
@@ -27,6 +29,8 @@ class CompareModelPerformance(Module):
                         'Will error if one of these columns is missing in either '
                         'the score file or the label file, assuming sizes differ.'
         )
+        self.force_merge = False
+        self.model_2_present = False
 
     @staticmethod
     def _create_module_specific_arguments(parser):
@@ -35,6 +39,7 @@ class CompareModelPerformance(Module):
 
         required.add_argument(
             '-a',
+            '--scores',
             '--scores-model-1',
             type=str,
             required=True,
@@ -62,12 +67,12 @@ class CompareModelPerformance(Module):
                  'Leading for per-consequence performance metrics.'
         )
 
-        required.add_argument(
+        optional.add_argument(
             '-b',
             '--scores-model-2',
             type=str,
-            required=True,
-            help='Input location of the file containing the scores for model 2. '
+            help='Optional input location of the file containing the scores for model 2. '
+                 'If not defined, will just plot statistics for arguments given for model 1. '
                  'Column `Consequence` is required to be present in either the score file or '
                  'the label file (or both). '
                  'Has to contain the `score` column and '
@@ -80,7 +85,9 @@ class CompareModelPerformance(Module):
             type=str,
             help='Optional input location of the file containing the labels for model 2. '
                  'Must be supplied in either TSV or gzipped TSV format! '
-                 'If not defined, uses file given through -l/--labels/--labels-model-1 for model 2.'
+                 'If not defined, '
+                 'uses file given through -l/--labels/--labels-model-1 for model 2. '
+                 'Raises error when -b/--scores-model-2 is not supplied.'
         )
 
         required.add_argument(
@@ -103,12 +110,13 @@ class CompareModelPerformance(Module):
 
     def _validate_module_specific_arguments(self, parser):
         scores1 = self.input_validator.validate_input_command_line_interface_file(
-            parser.get_argument('scores_model_1'),
+            parser.get_argument('scores'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
         scores2 = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('scores_model_2'),
-            TSVFileEnums.TSV_EXTENSIONS.value
+            TSVFileEnums.TSV_EXTENSIONS.value,
+            can_be_optional=True
         )
         labels = self.input_validator.validate_input_command_line_interface_file(
             parser.get_argument('labels'),
@@ -133,54 +141,94 @@ class CompareModelPerformance(Module):
         }
 
     def run_module(self, arguments):
-        path_scores_model_1 = arguments['scores_model_1']
+        path_scores_model_1 = arguments['scores']
         path_labels_model_1 = arguments['labels']
         path_scores_model_2 = arguments['scores_model_2']
         path_labels_model_2 = arguments['labels_model_2']
+        self.force_merge = arguments['force_merge']
+
+        self._set_model_2_presence(
+            path_scores_model_2,
+            path_labels_model_2
+        )
 
         model_1, model_2 = self._read_and_parse_input_data(
             path_scores_model_1,
             path_labels_model_1,
             path_scores_model_2,
-            path_labels_model_2,
-            arguments['force_merge']
+            path_labels_model_2
         )
         consequence_tools = ConsequenceTools()
         consequences = consequence_tools.has_consequence(model_1, model_2)
-        if consequences:
-            consequence_tools.validate_consequence_samples_equal(
-                model_1,
-                model_2,
-                consequences
-            )
 
         annotator = Annotator()
         annotator.add_score_difference(model_1)
-        annotator.add_score_difference(model_2)
 
         annotator.add_and_process_impute_af(model_1)
-        annotator.add_and_process_impute_af(model_2)
 
         add_dataset_source(model_1, CompareModelPerformanceEnums.MODEL_1.value)
-        add_dataset_source(model_2, CompareModelPerformanceEnums.MODEL_2.value)
+
+        if self.model_2_present:
+            if consequences:
+                consequence_tools.validate_consequence_samples_equal(
+                    model_1,
+                    model_2,
+                    consequences
+                )
+            annotator.add_score_difference(model_2)
+            annotator.add_and_process_impute_af(model_2)
+            add_dataset_source(model_2, CompareModelPerformanceEnums.MODEL_2.value)
+        else:
+            model_2 = pd.DataFrame(columns=model_1.columns)
 
         plotter = Plotter(
-            consequences,
-            path_scores_model_1,
-            path_labels_model_1,
-            path_scores_model_2,
-            path_labels_model_2
+            process_consequences=consequences,
+            model_1_score_path=path_scores_model_1,
+            model_1_label_path=path_labels_model_1,
+            model_2_present=self.model_2_present,
+            model_2_score_path=path_scores_model_2,
+            model_2_label_path=path_labels_model_2
         )
         plots = plotter.plot(model_1, model_2)
         return {**plots, DatasetIdentifierEnums.OUTPUT.value: arguments['output']}
 
+    def _set_model_2_presence(
+            self,
+            model_2_score_argument: Optional[str],
+            model_2_label_argument: Optional[str]
+    ) -> None:
+        """
+        Function to se the boolean value if model 2 is supplied in CLI or not.
+        Also checks if model_2_score_argument is given when model_2_label_argument is given and
+        not None, raises IOError when incorrect.
+
+        Args:
+            model_2_score_argument:
+                The CLI argument for the scores of model 2.
+            model_2_label_argument:
+                The CLI argument for the labels of model 2.
+
+        Raises:
+            IOError:
+                IOError is raised when model_2_label_argument is not None,
+                but model_2_score_argument is None.
+        """
+        if model_2_score_argument is None:
+            if model_2_label_argument is None:
+                self.model_2_present = False
+            else:
+                raise IOError(
+                    'Model 2 label argument is supplied, while model 2 score argument is not.'
+                )
+        else:
+            self.model_2_present = True
+
     def _read_and_parse_input_data(
             self,
-            scores1_argument: os.PathLike | Path | str,
-            labels1_argument: os.PathLike | Path | str,
-            scores2_argument: os.PathLike | Path | str,
-            labels2_argument: os.PathLike | Path | str | None,
-            force_merge_argument: bool
+            scores1_argument: os.PathLike[str] | Path | str,
+            labels1_argument: os.PathLike[str] | Path | str,
+            scores2_argument: Optional[os.PathLike[str] | Path | str],
+            labels2_argument: Optional[os.PathLike[str] | Path | str]
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Function to read and parse the scores and labels arguments.
@@ -191,11 +239,9 @@ class CompareModelPerformance(Module):
             labels1_argument:
                 Path to the label file (of model 2).
             scores2_argument:
-                Path to the score file of model 2.
+                (Optional) Path to the score file of model 2.
             labels2_argument:
-                Optional argument of the label file of model 2 if supplied through CLI.
-            force_merge_argument:
-                Boolean flag if scores and labels should be force merged if the sizes differ.
+                (Optional) Argument of the label file of model 2 if supplied through CLI.
 
         Returns:
             tuple:
@@ -204,57 +250,82 @@ class CompareModelPerformance(Module):
         """
         scores_model_1 = self._read_pandas_tsv(
             scores1_argument,
-            [  # type: ignore
-                ColumnEnums.SCORE.value
-            ]
-        )
-        scores_model_2 = self._read_pandas_tsv(
-            scores2_argument,
-            [  # type: ignore
+            [
                 ColumnEnums.SCORE.value
             ]
         )
         labels = self._read_pandas_tsv(
             labels1_argument,
-            [  # type: ignore
+            [
                 ColumnEnums.BINARIZED_LABEL.value,
                 ColumnEnums.GNOMAD_AF.value
             ]
         )
-        # No _read_pandas_tsv yet, since it can be None
-        labels2 = labels2_argument
-        force_merge = force_merge_argument
         merge_model_1 = self._merge_scores_and_labes(
             scores_model_1,
-            labels,
-            force_merge  # type: ignore
+            labels
         )
-        if labels2 is None:
-            merge_model_2 = self._merge_scores_and_labes(
-                scores_model_2,
-                labels,
-                force_merge  # type: ignore
-            )
-        else:
-            labels_model_2 = self._read_pandas_tsv(
-                labels2,
-                [  # type: ignore
-                    ColumnEnums.BINARIZED_LABEL.value,
-                    ColumnEnums.GNOMAD_AF.value
+        merge_model_2 = self._process_model_2_merge(
+            scores2_argument,
+            labels2_argument,
+            merge_model_1
+        )
+        return merge_model_1, merge_model_2
+
+    def _process_model_2_merge(
+            self,
+            scores2_argument: Optional[os.PathLike[str] | Path | str],
+            labels2_argument: Optional[os.PathLike[str] | Path | str],
+            model_1_merge: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Function to fully process the model 2 score and label arguments, if present.
+
+        Args:
+            scores2_argument:
+                The CLI argument for the model 2 scores.
+            labels2_argument:
+                The CLI argument for the model 2 labels.
+            model_1_merge:
+                The scores and labels merged dataframe for model 1.
+
+        Returns:
+            DataFrame:
+                Always returns a pandas.DataFrame, either with scores and labels of model 2 merged,
+                scores of model 2 merged with labels of model 1 or an empty dataframe containing
+                the columns of model 1 merged frame.
+        """
+        if self.model_2_present:
+            scores_model_2 = self._read_pandas_tsv(
+                scores2_argument,
+                [
+                    ColumnEnums.SCORE.value
                 ]
             )
-            merge_model_2 = self._merge_scores_and_labes(
-                scores_model_2,
-                labels_model_2,
-                force_merge  # type: ignore
-            )
-        return merge_model_1, merge_model_2
+            if labels2_argument is None:
+                return self._merge_scores_and_labes(
+                    scores_model_2,
+                    model_1_merge
+                )
+            else:
+                model_2_labels = self._read_pandas_tsv(
+                    labels2_argument,
+                    [
+                        ColumnEnums.BINARIZED_LABEL.value,
+                        ColumnEnums.GNOMAD_AF.value
+                    ]
+                )
+                return self._merge_scores_and_labes(
+                    scores_model_2,
+                    model_2_labels
+                )
+        else:
+            return pd.DataFrame(columns=model_1_merge.columns)
 
     def _merge_scores_and_labes(
             self,
             scores: pd.DataFrame,
-            labels: pd.DataFrame,
-            force_merge: bool
+            labels: pd.DataFrame
     ) -> pd.DataFrame:
         """
         Function to perform the merge of scores and labels.
@@ -264,8 +335,6 @@ class CompareModelPerformance(Module):
                 The pandas frame containing the CAPICE scores.
             labels:
                 The pandas frame containing the labels / binarized_labels.
-            force_merge:
-                The boolean flag if a force merge should be attempted in case sample sizes mismatch.
 
         Returns:
             dataframe:
@@ -280,15 +349,14 @@ class CompareModelPerformance(Module):
         if scores.shape[0] == labels.shape[0]:
             merge = pd.concat([scores, labels], axis=1)
         else:
-            merge = self._attempt_mismatch_merge(scores, labels, force_merge)
+            merge = self._attempt_mismatch_merge(scores, labels)
         merge = merge.loc[:, ~merge.columns.duplicated()]
         return merge
 
     def _attempt_mismatch_merge(
             self,
             scores: pd.DataFrame,
-            labels: pd.DataFrame,
-            force_merge:  bool
+            labels: pd.DataFrame
     ) -> pd.DataFrame:
         """
         Function to attempt the merge between scores and labels in case sample sizes differ.
@@ -298,8 +366,6 @@ class CompareModelPerformance(Module):
                 The frame containing the CAPICE scores.
             labels:
                 The frame containing the labels / binarized_labels.
-            force_merge:
-                Boolean if the merge should be attempted or an error should be raised.
 
         Returns:
             merge:
@@ -311,7 +377,7 @@ class CompareModelPerformance(Module):
                 SampleSizeMismatchError is raised when force_merge is set to False and the sample
                 sizes differ.
         """
-        if not force_merge:
+        if not self.force_merge:
             raise SampleSizeMismatchError(
                 'Sample sizes differ and -f/--force-merge is not supplied!'
             )
@@ -354,14 +420,14 @@ class CompareModelPerformance(Module):
             labels,
             on=CompareModelPerformanceEnums.MERGE_COLUMN.value,
             how='left'
-        )  # type: ignore
+        )
 
-    def export(self, output) -> None:
+    def export(self, output: dict[str, Any]) -> None:
         output_path = output[DatasetIdentifierEnums.OUTPUT.value]
         for filename, figure in output.items():
             if filename == DatasetIdentifierEnums.OUTPUT.value:
                 continue
-            figure.savefig(os.path.join(output_path, filename + '.png'))  # type: ignore
+            figure.savefig(os.path.join(output_path, filename + '.png'))
 
 
 def main():

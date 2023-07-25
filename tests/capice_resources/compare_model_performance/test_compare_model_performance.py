@@ -43,6 +43,12 @@ class TestCompareModelPerformance(unittest.TestCase):
         It does not matter that the scores for both model 1 and model 2 are equal,
         as compare-model-performance does not really care about that.
         """
+        self._test_component_full()
+
+    def _test_component_full(self):
+        """
+        De-duplication function for full component tests.
+        """
         CompareModelPerformance().run()
         for figure in [
             'auc',
@@ -55,6 +61,61 @@ class TestCompareModelPerformance(unittest.TestCase):
         ]:
             self.assertIn(figure + '.png', os.listdir(self.output_directory))
 
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-l', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_component_single_model_plot(self):
+        """
+        Full component test to see if code functions when only 1 model data is supplied
+        """
+        self._test_component_full()
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-l', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-b', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-m', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_component_labels2_supplied(self):
+        """
+        Full component test to see if code functions when model 2 labels are supplied in CLI
+        """
+        self._test_component_full()
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-l', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-m', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_raise_ioerror_incorrect_cli(self):
+        """
+        Full component testing of the compare-model-performance from CLI to export.
+        It does not matter that the scores for both model 1 and model 2 are equal,
+        as compare-model-performance does not really care about that.
+        """
+        with self.assertRaises(IOError) as e:
+            CompareModelPerformance().run()
+        self.assertEqual(
+            str(e.exception),
+            'Model 2 label argument is supplied, while model 2 score argument is not.'
+        )
+
     def test_attempt_mismatch_merge_fail(self):
         """
         Test to see if the "_merge_scores_and_labels" function raises the SampleSizeMismatchError as
@@ -64,11 +125,11 @@ class TestCompareModelPerformance(unittest.TestCase):
         (as the error is raised before anything is done with the frame)
         """
         module = CompareModelPerformance()
+        module.force_merge = False
         with self.assertRaises(SampleSizeMismatchError) as e:
             module._merge_scores_and_labes(
                 pd.DataFrame({'foo': ['bar', 'baz']}),
-                pd.DataFrame({'bar': ['foo']}),
-                force_merge=False
+                pd.DataFrame({'bar': ['foo']})
             )
         self.assertEqual(
             str(e.exception),
@@ -82,6 +143,7 @@ class TestCompareModelPerformance(unittest.TestCase):
         "labels" is preserved after the merge (mimicking the binarized_label column).
         """
         module = CompareModelPerformance()
+        module.force_merge = True
         scores = pd.DataFrame(
             {
                  'chr': [1, 2, 3, 4],
@@ -101,7 +163,7 @@ class TestCompareModelPerformance(unittest.TestCase):
                 'SuperUniqueLabelColumn': [1, 0, 0]
             }
         )
-        observed = module._merge_scores_and_labes(scores, labels, force_merge=True)
+        observed = module._merge_scores_and_labes(scores, labels)
         self.assertIn('CHROM', observed.columns)
         self.assertIn('SuperUniqueLabelColumn', observed.columns)
 

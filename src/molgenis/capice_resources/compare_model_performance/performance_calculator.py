@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_curve, roc_auc_score
@@ -6,8 +8,16 @@ from molgenis.capice_resources.core import ColumnEnums
 
 
 class PerformanceCalculator:
-    @staticmethod
-    def calculate_auc(dataset: pd.DataFrame) -> float:
+    def __init__(self, ignore_zero_sample_error: bool = False):
+        """
+        Args:
+            ignore_zero_sample_error:
+                Boolean value to ignore the errors raised by "roc_curve" and "roc_auc_score"
+                when the functions are supplied with empty dataframes or emtpy series.
+        """
+        self.ignore_zero_sample_error = ignore_zero_sample_error
+
+    def calculate_auc(self, dataset: pd.DataFrame) -> float:
         """
         Method to calculate the Area Under Curve (AUC) for a given dataframe containing the SCORE
         and Binarized_label columns.
@@ -19,16 +29,38 @@ class PerformanceCalculator:
         Returns:
             float:
                 Rounded float of the Area Under Curve on 4 decimals.
+                Will be NaN if ignore_zero_sample_error is set to True in initialization.
+        Raises:
+            ValueError:
+                ValueError is raised when upon initialization ignore_zero_sample_error is set to
+                False or if the ValueError message does not match a "zero sample error".
         """
-        return round(
-            roc_auc_score(
-                y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
-                y_score=dataset[ColumnEnums.SCORE.value]
-            ),
-            4
-        )
+        if self.ignore_zero_sample_error:
+            try:
+                return self._calculate_auc(dataset)
+            except ValueError as e:
+                if str(e) != "Found array with 0 sample(s) (shape=(0,)) " \
+                             "while a minimum of 1 is required.":
+                    raise
+                else:
+                    return np.nan
+        else:
+            return self._calculate_auc(dataset)
 
-    def calculate_roc(self, dataset: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, float]:
+    @staticmethod
+    def _calculate_auc(dataset: pd.DataFrame) -> float:
+        return round(
+                roc_auc_score(
+                    y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
+                    y_score=dataset[ColumnEnums.SCORE.value]
+                ),
+                4
+            )
+
+    def calculate_roc(
+            self,
+            dataset: pd.DataFrame
+    ) -> tuple[Any, Any, float]:
         """
         Method to calculate the False Positive Rate (FPR), True Positive Rate (TPR) and Area
         Under Curve (AUC) for a given dataframe containing the SCORE and Binarized_label columns.
@@ -41,9 +73,32 @@ class PerformanceCalculator:
             tuple:
                 Tuple containing [0] False Positive Rate (numpy.array) [1] True Positive Rate (
                 np.array) and [2] Area Under Curve (float, rounded to 4 decimals).
+        Raises:
+            ValueError:
+                ValueError is raised when upon initialization ignore_zero_sample_error is set to
+                False or if the ValueError message does not match a "zero sample error".
         """
-        fpr, tpr, _ = roc_curve(
+        if self.ignore_zero_sample_error:
+            message = "y_true takes value in {} and pos_label is not specified: " \
+                      "either make y_true take value in {0, 1} or {-1, 1} or " \
+                      "pass pos_label explicitly."
+            try:
+                fpr, tpr = self._calculate_fpr_tpr(dataset)
+                return fpr, tpr, self._calculate_auc(dataset)
+            except ValueError as e:
+                if str(e) != message:
+                    raise
+                else:
+                    return np.nan, np.nan, np.nan
+        else:
+            fpr, tpr = self._calculate_fpr_tpr(dataset)
+            return fpr, tpr, self._calculate_auc(dataset)
+
+    @staticmethod
+    def _calculate_fpr_tpr(
+            dataset: pd.DataFrame
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return roc_curve(
             y_true=dataset[ColumnEnums.BINARIZED_LABEL.value],
             y_score=dataset[ColumnEnums.SCORE.value]
-        )
-        return fpr, tpr, self.calculate_auc(dataset)
+        )[0:2]

@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -29,6 +30,7 @@ class TestPlotter(unittest.TestCase):
             consequences,
             'path_model_1_scores',
             'path_model_1_labels',
+            True,
             'path_model_2_scores',
             'path_model_2_labels'
         )
@@ -59,6 +61,7 @@ class TestPlotter(unittest.TestCase):
             False,
             'path_model_1_scores',
             'path_model_1_labels',
+            True,
             'path_model_2_scores',
             'path_model_2_labels'
         )
@@ -113,10 +116,185 @@ class TestPlotter(unittest.TestCase):
             ['Foo', 'Bar'],
             'path1',
             'path2',
+            True,
             'path3',
             'path4'
         )
         plotter.plot(test_case_model1, test_case_model2)
+
+    def test_plotter_init_supertitle_model_2_not_present(self):
+        """
+        Tests if the figure supertitles are set correctly if model 2 data is not supplied.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            False,
+            None,
+            None
+        )
+        self.assertEqual(
+            'Model 1 Receiver Operator Curves\n'
+            'Model 1 scores: path1\nModel 1 labels: path2\n',
+            plotter.fig_roc._suptitle.get_text()
+        )
+
+    def test_af_bins_label_m2_present_m1_m2_equal_size(self):
+        """
+        Tests the creation of the allele frequency plot label when both model 1 and model 2 data is
+        supplied and are equal in size.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            True,
+            'path3',
+            'path4'
+        )
+        observed = plotter._create_af_bins_plotlabels(
+            'testing_purpose',
+            0,
+            1.0,
+            0,
+            1.0
+        )
+        self.assertEqual(
+            'testing_purpose\nModel 1: 1.0\nModel 2: 1.0\nn: 0',
+            observed
+        )
+
+    def test_af_bins_label_m2_present_m1_m2_nonequal_size(self):
+        """
+        Tests the creation of the allele frequency plot label when both model 1 and model 2 data is
+        supplied and are not equal in size.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            True,
+            'path3',
+            'path4'
+        )
+        observed = plotter._create_af_bins_plotlabels(
+            'testing_purpose',
+            5,
+            1.0,
+            4,
+            1.0
+        )
+        self.assertEqual(
+            'testing_purpose\nModel 1: 1.0 (n: 5)\nModel 2: 1.0 (n: 4)',
+            observed
+        )
+
+    def test_af_bins_label_m2_not_present(self):
+        """
+        Tests the creation of the allele frequency plot label when only model 1 data is
+        supplied.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            False,
+            None,
+            None
+        )
+        observed = plotter._create_af_bins_plotlabels(
+            'testing_purpose',
+            5,
+            1.0,
+            0,
+            np.nan
+        )
+        self.assertEqual(
+            'testing_purpose\nModel 1: 1.0\nn: 5',
+            observed
+        )
+
+    def test_boxplot_label_m2_present(self):
+        """
+        Tests if the creation of the boxplot label is correct when model 2 is present.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            True,
+            'path3',
+            'path4'
+        )
+        fake_data = pd.DataFrame(
+            columns=['binarized_label']
+        )
+        expected = [
+            'Model 1:\nT: 0\nB: 0\nP: 0',
+            'Model 2:\nT: 0\nB: 0\nP: 0'
+        ]
+        observed_noniterable = plotter._create_boxplot_label(
+            fake_data,
+            0,
+            fake_data,
+            0,
+            False
+        )
+        self.assertEqual(
+            '\n\n'.join(expected),
+            observed_noniterable
+        )
+        observed_iterable = plotter._create_boxplot_label(
+            fake_data,
+            0,
+            fake_data,
+            0,
+            True
+        )
+        self.assertEqual(
+            expected,
+            observed_iterable
+        )
+
+    def test_boxplot_label_m2_missing(self):
+        """
+        Tests if the creation of the boxplot label is correct when model 2 is not present.
+        """
+        plotter = Plotter(
+            ['foo', 'bar'],
+            'path1',
+            'path2',
+            False,
+            None,
+            None
+        )
+        fake_data = pd.DataFrame(
+            columns=['binarized_label']
+        )
+        expected = 'Model 1:\nT: 0\nB: 0\nP: 0'
+        observed_noniterable = plotter._create_boxplot_label(
+            fake_data,
+            0,
+            fake_data,
+            0,
+            False
+        )
+        self.assertEqual(
+            expected,
+            observed_noniterable
+        )
+        observed_iterable = plotter._create_boxplot_label(
+            fake_data,
+            0,
+            fake_data,
+            0,
+            True
+        )
+        self.assertEqual(
+            [expected],
+            observed_iterable
+        )
 
 
 if __name__ == '__main__':
