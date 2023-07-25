@@ -18,7 +18,8 @@ class CompareModelPerformance(Module):
     def __init__(self):
         super().__init__(
             program='Compare model performance',
-            description='Compares the performance of 2 different XGBoost style models. '
+            description='Calculate the performance of a singular CAPICE model or '
+                        'compare the performance of 2 CAPICE models. '
                         'Please note that model 1 is leading for '
                         'the per-consequence performance measurements. '
                         'If the size of the label file does not match the size of the scores file, '
@@ -38,6 +39,7 @@ class CompareModelPerformance(Module):
 
         required.add_argument(
             '-a',
+            '--scores',
             '--scores-model-1',
             type=str,
             required=True,
