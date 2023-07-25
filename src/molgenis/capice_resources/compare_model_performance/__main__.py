@@ -110,7 +110,7 @@ class CompareModelPerformance(Module):
 
     def _validate_module_specific_arguments(self, parser):
         scores1 = self.input_validator.validate_input_command_line_interface_file(
-            parser.get_argument('scores_model_1'),
+            parser.get_argument('scores'),
             TSVFileEnums.TSV_EXTENSIONS.value
         )
         scores2 = self.input_validator.validate_input_command_line_interface_file(
@@ -141,7 +141,7 @@ class CompareModelPerformance(Module):
         }
 
     def run_module(self, arguments):
-        path_scores_model_1 = arguments['scores_model_1']
+        path_scores_model_1 = arguments['scores']
         path_labels_model_1 = arguments['labels']
         path_scores_model_2 = arguments['scores_model_2']
         path_labels_model_2 = arguments['labels_model_2']
