@@ -958,7 +958,12 @@ class Plotter:
             violinplot_data = model_1_data
         sns.violinplot(
             # sort_values to ensure that x axis tick 0 is always binarized_label 0 (benign)
-            data=violinplot_data.sort_values(by=ColumnEnums.BINARIZED_LABEL.value),
+            data=violinplot_data.sort_values(
+                by=[
+                    ColumnEnums.DATASET_SOURCE.value,
+                    ColumnEnums.BINARIZED_LABEL.value
+                ]
+            ),
             x=ColumnEnums.BINARIZED_LABEL.value,
             y=column_to_plot,
             hue=ColumnEnums.DATASET_SOURCE.value,
