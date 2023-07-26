@@ -17,18 +17,15 @@ class TestCompareModelPerformance(unittest.TestCase):
         'compare_model_performance',
         'output'
     )
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.expected_figures = [
-            'auc',
-            'roc',
-            'allele_frequency',
-            'score_distributions_box',
-            'score_distributions_vio',
-            'score_differences_vio',
-            'score_differences_box'
-        ]
+    expected_figures = [
+        'auc',
+        'roc',
+        'allele_frequency',
+        'score_distributions_box',
+        'score_distributions_vio',
+        'score_differences_vio',
+        'score_differences_box'
+    ]
 
     @classmethod
     def tearDownClass(cls) -> None:
