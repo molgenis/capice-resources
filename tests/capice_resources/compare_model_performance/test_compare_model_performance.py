@@ -12,7 +12,20 @@ from molgenis.capice_resources.compare_model_performance.__main__ import Compare
 
 
 class TestCompareModelPerformance(unittest.TestCase):
-    output_directory = os.path.join(get_testing_resources_dir(), 'compare_model_performance')
+    output_directory = os.path.join(
+        get_testing_resources_dir(),
+        'compare_model_performance',
+        'output'
+    )
+    expected_figures = [
+        'auc',
+        'roc',
+        'allele_frequency',
+        'score_distributions_box',
+        'score_distributions_vio',
+        'score_differences_vio',
+        'score_differences_box'
+    ]
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -43,23 +56,80 @@ class TestCompareModelPerformance(unittest.TestCase):
         It does not matter that the scores for both model 1 and model 2 are equal,
         as compare-model-performance does not really care about that.
         """
-        self._test_component_full()
-
-    def _test_component_full(self):
-        """
-        De-duplication function for full component tests.
-        """
         CompareModelPerformance().run()
-        for figure in [
-            'auc',
-            'roc',
-            'allele_frequency',
-            'score_distributions_box',
-            'score_distributions_vio',
-            'score_differences_vio',
-            'score_differences_box'
-        ]:
+        for figure in self.expected_figures:
             self.assertIn(figure + '.png', os.listdir(self.output_directory))
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a', os.path.join(get_testing_resources_dir(),
+                               'compare_model_performance',
+                               'scores_no_benign_frameshifts.tsv.gz'),
+            '-l', os.path.join(get_testing_resources_dir(),
+                               'compare_model_performance',
+                               'labels_no_benign_frameshifts.tsv.gz'),
+            '-b', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-m', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_component_full_model_1_missing_consequence(self):
+        """
+        Full component testing of the compare-model-performance from CLI to export.
+        Tests the case where model 1 does not contain data for benign frameshift variants and
+        pathogenic splice_polypirimidine_tract variants, but model 2 does.
+        """
+        with self.assertWarns(UserWarning) as w:
+            CompareModelPerformance().run()
+        for figure in self.expected_figures:
+            self.assertIn(figure + '.png', os.listdir(self.output_directory))
+        self.assertEqual(
+            str(w.warning),
+            'Model files differ in sample size for consequence(s): '
+            '5_prime_UTR_variant, '
+            'coding_sequence_variant, '
+            'frameshift_variant, intron_variant, '
+            'splice_acceptor_variant, splice_donor_5th_base_variant, '
+            'splice_donor_variant, splice_polypyrimidine_tract_variant, '
+            'splice_region_variant, stop_gained'
+        )
+
+    @patch(
+        'sys.argv',
+        [
+            __file__,
+            '-a', os.path.join(get_testing_resources_dir(), 'scores.tsv.gz'),
+            '-l', os.path.join(get_testing_resources_dir(), 'labels.tsv.gz'),
+            '-b', os.path.join(get_testing_resources_dir(),
+                               'compare_model_performance',
+                               'scores_no_benign_frameshifts.tsv.gz'),
+            '-m', os.path.join(get_testing_resources_dir(),
+                               'compare_model_performance',
+                               'labels_no_benign_frameshifts.tsv.gz'),
+            '-o', output_directory
+        ]
+    )
+    def test_component_full_model_2_missing_consequence(self):
+        """
+        Full component testing of the compare-model-performance from CLI to export.
+        Inverse of test "test_component_full_model_1_missing_consequence"
+        """
+        with self.assertWarns(UserWarning) as w:
+            CompareModelPerformance().run()
+        for figure in self.expected_figures:
+            self.assertIn(figure + '.png', os.listdir(self.output_directory))
+        self.assertEqual(
+            str(w.warning),
+            'Model files differ in sample size for consequence(s): '
+            '5_prime_UTR_variant, '
+            'coding_sequence_variant, '
+            'frameshift_variant, intron_variant, '
+            'splice_acceptor_variant, splice_donor_5th_base_variant, '
+            'splice_donor_variant, splice_polypyrimidine_tract_variant, '
+            'splice_region_variant, stop_gained'
+        )
 
     @patch(
         'sys.argv',
@@ -74,7 +144,9 @@ class TestCompareModelPerformance(unittest.TestCase):
         """
         Full component test to see if code functions when only 1 model data is supplied
         """
-        self._test_component_full()
+        CompareModelPerformance().run()
+        for figure in self.expected_figures:
+            self.assertIn(figure + '.png', os.listdir(self.output_directory))
 
     @patch(
         'sys.argv',
@@ -91,7 +163,9 @@ class TestCompareModelPerformance(unittest.TestCase):
         """
         Full component test to see if code functions when model 2 labels are supplied in CLI
         """
-        self._test_component_full()
+        CompareModelPerformance().run()
+        for figure in self.expected_figures:
+            self.assertIn(figure + '.png', os.listdir(self.output_directory))
 
     @patch(
         'sys.argv',
