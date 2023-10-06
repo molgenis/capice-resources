@@ -104,17 +104,17 @@ is described in 1 step and a step later mentions the same filename, they both re
    3. Add feature to `capice/resources/train_features.json`.
    4. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
    5. Download the following files to a single directory on the system/cluster where VIP is installed: 
-      * [train_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/train_input_raw.vcf.gz)
-      * [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/blob/master/resources/predict_input_raw.vcf.gz)
-      * [breakends.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/breakends.vcf.gz)
-      * [edge_cases.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/edge_cases.vcf.gz)
-      * [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/blob/master/tests/resources/symbolic_alleles.vcf.gz)
+      * [train_input_raw.vcf.gz](https://github.com/molgenis/capice/raw/main/resources/train_input_raw.vcf.gz)
+      * [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/raw/main/resources/predict_input_raw.vcf.gz)
+      * [breakends.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/breakends.vcf.gz)
+      * [edge_cases.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/edge_cases.vcf.gz)
+      * [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/symbolic_alleles.vcf.gz)
    6. Annotate all downloaded files with VEP using the supplied [slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh):
        * Supply a smaller `--time` argument to slurm (processing the files should take a maximum of 20 minutes each)
        * Ensure `-g` is supplied.
        * To reduce potential error, a for loop should be used to mark each file (this is assuming you have changed directory into the single directory):
          * ```bash
-           for file in *.vcf.gz; do sbatch --time=00:20:00 slurm_run_vep.sh -p </path/to/vip_install_directory> -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
+           for file in *.vcf.gz; do sbatch --export APPTAINER_BIND=<"/bind"> --time=00:20:00 slurm_run_vep.sh -p </path/to/vip_install_directory> -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
            ```
        * Once all files have been processed, rename the following files:
        * ```bash
@@ -138,6 +138,7 @@ is described in 1 step and a step later mentions the same filename, they both re
       python3 -m venv venv
       source venv/bin/activate
       pip --no-cache-dir install -e '.[test]'
+      deactivate
       module purge
       ```
    9. Download/prepare CGD data if not yet locally available:
@@ -150,7 +151,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        ```shell
        module load Python/3.10.4-GCCcore-11.3.0-bare
        source ./venv/bin/activate
-       process-vep -g <path/to/CGD.txt.gz> -j </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
+       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
        deactivate
        module purge
        ```
@@ -179,7 +180,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        #SBATCH --get-user-env=L60
        module load Python/3.10.4-GCCcore-11.3.0-bare
        source </path/to/your/capice/venv/bin/activate>
-       capice -v train -t 8 -i </path/to/train_input.tsv.gz> -m </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.ubj>
+       capice -v train -t 8 -i </path/to/train_input.tsv.gz> -e </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.ubj>
        module purge
        ```
        And run it (`sbatch <scriptname>`).
@@ -216,7 +217,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
        2. Generate a pre-release draft on GitHub.
    19. Create new Singularity image of the pre-release (note: singularity images do function with apptainer):
-       1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/singularity/def/capice-4.0.0.def)
+       1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
        2. Update the defined capice version & filename.
        3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def` (where `sif/capice-4.0.0.sif` is the output path.)
 2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull origin main`).
