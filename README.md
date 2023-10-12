@@ -151,7 +151,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        ```shell
        module load Python/3.10.4-GCCcore-11.3.0-bare
        source ./venv/bin/activate
-       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
+       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
        deactivate
        module purge
        ```
