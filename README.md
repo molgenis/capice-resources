@@ -151,7 +151,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        ```shell
        module load Python/3.10.4-GCCcore-11.3.0-bare
        source ./venv/bin/activate
-       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
+       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
        deactivate
        module purge
        ```
@@ -267,8 +267,8 @@ is described in 1 step and a step later mentions the same filename, they both re
     ```shell
     module load Python/3.10.4-GCCcore-11.3.0-bare
     source ./venv/bin/activate
-    process-vep -j </path/to/train_features.json> -g <path/to/CGD.txt.gz> -t </path/to/train_test_vep.tsv.gz> -v </path/to/validation.tsv.gz> -o </path/to/build37> 1> </path/to/build37.log>
-    process-vep -j </path/to/train_features.json> -g <path/to/CGD.txt.gz> -a -t </path/to/train_test_grch38_vep.tsv.gz> -v </path/to/validation_grch38_vep.tsv.gz> -o </path/to/grch38> 1> </path/to/grch38.log>
+    process-vep -f </path/to/train_features.json> -g <path/to/CGD.txt.gz> -t </path/to/train_test_vep.tsv.gz> -v </path/to/validation.tsv.gz> -o </path/to/build37> 1> </path/to/build37.log>
+    process-vep -f </path/to/train_features.json> -g <path/to/CGD.txt.gz> -a -t </path/to/train_test_grch38_vep.tsv.gz> -v </path/to/validation_grch38_vep.tsv.gz> -o </path/to/grch38> 1> </path/to/grch38.log>
     deactivate
     module purge
     ```
