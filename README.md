@@ -104,11 +104,13 @@ is described in 1 step and a step later mentions the same filename, they both re
    3. Add feature to `capice/resources/train_features.json`.
    4. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
    5. Download the following files to a single directory on the system/cluster where VIP is installed: 
-      * [train_input_raw.vcf.gz](https://github.com/molgenis/capice/raw/main/resources/train_input_raw.vcf.gz)
-      * [predict_input_raw.vcf.gz](https://github.com/molgenis/capice/raw/main/resources/predict_input_raw.vcf.gz)
-      * [breakends.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/breakends.vcf.gz)
-      * [edge_cases.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/edge_cases.vcf.gz)
-      * [symbolic_alleles.vcf.gz](https://github.com/molgenis/capice/raw/main/tests/resources/symbolic_alleles.vcf.gz)
+   ```
+   curl -Ls -o train_input_raw.vcf.gzhttps://github.com/molgenis/capice/raw/main/resources/train_input_raw.vcf.gz
+   curl -Ls -o predict_input_raw.vcf.gzhttps://github.com/molgenis/capice/raw/main/resources/predict_input_raw.vcf.gz
+   curl -Ls -o breakends.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/breakends.vcf.gz
+   curl -Ls -o edge_cases.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/edge_cases.vcf.gz
+   curl -Ls -o symbolic_alleles.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/symbolic_alleles.vcf.gz
+   ```
    6. Annotate all downloaded files with VEP using the supplied [slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh):
        * Supply a smaller `--time` argument to slurm (processing the files should take a maximum of 20 minutes each)
        * Ensure `-g` is supplied.
