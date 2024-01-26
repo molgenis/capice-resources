@@ -52,6 +52,7 @@ def check_unsupported_contigs(loaded_dataset: pd.DataFrame, column_name: str) ->
         loaded_dataset.drop(index=alt_contigs.index, inplace=True)
     loaded_dataset.drop(columns='contigs', inplace=True)
 
+
 def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
     """
     Function to order a (pseudo) VCF on chromosome and position.
@@ -93,6 +94,7 @@ def correct_order_vcf_notation(pseudo_vcf: pd.DataFrame) -> None:
     pseudo_vcf.drop(columns='order', inplace=True)
     pseudo_vcf.reset_index(drop=True, inplace=True)
 
+
 def preprocess_clinvar(clinvar_vcf: pd.DataFrame) -> None:
     clinvar_vcf.loc[clinvar_vcf[clinvar_vcf['#CHROM'] == '1'].index, '#CHROM'] = 'chr1'
     clinvar_vcf.loc[clinvar_vcf[clinvar_vcf['#CHROM'] == '2'].index, '#CHROM'] = 'chr2'
@@ -119,6 +121,7 @@ def preprocess_clinvar(clinvar_vcf: pd.DataFrame) -> None:
     clinvar_vcf.loc[clinvar_vcf[clinvar_vcf['#CHROM'] == 'X'].index, '#CHROM'] = 'chrX'
     clinvar_vcf.loc[clinvar_vcf[clinvar_vcf['#CHROM'] == 'Y'].index, '#CHROM'] = 'chrY'
     clinvar_vcf.loc[clinvar_vcf[clinvar_vcf['#CHROM'] == 'MT'].index, '#CHROM'] = 'chrM'
+
 
 def apply_binarized_label(data: pd.DataFrame) -> None:
     """
