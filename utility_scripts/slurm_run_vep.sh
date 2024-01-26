@@ -19,7 +19,6 @@ run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
 -o    required: The directory and output filename.
--a    optional: change the assembly from GRCh37 to GRCh38.
 -g    optional: enables the --per-gene flag for VEP.
 -f    optional: Force flag. Overwrites existing output.
 
@@ -36,7 +35,6 @@ Requirements:
 "
 
 FORCE=false
-ASSEMBLY="GRCh37"
 PG=false
 
 main() {
@@ -51,7 +49,7 @@ digestCommandLine() {
       p)
         vip_path=${OPTARG}
         resources_directory="${vip_path%/}/resources/" # %/ to ensure that paths are set correct
-        vep_image="${vip_path%/}/images/vep-107.0.sif"
+        vep_image="${vip_path%/}/images/vep-111.0.sif"
         ;;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
@@ -85,7 +83,7 @@ validateCommandLine() {
     if [ ! -f "${vep_image}" ]
     then
       valid=false
-      errcho "VEP 107.0 image does not exist"
+      errcho "VEP 111.0 image does not exist"
     fi
   fi
 
@@ -138,52 +136,47 @@ validateCommandLine() {
 }
 
 runVep() {
-  local args=()
-  args+=("exec")
-  args+=("${vep_image}")
-  args+=("vep")
-  args+=("--input_file" "${input}")
-  args+=("--format" "vcf")
-  args+=("--output_file" "${output}")
-  args+=("--vcf")
-  args+=("--compress_output" "gzip")
-  args+=("--sift" "s")
-  args+=("--polyphen" "s")
-  args+=("--numbers")
-  args+=("--symbol")
-  args+=("--shift_3prime" "1")
-  args+=("--allele_number")
-  args+=("--refseq")
-  args+=("--total_length")
-  args+=("--no_stats")
-  args+=("--offline")
-  args+=("--cache")
-  args+=("--dir_cache" "${resources_directory}/vep/cache")
-  args+=("--species" "homo_sapiens")
-  args+=("--assembly" "${ASSEMBLY}")
-  args+=("--fork" "4")
-  args+=("--dont_skip")
-  args+=("--allow_non_variant")
-  args+=("--use_given_ref")
-  args+=("--exclude_predicted")
-  args+=("--flag_pick_allele")
-  args+=("--plugin" "Grantham")
-  if [[ "${PG}" == true ]]
-  then
-    args+=("--per_gene")
-  fi
-  args+=("--dir_plugins" "${resources_directory}/vep/plugins")
-
-  if [[ "${ASSEMBLY}" == "GRCh37" ]]
-  then
-    args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh37/spliceai_scores.masked.snv.hg19.vcf.gz,indel=${resources_directory}GRCh37/spliceai_scores.masked.indel.hg19.vcf.gz")
-    args+=("--custom" "${resources_directory}GRCh37/gnomad.total.r2.1.1.sites.stripped.patch1.vcf.gz,gnomAD,vcf,exact,0,AF,HN")
-    args+=("--custom" "${resources_directory}GRCh37/hg19.100way.phyloP100way.bw,phyloP,bigwig,exact,0")
-  else
+    local args=()
+    args+=("exec")
+    args+=("${vep_image}")
+    args+=("vep")
+    args+=("--input_file" "${input}")
+    args+=("--format" "vcf")
+    args+=("--output_file" "${output}")
+    args+=("--vcf")
+    args+=("--compress_output" "gzip")
+    args+=("--no_stats")
+    args+=("--offline")
+    args+=("--cache")
+    args+=("--dir_cache" "${resources_directory}/vep/cache")
+    args+=("--species" "homo_sapiens")
+    args+=("--assembly" "GRCh38")
+    args+=("--refseq")
+    args+=("--exclude_predicted")
+    args+=("--use_given_ref")
+    args+=("--symbol")
+    args+=("--flag_pick_allele")
+    args+=("--sift" "s")
+    args+=("--polyphen" "s")
+    args+=("--total_length")
+    args+=("--shift_3prime" "1")
+    args+=("--allele_number")
+    args+=("--numbers")
+    args+=("--dont_skip")
+    args+=("--allow_non_variant")
+    args+=("--fork" "4")
+    args+=("--dir_plugins" "${resources_directory}/vep/plugins")
+    args+=("--plugin" "Grantham")
+    args+=("--safe")
     args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
-    args+=("--custom" "${resources_directory}GRCh38/gnomad.genomes.v3.1.2.sites.stripped.vcf.gz,gnomAD,vcf,exact,0,AF,HN")
-    args+=("--custom" "${resources_directory}GRCh38/hg38.phyloP100way.bw,phyloP,bigwig,exact,0")
-  fi
+    args+=("--plugin" "gnomAD,${resources_directory}GRCh38/gnomad.total.v4.0.sites.stripped.tsv.gz")
+    args+=("--plugin" "ClinVar,${resources_directory}GRCh38/clinvar_20240119_stripped.tsv.gz")
+    args+=("--custom" "${resources_directory}GRCh38/hg38.phyloP100way.bed.gz,phyloP,bed,exact,0")
+    if [[ "${PG}" == true ]]
+    then
+      args+=("--per_gene")
+    fi
+
   apptainer "${args[@]}"
 }
 
