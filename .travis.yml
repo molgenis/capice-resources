@@ -1,6 +1,6 @@
 os: linux
 dist: focal
-language: python
+language: java
 python:
 - '3.10'
 jdk:
