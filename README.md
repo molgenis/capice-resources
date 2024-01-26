@@ -7,7 +7,7 @@ Repository for resource files for CAPICE and updating CAPICE model. It contains 
 
 ## Requirements
 - CAPICE (personal git branch for development)
-- [VIP](https://github.com/molgenis/vip) v4.12.2 (include both GRCh37 & GRCh38 during installation)
+- [VIP](https://github.com/molgenis/vip) v7.4.0
 - Python 3.10 or higher
 - [Apptainer](https://apptainer.org/)
 
@@ -132,7 +132,7 @@ is described in 1 step and a step later mentions the same filename, they both re
    7. Run the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
       on the train input. (note: use `-t` when using the conversion tool)
       ```shell
-      APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz>
+      APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz> -p <path/to/bcftools.sif>
       ```
    8. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
       ```shell
@@ -195,7 +195,7 @@ is described in 1 step and a step later mentions the same filename, they both re
        ```
    14. Move the files to capice
        ```shell
-       cp train_input.tsv.gz </path/to/capice/resources/>
+       cp train_input_annotated.tsv.gz </path/to/capice/resources/>
        cp predict_input.tsv.gz </path/to/capice/resources/>
        cp xgb_booster_poc.ubj </path/to/capice/tests/resources/>
        cp breakends_vep.tsv.gz </path/to/capice/tests/resources/>
