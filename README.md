@@ -245,8 +245,6 @@ is described in 1 step and a step later mentions the same filename, they both re
    APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/train_test_vep.log> --error=</path/to/train_test_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/train_test.vcf.gz> -o </path/to/train_test_vep.vcf.gz>
    APPTAINER_BIND=<"/bind"> sbatch --output=</path/to/validation_vep.log> --error=</path/to/validation_vep.err> --export=APPTAINER_BIND ./utility_scripts/slurm_run_vep.sh -p </path/to/vip/directory> -g -i </path/to/validation.vcf.gz> -o </path/to/validation_vep.vcf.gz>
    ```
-   __IMPORTANT:__ If memory causes issues, `--buffer_size 500` (or something similar) can be used 
-   to reduce memory usage (at the cost of speed).
 8. Convert VEP annotated train-test & validation VCFs (separately!) back to TSV using 
    [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh) (using `-t`):
    ```shell
