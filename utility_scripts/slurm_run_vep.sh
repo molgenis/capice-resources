@@ -83,7 +83,7 @@ validateCommandLine() {
     if [ ! -f "${vep_image}" ]
     then
       valid=false
-      errcho "VEP 111.0 image does not exist"
+      errcho "VEP image does not exist"
     fi
   fi
 
