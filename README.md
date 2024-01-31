@@ -225,8 +225,8 @@ For this script the user must ensure paths and variables are set correctly!
 4. Use `create_and_train.sh` to create a train-test and validation files:
    ```shell
     APPTAINER_BIND=<bind> sbatch \
-    --output=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/traintest.log \
-    --error=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/traintest.err \
+    --output=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/create_and_train.log \
+    --error=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/create_and_train.err \
     --export=APPTAINER_BIND \ 
    <path_to/capice-resources/>/create_and_train.sh \
     -v "<path_to/vip/>" \
@@ -243,10 +243,9 @@ For this script the user must ensure paths and variables are set correctly!
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
    ```
-6. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
-      the `<workdir>/train/train_test.vcf.gz` and `<workdir>/train/validation.vcf.gz` files .
-7. Attach the new models to the draft release created in [capice-resources](https://github.com/molgenis/capice-resources) releases.
-8. Run CAPICE on the newly created models:
+5. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
+      the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
+6. Run CAPICE on the newly created models:
    ```shell
    module load Python/3.10.4-GCCcore-11.3.0-bare
    source capice/venv/bin/activate
@@ -254,7 +253,7 @@ For this script the user must ensure paths and variables are set correctly!
    deactivate
    ```
    (Note: `module purge` is not required as `Python/3.10.4-GCCcore-11.3.0-bare` is required for the next steps too)
-9. Use latest non `Release Candidate` model to generate CAPICE results file of the same validation TSV:
+7. Use latest stable release model to generate CAPICE results file of the same validation TSV:
    ```shell
    python3 -m venv capice-v<version>/venv
    source capice-v<version>/venv/bin/activate
@@ -263,20 +262,20 @@ For this script the user must ensure paths and variables are set correctly!
    capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/v<version>>-v<model_version>_grch38.ubj> -o </path/to/validation_grch38_pedicted_old_model.tsv.gz>
    deactivate
    ```
-10. Use module `compare-model-performance` to compare performance of two models: (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
-    ```shell
-    source capice-resources/venv/bin/activate
-    compare-model-performance -a </path/to/validation_grch38_pedicted.tsv.gz> -l </path/to/validation_grch38_vep_processed.tsv.gz> -b </path/to/validation_grch38_pedicted_old_model.tsv.gz> -o </output/dir/path/grch38/>
-    deactivate
-    ```
-11. Run CAPICE explain tool on generated models:
-    ```shell
-    source capice/venv/bin/activate
-    capice explain -i </path/to/capice_model_grch38.ubj> -o </path/to/capice_model_grch38_explain.tsv.gz>
-    capice explain -i </path/to/v<version>-v<model_version>_grch38.ubj> -o </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz>
-    deactivate
-    ```
-12. Merge/rank explain tool output:
+8. Use module `compare-model-performance` to compare performance of two models: (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
+   ```shell
+   source capice-resources/venv/bin/activate
+   compare-model-performance -a </path/to/validation_grch38_pedicted.tsv.gz> -l </path/to/validation_grch38_vep_processed.tsv.gz> -b </path/to/validation_grch38_pedicted_old_model.tsv.gz> -o </output/dir/path/grch38/>
+   deactivate
+   ```
+9. Run CAPICE explain tool on generated models:
+   ```shell
+   source capice/venv/bin/activate
+   capice explain -i </path/to/capice_model_grch38.ubj> -o </path/to/capice_model_grch38_explain.tsv.gz>
+   capice explain -i </path/to/v<version>-v<model_version>_grch38.ubj> -o </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz>
+   deactivate
+   ```
+10. Merge/rank explain tool output:
     ```shell
     source capice-resources/venv/bin/activate
     compare-model-features -a </path/to/capice_model_grch38_explain.tsv.gz> -b </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz> -o </path/to/merged_grch38.tsv.gz>

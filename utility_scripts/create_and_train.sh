@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=capice_train_test_create
+#SBATCH --job-name=capice_create_and_train
 #SBATCH --time=23:59:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16gb
