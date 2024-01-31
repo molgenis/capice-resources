@@ -275,7 +275,7 @@ is described in 1 step and a step later mentions the same filename, they both re
     module load Python/3.10.4-GCCcore-11.3.0-bare
     source </path/to/your/capice/venv/bin/activate>
     capice -v train -t 8 -i </path/to/train_test_grch38_vep_processed.tsv.gz> \
-    -e </path/to/capice/resources/train_impute_values.json> \
+    -e </path/to/train_features.json> \
     -o </path/to/store/output/capice_model_grch38.ubj>
     ```
 11. Attach the new models to the draft release created in [capice-resources](https://github.com/molgenis/capice-resources) releases.
