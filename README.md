@@ -222,19 +222,20 @@ For this script the user must ensure paths and variables are set correctly!
       ```shell
       wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_<date>.vcf.gz
       ```
-4. Use `create_and_train.sh` to create a train-test and validation files:
+4. Use `create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
    ```shell
-    APPTAINER_BIND=<bind> sbatch \
-    --output=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/create_and_train.log \
-    --error=/groups/umcg-gcc/tmp02/users/umcg-bcharbon/capice_model/GRCh38/TEST/create_and_train.err \
+   mkdir <workdir>
+   APPTAINER_BIND=<bind> sbatch \
+    --output=<workdir>/create_and_train.log \
+    --error=<workdir>/create_and_train.err \
     --export=APPTAINER_BIND \ 
    <path_to/capice-resources/>/create_and_train.sh \
-    -v "<path_to/vip/>" \
+    -p "<path_to/vip/>" \
     -b "<path_to/bcftools-<version>.sif>" \
     -w "<workdir>" \
-    -b "<path_to/clinvar_<date>.vcf.gz>" \
-    -a "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
-    -c "<path_to/capice/>" \
+    -c "<path_to/clinvar_<date>.vcf.gz>" \
+    -v "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
+    -g "<path_to/capice/>" \
     -r "<path_to/capice-resources/>" \
     -t
    ```
