@@ -111,7 +111,7 @@ postprocess(){
 
 create_model_job() {
 	echo "writing train script"
-	mkdir "${WORKDIR}/model/"
+	mkdir -p "${WORKDIR}/model/"
   echo "#!/bin/bash
 #SBATCH --job-name=capice_train
 #SBATCH --output=${WORKDIR}/model/capice_train_grch38.log
