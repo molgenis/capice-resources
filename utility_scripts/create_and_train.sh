@@ -29,7 +29,7 @@ main() {
 digestCommandLine() {
 	readonly USAGE="
 	Usage:
-	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -g <arg> -p <arg> -t
+	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -n <arg> -p <arg> -t
     v) path/to/vkgl_file
 		c) path/to/clinvar_file
 		b) path/to/bcftools_sif
@@ -40,7 +40,7 @@ digestCommandLine() {
 		t) train capice model
 	"
 
-	while getopts v:b:c:w:r:g:p:t flag
+	while getopts v:b:c:w:r:n:p:t flag
 	do
 		case "${flag}" in
 			v) VKGL_FILE=${OPTARG};;
