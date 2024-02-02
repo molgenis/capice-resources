@@ -95,134 +95,35 @@ For this script the user must ensure paths and variables are set correctly!
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
       have to be written for int/float values).
    3. Add feature to `capice/resources/train_features.json`.
-   4. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
-   5. Download the following files to a single directory on the system/cluster where VIP is installed: 
-       ```
-       curl -Ls -o train_input_raw.vcf.gz https://github.com/molgenis/capice/raw/main/resources/train_input_raw_GRCh38.vcf.gz
-       curl -Ls -o predict_input_raw.vcf.gz https://github.com/molgenis/capice/raw/main/resources/predict_input_raw_GRCh38.vcf.gz
-       curl -Ls -o breakends.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/breakends_GRCh38.vcf.gz
-       curl -Ls -o edge_cases.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/edge_cases_GRCh38.vcf.gz
-       curl -Ls -o symbolic_alleles.vcf.gz https://github.com/molgenis/capice/raw/main/tests/resources/symbolic_alleles_GRCh38.vcf.gz
-       ```
-   6. Annotate all downloaded files with VEP using the supplied [slurm_run_vep.sh](utility_scripts/slurm_run_vep.sh):
-       * Supply a smaller `--time` argument to slurm (processing the files should take a maximum of 30 minutes each)
-       * Ensure `-g` is supplied.
-       * To reduce potential error, a for loop should be used to mark each file (this is assuming you have changed directory into the single directory):
-         * ```bash
-           for file in *.vcf.gz; do sbatch --export APPTAINER_BIND=<"/bind"> --time=00:30:00 slurm_run_vep.sh -p </path/to/vip_install_directory> -i "${file}" -g -o "${file%.vcf.gz}_vep.vcf.gz"; done
-           ```
-       * Once all files have been processed, rename the following files:
-       * ```bash
-         mv ./train_input_raw_vep.vcf.gz ./train_input_annotated.vcf.gz
-         mv ./predict_input_raw_vep.vcf.gz ./predict_input.vcf.gz
-         ```
-       You should now have the following files:
-      - train_input_annotated.vcf.gz
-      - predict_input.vcf.gz
-      - breakends_vep.vcf.gz
-      - edge_cases_vep.vcf.gz
-      - symbolic_alleles_vep.vcf.gz
-   7. Run the [CAPICE conversion tool](https://github.com/molgenis/capice/blob/master/scripts/convert_vep_vcf_to_tsv_capice.sh)
-      on the train input. (note: use `-t` when using the conversion tool)
-      ```shell
-      APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -t -i <train_input_annotated.vcf.gz> -o <train_input_annotated.tsv.gz> -p <path/to/bcftools.sif>
-      ```
-   8. Load Python and install [capice-resources](https://github.com/molgenis/capice-resources) in virtual environment. Run following commands in capice-resources folder:
-      ```shell
-      module load Python/3.10.4-GCCcore-11.3.0-bare
-      python3 -m venv venv
-      source venv/bin/activate
-      pip --no-cache-dir install -e '.[test]'
-      deactivate
-      module purge
-      ```
-   9. Download/prepare CGD data if not yet locally available:
-      ```shell
-      wget https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
-      # update_date can be found at the bottom of https://research.nhgri.nih.gov/CGD/download/
-      mv CGD.txt.gz CGD_<update_date>.txt.gz
-      ```
-   10. Run capice-resources `process-vep` module: 
-       ```shell
-       module load Python/3.10.4-GCCcore-11.3.0-bare
-       source ./venv/bin/activate
-       process-vep -g <path/to/CGD.txt.gz> -f </path/to/capice/resources/up_to_date_train_features.json> -t </path/to/train_input_annotated.tsv.gz> -o </path/to/output>
-       deactivate
-       module purge
-       ```
-   11. Load & install capice:
-       ```shell
-       git clone https://github.com/molgenis/capice.git
-       cd capice
-       git checkout <branch_name>
-       module load Python/3.10.4-GCCcore-11.3.0-bare
-       python3 -m venv venv
-       source venv/bin/activate
-       pip --no-cache-dir install -e '.[test]'
-       module purge
-       ```
-   12. Create a script to run capice to generate a new model, like the following:
-       ```shell
-       #!/bin/bash
-       #SBATCH --job-name=CAPICE_POC_train
-       #SBATCH --output=/path/to/output/dir/capice_poc_train.log
-       #SBATCH --error=/path/to/output/dir/capice_poc_train.err
-       #SBATCH --time=23:59:00
-       #SBATCH --cpus-per-task=8
-       #SBATCH --mem=16gb
-       #SBATCH --nodes=1
-       #SBATCH --export=NONE
-       #SBATCH --get-user-env=L60
-       module load Python/3.10.4-GCCcore-11.3.0-bare
-       source </path/to/your/capice/venv/bin/activate>
-       capice -v train -t 8 -i </path/to/train_input.tsv.gz> -e </path/to/capice/resources/train_features.json> -o </path/to/store/output/xgb_booster_poc.ubj>
-       module purge
-       ```
-       And run it (`sbatch <scriptname>`).
-   13. Run BCF tools for the other files:
-       ```shell
-       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i predict_input.vcf.gz -o predict_input.tsv.gz
-       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i breakends_vep.vcf.gz -o breakends_vep.tsv.gz
-       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i edge_cases_vep.vcf.gz -o edge_cases_vep.tsv.gz
-       APPTAINER_BIND=<"/bind"> bash capice/scripts/convert_vep_vcf_to_tsv_capice.sh -p </path/to/bcftools.sif> -t -i symbolic_alleles_vep.vcf.gz -o symbolic_alleles_vep.tsv.gz
-       ```
-   14. Move the files to capice
-       ```shell
-       cp train_input_annotated.tsv.gz </path/to/capice/resources/>
-       cp predict_input.tsv.gz </path/to/capice/resources/>
-       cp xgb_booster_poc.ubj </path/to/capice/tests/resources/>
-       cp breakends_vep.tsv.gz </path/to/capice/tests/resources/>
-       cp edge_cases_vep.tsv.gz </path/to/capice/tests/resources/>
-       cp symbolic_alleles_vep.tsv.gz </path/to/capice/tests/resources/>
-       ```
-   15. Install your current branch of capice in a virtual environment and run the tests.
-       ```shell
-       module load Python/3.10.4-GCCcore-11.3.0-bare
-       python3 -m venv venv
-       source venv/bin/activate
-       pip --no-cache-dir install -e '.[test]'
-       pytest
-       deactivate
-       module purge
-       ```
-   16. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
+   Make new branch for [CAPICE](https://github.com/molgenis/capice-resources) and checkout this branch locally.
+   4. Update VEP command in the `capice-resources/src/utility_scripts/slurm_run_vep.sh`.
+   5. Use `<capice-resources>/utility_scripts/create_poc.sh`
+   ```shell
+    APPTAINER_BIND=/groups sbatch \
+    --output=<workdir>/poc.log \
+    --error=<workdir>/poc.err \
+    --export=APPTAINER_BIND create_poc.sh \
+    -a "<bind>" \
+    -n automate \
+    -b "<path_to/bcftools-<version>.sif>" \
+    -w "<workdir>" \
+    -r "<path_to/capice-resources/>" \
+    -p "<path_to/vip/>"
+   ```
+   1. Check the output log for test failures.
+   2. Commit the updated slurm_run_vep.sh
+   3. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
+   4. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
-   17. Create pull-request for review.
-   18. Once the pull-request is reviewed/merged by someone else, create a new release(-candidate):
-       1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
-       2. Generate a pre-release draft on GitHub.
-   19. Create new Apptainer image of the pre-release:
-       1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
-       2. Update the defined capice version & filename.
-       3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def` (where `sif/capice-4.0.0.sif` is the output path.)
-2. Install new capice version on cluster & ensure capice-resources on the cluster is up-to-date (`git pull origin main`).
-3. 
+   5. commit capice files
+2. 
    1. Obtain the latest GRCh38 VKGL release from the cluster
    2. Download the latest public GRCh38 [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/) datasets (please note that these filenames are stored in the train-test and validation VCF, so file dates in the name of the files improves reproducibility). 
       ```shell
       wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_<date>.vcf.gz
       ```
-4. Use `create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
+3. if not continuing in the folder used in step 1: checkout the new branch of capice-resources
+4. Use `<capice-resources>/utility_scripts/create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
    ```shell
    mkdir <workdir>
    APPTAINER_BIND=<bind> sbatch \
@@ -254,7 +155,7 @@ For this script the user must ensure paths and variables are set correctly!
    deactivate
    ```
    (Note: `module purge` is not required as `Python/3.10.4-GCCcore-11.3.0-bare` is required for the next steps too)
-7. Use latest stable release model to generate CAPICE results file of the same validation TSV:
+7. Use the latest stable release model to generate CAPICE results file of the same validation TSV:
    ```shell
    python3 -m venv capice-v<version>/venv
    source capice-v<version>/venv/bin/activate
@@ -269,20 +170,31 @@ For this script the user must ensure paths and variables are set correctly!
    compare-model-performance -a </path/to/validation_grch38_pedicted.tsv.gz> -l </path/to/validation_grch38_vep_processed.tsv.gz> -b </path/to/validation_grch38_pedicted_old_model.tsv.gz> -o </output/dir/path/grch38/>
    deactivate
    ```
-9. Run CAPICE explain tool on generated models:
+9. Create a capice-resources pull-request.
+10. Create a capice pull-request.
+11. Once the pull-request is merged, create a new release:
+     1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
+     2. create a release on GitHub.
+12. Create new Apptainer image of the pre-release:
+     1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
+     2. Update the defined capice version & filename.
+     3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def`
+
+Optional:
+1. Run CAPICE explain tool on generated models:
    ```shell
    source capice/venv/bin/activate
    capice explain -i </path/to/capice_model_grch38.ubj> -o </path/to/capice_model_grch38_explain.tsv.gz>
    capice explain -i </path/to/v<version>-v<model_version>_grch38.ubj> -o </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz>
    deactivate
    ```
-10. Merge/rank explain tool output:
-    ```shell
-    source capice-resources/venv/bin/activate
-    compare-model-features -a </path/to/capice_model_grch38_explain.tsv.gz> -b </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz> -o </path/to/merged_grch38.tsv.gz>
-    deactivate
-    module purge
-    ```
+2. Merge/rank explain tool output:
+   ```shell
+   source capice-resources/venv/bin/activate
+   compare-model-features -a </path/to/capice_model_grch38_explain.tsv.gz> -b </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz> -o </path/to/merged_grch38.tsv.gz>
+   deactivate
+   module purge
+   ```
 
 ## Making train-test and validation VCF files
 

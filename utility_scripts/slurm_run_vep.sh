@@ -83,7 +83,7 @@ validateCommandLine() {
     if [ ! -f "${vep_image}" ]
     then
       valid=false
-      errcho "VEP image does not exist"
+      errcho "VEP image '${vep_image}' does not exist"
     fi
   fi
 
@@ -95,7 +95,7 @@ validateCommandLine() {
     if [ ! -f "${input}" ]
     then
       valid=false
-      errcho "Input file does not exist"
+      errcho "Input file '${input}' does not exist"
     else
       if [[ "${input}" != *.vcf.gz ]]
       then
