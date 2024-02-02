@@ -45,7 +45,7 @@ digestCommandLine() {
 		case "${flag}" in
 			v) VKGL_FILE=${OPTARG};;
 			b) BCFTOOLS_SIF=${OPTARG};;
-      c) CLINVAR_FILE=${OPTARG};;
+			c) CLINVAR_FILE=${OPTARG};;
 			w) WORKDIR=${OPTARG};;
 			r) CAPICE_RESOUCES=${OPTARG};;
 			n) CAPICE_BRANCH=${OPTARG};;
@@ -59,12 +59,14 @@ digestCommandLine() {
 				exit 1;;
 		esac
 	done
+	
+	CAPICE="${WORKDIR}/capice"
 }
 
 install_capice(){
 	echo "installing capice"
-	git clone https://github.com/molgenis/capice.git "${WORKDIR}/capice"
-	cd "${WORKDIR}/capice"
+	git clone https://github.com/molgenis/capice.git "${CAPICE}"
+	cd "${CAPICE}"
 	git checkout "${CAPICE_BRANCH}"
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	python3 -m venv "${CAPICE}/venv"
@@ -77,6 +79,7 @@ install_capice(){
 create_train_data() {
 	echo "running train-data-creator"
 	module load Python/3.10.4-GCCcore-11.3.0-bare
+	python3 -m venv "${CAPICE_RESOUCES}/venv"
 	source ${CAPICE_RESOUCES}/venv/bin/activate
 	train-data-creator -v ${VKGL_FILE} -c ${CLINVAR_FILE} -o ${WORKDIR}/data/
 	deactivate
