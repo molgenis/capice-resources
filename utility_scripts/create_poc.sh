@@ -157,7 +157,7 @@ vcf_to_tsv(){
 
 copy_to_capice(){
 	echo "running copy_to_capice"
-	cp "${WORKDIR}/poc/data/train_input_annotated.tsv.gz" "${CAPICE}/resources/"
+	cp "${WORKDIR}/poc/data/processed/train_test.tsv.gz" "${CAPICE}/resources/"
 	cp "${WORKDIR}/poc/data/predict_input.tsv.gz" "${CAPICE}/resources/"
 	cp "${WORKDIR}/poc/xgb_booster_poc.ubj" "${CAPICE}/tests/resources/"
 	cp "${WORKDIR}/poc/data/breakends_vep.tsv.gz" "${CAPICE}/tests/resources/"
