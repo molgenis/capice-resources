@@ -133,7 +133,6 @@ capice -v train -t 8 -i ${WORKDIR}/data/processed/train_test.tsv.gz \
 
 train(){
 	echo "running capice training"
-	mkdir ${WORKDIR}/model
 	bash ${WORKDIR}/train.sh
 	echo "finished capice training"
 }
