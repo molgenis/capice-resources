@@ -44,8 +44,8 @@ main() {
 	digestCommandLine "$@"
 	install_capice "${PROD_CAPICE_VERSION}"
 	download_model
-	run_capice "${WORKDIR}/capice_${PROD_CAPICE_VERSION}" "${WORKDIR}/${PROD_MODEL}" "${WORKDIR}/prod/validation_predicted.tsv.gz"
-	run_capice "${NEW_CAPICE}" "${NEW_MODEL}" "${WORKDIR}/new/validation_predicted.tsv.gz"
+	run_capice "${WORKDIR}/capice_${PROD_CAPICE_VERSION}" "${WORKDIR}/${PROD_MODEL}" "${WORKDIR}/prod_validation_predicted.tsv.gz"
+	run_capice "${NEW_CAPICE}" "${NEW_MODEL}" "${WORKDIR}/new_validation_predicted.tsv.gz"
 	compare_and_threshold
 }
 
@@ -80,8 +80,8 @@ run_capice(){
 compare_and_threshold(){
     echo "running compare_and_threshold"
 	source ${CAPICE_RESOURCES}/venv/bin/activate
-	compare-model-performance -a ${WORKDIR}/new/validation_predicted.tsv.gz -l ${VALIDATION_TSV} -b ${WORKDIR}/prod/validation_predicted.tsv.gz -o ${WORKDIR}/compare
-	threshold-calculator -v ${VALIDATION_TSV} -s ${WORKDIR}/new/validation_predicted.tsv.gz -o ${WORKDIR}/threshold/
+	compare-model-performance -a ${WORKDIR}/new_validation_predicted.tsv.gz -l ${VALIDATION_TSV} -b ${WORKDIR}/prod_validation_predicted.tsv.gz -o ${WORKDIR}/compare
+	threshold-calculator -v ${VALIDATION_TSV} -s ${WORKDIR}/new_validation_predicted.tsv.gz -o ${WORKDIR}/threshold/
 	deactivate
     echo "finished compare_and_threshold"
 }
