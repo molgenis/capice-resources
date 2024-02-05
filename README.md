@@ -152,10 +152,10 @@ For this script the user must ensure paths and variables are set correctly!
    --error=/<workdir>/validate_and_threshold.err \
    --export=APPTAINER_BIND <path/to>/capice-resources/utility_scripts/validate_and_threshold.sh \
    -r <path/to>/capice-resources \
-   -m <cpaice_production_model_filename> \
+   -m <capice_production_model_filename> \
    -p <capice_production_version_tag> \
    -c <path/to>/capice \
-   -n <path/to>/model.ubj \
+   -n <path/to>/new_model.ubj \
    -v <path/to>/processed/validation.tsv.gz \
    -w <workdir>
    ```
