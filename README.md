@@ -145,37 +145,28 @@ For this script the user must ensure paths and variables are set correctly!
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
    ```
-5. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
+5. Compare new model with production and calculate new threshold:
+   ```shell
+   APPTAINER_BIND=/groups sbatch \
+   --output=/<workdir>/validate_and_threshold.log \
+   --error=/<workdir>/validate_and_threshold.err \
+   --export=APPTAINER_BIND <path/to>/capice-resources/utility_scripts/validate_and_threshold.sh \
+   -r <path/to>/capice-resources \
+   -m <cpaice_production_model_filename> \
+   -p <capice_production_version_tag> \
+   -c <path/to>/capice \
+   -n <path/to>/model.ubj \
+   -v <path/to>/processed/validation.tsv.gz \
+   -w <workdir>
+   ```
+6. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
       the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
-6. Run CAPICE on the newly created models:
-   ```shell
-   module load Python/3.10.4-GCCcore-11.3.0-bare
-   source capice/venv/bin/activate
-   capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/capice_model_grch38.ubj> -o </path/to/validation_grch38_pedicted.tsv.gz>
-   deactivate
-   ```
-   (Note: `module purge` is not required as `Python/3.10.4-GCCcore-11.3.0-bare` is required for the next steps too)
-7. Use the latest stable release model to generate CAPICE results file of the same validation TSV:
-   ```shell
-   python3 -m venv capice-v<version>/venv
-   source capice-v<version>/venv/bin/activate
-   pip --no-cache-dir install capice==<version>
-   wget https://github.com/molgenis/capice/releases/download/v<version>/v<version>-v<model_version>_grch38.ubj
-   capice predict -i </path/to/validation_grch38_vep_processed.tsv.gz> -m </path/to/v<version>>-v<model_version>_grch38.ubj> -o </path/to/validation_grch38_pedicted_old_model.tsv.gz>
-   deactivate
-   ```
-8. Use module `compare-model-performance` to compare performance of two models: (`capice_predict_input.tsv` is the validation TSV used in the 2 steps above):  
-   ```shell
-   source capice-resources/venv/bin/activate
-   compare-model-performance -a </path/to/validation_grch38_pedicted.tsv.gz> -l </path/to/validation_grch38_vep_processed.tsv.gz> -b </path/to/validation_grch38_pedicted_old_model.tsv.gz> -o </output/dir/path/grch38/>
-   deactivate
-   ```
-9. Create a capice-resources pull-request.
-10. Create a capice pull-request.
-11. Once the pull-request is merged, create a new release:
+7. Create a capice-resources pull-request.
+8. Create a capice pull-request.
+9. Once the pull-request is merged, create a new release:
      1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
      2. create a release on GitHub.
-12. Create new Apptainer image of the pre-release:
+10. Create new Apptainer image of the pre-release:
      1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
      2. Update the defined capice version & filename.
      3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def`
