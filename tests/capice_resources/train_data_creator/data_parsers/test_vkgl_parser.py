@@ -100,7 +100,7 @@ class TestVKGLParser(unittest.TestCase):
     def test_unsupported_contig(self):
         test_case = pd.DataFrame(
             {
-                'chromosome': ['1', 'MT', 'FOOBAR'],
+                'chromosome': ['chr1', 'chrM', 'FOOBAR'],
                 'start': [100, 200, 300],
                 'ref': ['A', 'C', 'G'],
                 'alt': ['T', 'G', 'C'],

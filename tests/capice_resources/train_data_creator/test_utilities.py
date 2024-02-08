@@ -13,14 +13,14 @@ class TestUtilities(unittest.TestCase):
         """
         test_set = pd.DataFrame(
             {
-                '#CHROM': [1, 'MT', 5, 3, 3, 'Y', 'X'],
+                '#CHROM': ['chr1', 'chrM', 'chr5', 'chr3', 'chr3', 'chrY', 'chrX'],
                 'POS': [100, 200, 300, 500, 400, 1000, 12000]
             }
         )
         correct_order_vcf_notation(test_set)
         expected = pd.DataFrame(
             {
-                '#CHROM': [1, 3, 3, 5, 'X', 'Y', 'MT'],
+                '#CHROM': ['chr1', 'chr3', 'chr3', 'chr5', 'chrX', 'chrY', 'chrM'],
                 'POS': [100, 400, 500, 300, 12000, 1000, 200]
             }
         )
