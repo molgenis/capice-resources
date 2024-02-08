@@ -138,27 +138,15 @@ For this script the user must ensure paths and variables are set correctly!
     -v "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
     -g "<path_to/capice/>" \
     -r "<path_to/capice-resources/>" \
-    -t
+    -m "<capice_production_model_filename>" \
+    -t "<capice_production_git_tag>"
    ```
    - Omitting -t will generate new train and validation data and the train script without running it.
    - `<workdir>/train/train.sh` can be used to train a new model on the generated train_test data:
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
    ```
-5. Compare new model with production and calculate new threshold:
-   ```shell
-   APPTAINER_BIND=/groups sbatch \
-   --output=/<workdir>/validate_and_threshold.log \
-   --error=/<workdir>/validate_and_threshold.err \
-   --export=APPTAINER_BIND <path/to>/capice-resources/utility_scripts/validate_and_threshold.sh \
-   -r <path/to>/capice-resources \
-   -m <cpaice_production_model_filename> \
-   -p <capice_production_version_tag> \
-   -c <path/to>/capice \
-   -n <path/to>/model.ubj \
-   -v <path/to>/processed/validation.tsv.gz \
-   -w <workdir>
-   ```
+5. Check the created validation plots to see how the new model performs
 6. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
       the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
 7. Create a capice-resources pull-request.
