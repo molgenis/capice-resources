@@ -170,7 +170,6 @@ runVep() {
     args+=("--safe")
     args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
     args+=("--plugin" "gnomAD,${resources_directory}GRCh38/gnomad.total.v4.0.sites.stripped.tsv.gz")
-    args+=("--plugin" "ClinVar,${resources_directory}GRCh38/clinvar_20240119_stripped.tsv.gz")
     args+=("--custom" "${resources_directory}GRCh38/hg38.phyloP100way.bed.gz,phyloP,bed,exact,0")
     if [[ "${PG}" == true ]]
     then
