@@ -91,39 +91,38 @@ For this script the user must ensure paths and variables are set correctly!
 ## Usage
 
 1. Update the CAPICE tool: 
-   1. Make new branch for [CAPICE](https://github.com/molgenis/capice) and checkout this branch locally.
+   1. Create a new branch for [CAPICE](https://github.com/molgenis/capice).
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
       have to be written for int/float values).
    3. Add feature to `capice/resources/train_features.json`.
-   Make new branch for [CAPICE](https://github.com/molgenis/capice-resources) and checkout this branch locally.
-   4. Update VEP command in the `capice-resources/src/utility_scripts/slurm_run_vep.sh`.
-   5. Use `<capice-resources>/utility_scripts/create_poc.sh`
+   4. Create a Make new branch for [CAPICE](https://github.com/molgenis/capice-resources).
+   5. Update VEP command in the `capice-resources/src/utility_scripts/slurm_run_vep.sh`.
+   6. Use `<capice-resources>/utility_scripts/create_poc.sh`
    ```shell
     APPTAINER_BIND=/groups sbatch \
     --output=<workdir>/poc.log \
     --error=<workdir>/poc.err \
     --export=APPTAINER_BIND create_poc.sh \
     -a "<bind>" \
-    -n automate \
+    -n "<capice branch>" \
     -b "<path_to/bcftools-<version>.sif>" \
     -w "<workdir>" \
     -r "<path_to/capice-resources/>" \
     -p "<path_to/vip/>"
    ```
-   1. Check the output log for test failures.
-   2. Commit the updated slurm_run_vep.sh
-   3. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
-   4. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
+   7. Check the output log for test failures.
+   8. Commit the updated slurm_run_vep.sh
+   9. Update VEP command in the `capice/README.md` (Requirements & Usage -> VEP).
+   10. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
-   5. commit capice files
+   11. commit capice files
 2. 
    1. Obtain the latest GRCh38 VKGL release from the cluster
    2. Download the latest public GRCh38 [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/) datasets (please note that these filenames are stored in the train-test and validation VCF, so file dates in the name of the files improves reproducibility). 
       ```shell
       wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_<date>.vcf.gz
       ```
-3. if not continuing in the folder used in step 1: checkout the new branch of capice-resources
-4. Use `<capice-resources>/utility_scripts/create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
+3. Use `<capice-resources>/utility_scripts/create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
    ```shell
    mkdir <workdir>
    APPTAINER_BIND=<bind> sbatch \
@@ -146,15 +145,13 @@ For this script the user must ensure paths and variables are set correctly!
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
    ```
-5. Check the created validation plots to see how the new model performs
-6. Make [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and add
-      the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
-7. Create a capice-resources pull-request.
-8. Create a capice pull-request.
-9. Once the pull-request is merged, create a new release:
-     1. Tag master with `v<major>.<minor>.<patch>-rc<cadidate_version>`.
-     2. create a release on GitHub.
-10. Create new Apptainer image of the pre-release:
+4. Check the created validation plots to see how the new model performs
+5. Create a capice-resources pull-request.
+6. Create a capice pull-request.
+7. Create a [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and
+8. Create a  [capice](https://github.com/molgenis/capice) release 
+     1. add the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
+9. Create new Apptainer image:
      1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
      2. Update the defined capice version & filename.
      3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def`
