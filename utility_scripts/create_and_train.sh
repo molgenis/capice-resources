@@ -15,15 +15,15 @@ TRAIN=false
 
 main() {
 	digestCommandLine "$@"
-	#install_capice "${CAPICE_BRANCH}"
-	#install_capice "${PROD_CAPICE_VERSION}"
-	#create_train_data
-	#vep
-	#postprocess
-	#create_model_job
-	#train
-	#download_model
-	#run_capice "${WORKDIR}/capice/${PROD_CAPICE_VERSION}/" "${WORKDIR}/validation/${PROD_MODEL}" "${WORKDIR}/validation/prod_validation_predicted.tsv.gz"
+	install_capice "${CAPICE_BRANCH}"
+	install_capice "${PROD_CAPICE_VERSION}"
+	create_train_data
+	vep
+	postprocess
+	create_model_job
+	train
+	download_model
+	run_capice "${WORKDIR}/capice/${PROD_CAPICE_VERSION}/" "${WORKDIR}/validation/${PROD_MODEL}" "${WORKDIR}/validation/prod_validation_predicted.tsv.gz"
 	run_capice "${WORKDIR}/capice/${CAPICE_BRANCH}/" "${WORKDIR}/model/capice_model.ubj" "${WORKDIR}/validation/new_validation_predicted.tsv.gz"
 	compare_and_threshold
 }
