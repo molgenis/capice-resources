@@ -48,7 +48,7 @@ digestCommandLine() {
     case "${flag}" in
       p)
         vip_path=${OPTARG}
-        resources_directory="${vip_path%/}/resources/" # %/ to ensure that paths are set correct
+        resources_directory="${vip_path%/}/resources" # %/ to ensure that paths are set correct
         vep_image="${vip_path%/}/images/vep-111.0.sif"
         ;;
       i) input=${OPTARG};;
@@ -147,7 +147,9 @@ runVep() {
     args+=("--compress_output" "gzip")
     args+=("--no_stats")
     args+=("--offline")
+    args+=("--fasta" "${resources_directory}/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz")
     args+=("--cache")
+    args+=("--buffer_size" "1000")
     args+=("--dir_cache" "${resources_directory}/vep/cache")
     args+=("--species" "homo_sapiens")
     args+=("--assembly" "GRCh38")
@@ -168,9 +170,9 @@ runVep() {
     args+=("--dir_plugins" "${resources_directory}/vep/plugins")
     args+=("--plugin" "Grantham")
     args+=("--safe")
-    args+=("--plugin" "SpliceAI,snv=${resources_directory}GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
-    args+=("--plugin" "gnomAD,${resources_directory}GRCh38/gnomad.total.v4.0.sites.stripped.tsv.gz")
-    args+=("--custom" "${resources_directory}GRCh38/hg38.phyloP100way.bed.gz,phyloP,bed,exact,0")
+    args+=("--plugin" "SpliceAI,snv=${resources_directory}/GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}/GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
+    args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.0.sites.stripped.tsv.gz")
+    args+=("--custom" "${resources_directory}/GRCh38/hg38.phyloP100way.bed.gz,phyloP,bed,exact,0")
     if [[ "${PG}" == true ]]
     then
       args+=("--per_gene")
