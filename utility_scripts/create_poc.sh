@@ -63,11 +63,11 @@ digestCommandLine() {
 download(){
 	echo "downloading"
 	#FIXME: branchname in url
-	curl -Ls -o "${WORKDIR}/data/train_input_raw.vcf.gz" "https://github.com/molgenis/capice/raw/feat/noGnomad/resources/train_input_raw.vcf.gz"
-	curl -Ls -o "${WORKDIR}/data/predict_input_raw.vcf.gz" "https://github.com/molgenis/capice/raw/feat/noGnomad/resources/predict_input_raw.vcf.gz"
-	curl -Ls -o "${WORKDIR}/data/breakends.vcf.gz" "https://github.com/molgenis/capice/raw/feat/noGnomad/tests/resources/breakends.vcf.gz"
-	curl -Ls -o "${WORKDIR}/data/edge_cases.vcf.gz" "https://github.com/molgenis/capice/raw/feat/noGnomad/tests/resources/edge_cases.vcf.gz"
-	curl -Ls -o "${WORKDIR}/data/symbolic_alleles.vcf.gz" "https://github.com/molgenis/capice/raw/feat/noGnomad/tests/resources/symbolic_alleles.vcf.gz"
+	curl -Ls -o "${WORKDIR}/data/train_input_raw.vcf.gz" "https://github.com/molgenis/capice/raw/${CAPICE_BRANCH}/resources/train_input_raw.vcf.gz"
+	curl -Ls -o "${WORKDIR}/data/predict_input_raw.vcf.gz" "https://github.com/molgenis/capice/raw/${CAPICE_BRANCH}/resources/predict_input_raw.vcf.gz"
+	curl -Ls -o "${WORKDIR}/data/breakends.vcf.gz" "https://github.com/molgenis/capice/raw/${CAPICE_BRANCH}/tests/resources/breakends.vcf.gz"
+	curl -Ls -o "${WORKDIR}/data/edge_cases.vcf.gz" "https://github.com/molgenis/capice/raw/${CAPICE_BRANCH}/tests/resources/edge_cases.vcf.gz"
+	curl -Ls -o "${WORKDIR}/data/symbolic_alleles.vcf.gz" "https://github.com/molgenis/capice/raw/${CAPICE_BRANCH}/tests/resources/symbolic_alleles.vcf.gz"
 	echo "finished downloading"
 }
 
