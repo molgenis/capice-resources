@@ -94,10 +94,12 @@ For this script the user must ensure paths and variables are set correctly!
    1. Create a new branch for [CAPICE](https://github.com/molgenis/capice).
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
       have to be written for int/float values).
-   3. Add feature to `capice/resources/train_features.json`.
+   3. Add feature to `capice/resources/train_features.json` and test_main_train.py test_integration_reset_train_features.
    4. Create a Make new branch for [CAPICE](https://github.com/molgenis/capice-resources).
    5. Update VEP command in the `capice-resources/src/utility_scripts/slurm_run_vep.sh`.
-   6. Use `<capice-resources>/utility_scripts/create_poc.sh`
+   6. clone capice-resources branch on a cluster
+   7. create a working directory for the next step 
+   8. Use `<capice-resources>/utility_scripts/create_poc.sh`
    ```shell
     APPTAINER_BIND=/groups sbatch \
     --output=<workdir>/poc.log \
