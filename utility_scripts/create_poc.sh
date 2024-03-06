@@ -17,7 +17,6 @@ main() {
 	mkdir -p "${WORKDIR}/data/"
 	CAPICE="${WORKDIR}/capice"
 
-  #FIXME:re-enable
 	install_capice_resources
 	install_capice
 	download
