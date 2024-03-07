@@ -26,11 +26,8 @@ main() {
 	run_capice "${WORKDIR}/capice/${PROD_CAPICE_VERSION}/" "${WORKDIR}/validation/${PROD_MODEL}" "${WORKDIR}/validation/prod_validation_predicted.tsv.gz"
 	run_capice "${WORKDIR}/capice/${CAPICE_BRANCH}/" "${WORKDIR}/model/capice_model.ubj" "${WORKDIR}/validation/new_validation_predicted.tsv.gz"
 	compare_and_threshold
-  explain
-  merge_rank
-}
-
-merge_rank(){
+  	explain
+  	merge_rank
 }
 
 digestCommandLine() {
