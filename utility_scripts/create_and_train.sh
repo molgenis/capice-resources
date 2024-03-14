@@ -26,6 +26,8 @@ main() {
 	run_capice "${WORKDIR}/capice/${PROD_CAPICE_VERSION}/" "${WORKDIR}/validation/${PROD_MODEL}" "${WORKDIR}/validation/prod_validation_predicted.tsv.gz"
 	run_capice "${WORKDIR}/capice/${CAPICE_BRANCH}/" "${WORKDIR}/model/capice_model.ubj" "${WORKDIR}/validation/new_validation_predicted.tsv.gz"
 	compare_and_threshold
+  	explain
+  	merge_rank
 }
 
 digestCommandLine() {
@@ -162,6 +164,20 @@ compare_and_threshold(){
 	threshold-calculator -v ${WORKDIR}/data/processed/validation.tsv.gz -s ${WORKDIR}/validation/new_validation_predicted.tsv.gz -o ${WORKDIR}/validation/threshold/
 	deactivate
     echo "finished compare_and_threshold"
+}
+
+explain(){
+  source ${CAPICE}/venv/bin/activate
+  mkdir -p ${WORKDIR}/explain/
+  capice explain -i ${WORKDIR}/model/capice_model.ubj -o ${WORKDIR}/explain/new_explain.tsv.gz
+  capice explain -i ${WORKDIR}/validation/${PROD_MODEL} -o ${WORKDIR}/explain/${PROD_CAPICE_VERSION}_explain.tsv.gz
+  deactivate
+}
+
+merge_rank(){
+  source ${CAPICE_RESOURCES}/venv/bin/activate
+  compare-model-features -a ${WORKDIR}/explain/new_explain.tsv.gz -b ${WORKDIR}/explain/${PROD_CAPICE_VERSION}_explain.tsv.gz -o ${WORKDIR}/explain/merged_grch38.tsv.gz
+  deactivate
 }
 
 main "$@"

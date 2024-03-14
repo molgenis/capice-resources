@@ -94,10 +94,12 @@ For this script the user must ensure paths and variables are set correctly!
    1. Create a new branch for [CAPICE](https://github.com/molgenis/capice).
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
       have to be written for int/float values).
-   3. Add feature to `capice/resources/train_features.json`.
+   3. Add feature to `capice/resources/train_features.json` and test_main_train.py test_integration_reset_train_features.
    4. Create a Make new branch for [CAPICE](https://github.com/molgenis/capice-resources).
    5. Update VEP command in the `capice-resources/src/utility_scripts/slurm_run_vep.sh`.
-   6. Use `<capice-resources>/utility_scripts/create_poc.sh`
+   6. clone capice-resources branch on a cluster
+   7. create a working directory for the next step 
+   8. Use `<capice-resources>/utility_scripts/create_poc.sh`
    ```shell
     APPTAINER_BIND=/groups sbatch \
     --output=<workdir>/poc.log \
@@ -146,31 +148,16 @@ For this script the user must ensure paths and variables are set correctly!
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
    ```
 4. Check the created validation plots to see how the new model performs
-5. Create a capice-resources pull-request.
-6. Create a capice pull-request.
-7. Create a [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and
-8. Create a  [capice](https://github.com/molgenis/capice) release 
+5. Check the explain / rank output
+6. Create a capice-resources pull-request.
+7. Create a capice pull-request.
+8. Create a [capice-resources](https://github.com/molgenis/capice-resources) GitHub release draft and
+9. Create a  [capice](https://github.com/molgenis/capice) release 
      1. add the `<workdir>/train/train_test.vcf.gz`, `<workdir>/train/validation.vcf.gz` and the new model.
-9. Create new Apptainer image:
+10. Create new Apptainer image:
      1. Copy [this def file](https://github.com/molgenis/vip/blob/main/utils/apptainer/def/capice-5.1.1.def)
      2. Update the defined capice version & filename.
      3. Run `sudo apptainer build sif/capice-<version>.sif def/capice-<version>.def`
-
-Optional:
-1. Run CAPICE explain tool on generated models:
-   ```shell
-   source capice/venv/bin/activate
-   capice explain -i </path/to/capice_model_grch38.ubj> -o </path/to/capice_model_grch38_explain.tsv.gz>
-   capice explain -i </path/to/v<version>-v<model_version>_grch38.ubj> -o </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz>
-   deactivate
-   ```
-2. Merge/rank explain tool output:
-   ```shell
-   source capice-resources/venv/bin/activate
-   compare-model-features -a </path/to/capice_model_grch38_explain.tsv.gz> -b </path/to/v<version>-v<model_version>_grch38_explain.tsv.gz> -o </path/to/merged_grch38.tsv.gz>
-   deactivate
-   module purge
-   ```
 
 ## Making train-test and validation VCF files
 
