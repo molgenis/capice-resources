@@ -7,7 +7,7 @@ Repository for resource files for CAPICE and updating CAPICE model. It contains 
 
 ## Requirements
 - CAPICE (personal git branch for development)
-- [VIP](https://github.com/molgenis/vip) v7.4.0
+- [VIP](https://github.com/molgenis/vip) v7.6.x
 - Python 3.10 or higher
 - [Apptainer](https://apptainer.org/)
 
