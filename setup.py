@@ -13,7 +13,7 @@ setup(
     url='https://github.com/molgenis/capice-resources/',
     license='LGPL-3.0',
     author='Molgenis',
-    author_email='molgenis-support@umcg.nl',
+    author_email='support@molgenis.org',
     description='Resource files for CAPICE to train new CAPICE models',
     long_description=long_description,
     classifiers=[
