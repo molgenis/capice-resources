@@ -140,9 +140,8 @@ For this script the user must ensure paths and variables are set correctly!
     -r "<path_to/capice-resources/>" \
     -m "<capice_production_model_filename>" \
     -t "<capice_production_git_tag>"
-    -d "<capice traintest data file name>"
+    -d "<capice production traintest data file name>"
    ```
-   - Omitting -d will generate new train and validation data and the train script without running it.
    - `<workdir>/train/train.sh` can be used to train a new model on the generated train_test data:
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
