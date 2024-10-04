@@ -131,18 +131,18 @@ For this script the user must ensure paths and variables are set correctly!
     --output=<workdir>/create_and_train.log \
     --error=<workdir>/create_and_train.err \
     --export=APPTAINER_BIND \ 
-   <path_to/capice-resources/>/create_and_train.sh \
+   <path_to/capice-resources/>/utility_scripts/create_and_train.sh \
     -p "<path_to/vip/>" \
     -b "<path_to/bcftools-<version>.sif>" \
     -w "<workdir>" \
     -c "<path_to/clinvar_<date>.vcf.gz>" \
     -v "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
-    -g "<path_to/capice/>" \
     -r "<path_to/capice-resources/>" \
     -m "<capice_production_model_filename>" \
     -t "<capice_production_git_tag>"
+    -d "<capice traintest data file name>"
    ```
-   - Omitting -t will generate new train and validation data and the train script without running it.
+   - Omitting -d will generate new train and validation data and the train script without running it.
    - `<workdir>/train/train.sh` can be used to train a new model on the generated train_test data:
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
