@@ -77,7 +77,7 @@ install_capice_resources(){
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	python3 -m venv "${WORKDIR}/venvs/capice-resources"
 	source "${WORKDIR}/venvs/capice-resources/bin/activate"
-	pip --no-cache-dir install -e "${CAPICE_RESOURCES}[test]" "${CAPICE_RESOURCES}"
+	pip --no-cache-dir install "${CAPICE_RESOURCES}"
 	module purge
 	echo "finished installing capice resources"
 }
@@ -90,7 +90,7 @@ install_capice(){
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	python3 -m venv "${WORKDIR}/venvs/capice${1}"
 	source "${WORKDIR}/venvs/capice${1}/bin/activate"
-	pip --no-cache-dir install -e "${WORKDIR}/capice/${1}[test]" "${WORKDIR}/capice/${1}"
+	pip --no-cache-dir install "${WORKDIR}/capice/${1}"
 	module purge
 	echo "finished installing capice ${1}"
 }
@@ -159,7 +159,7 @@ create_model_job() {
 #SBATCH --export=NONE
 #SBATCH --get-user-env=L60
 module load Python/3.10.4-GCCcore-11.3.0-bare
-source ${WORKDIR}/venvs/capice${1}/bin/activate
+source ${WORKDIR}/venvs/capice${CAPICE_BRANCH}/bin/activate
 capice -v train -t 8 -i ${WORKDIR}/data/processed/train_test.tsv.gz \
 -e ${CAPICE}/resources/train_features.json \
 -o ${WORKDIR}/model/capice_model.ubj
@@ -183,7 +183,7 @@ run_capice(){
   echo "running capice ${2}"
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	source $1/bin/activate
-	capice predict -i ${WORKDIR}/data/processed/validation.tsv.gz -m $2 -o $3
+	capice predict -i ${WORKDIR}/data/processed/validation.tsv.gz -m $3 -o $4
 	deactivate
   echo "finished running capice ${2}"
 }
