@@ -128,6 +128,7 @@ For this script the user must ensure paths and variables are set correctly!
    ```shell
    mkdir <workdir>
    APPTAINER_BIND=<bind> sbatch \
+    --job-name=capice_create_and_train
     --output=<workdir>/create_and_train.log \
     --error=<workdir>/create_and_train.err \
     --export=APPTAINER_BIND \ 
