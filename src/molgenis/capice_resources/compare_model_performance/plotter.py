@@ -363,8 +363,8 @@ class Plotter:
                 label=f'Model 2 (AUC={auc_model_2})'
             )
         ax_roc.plot([0, 1], [0, 1], color='black', linestyle='--')
-        ax_roc.set_xlim([0.0, 1.0])
-        ax_roc.set_ylim([0.0, 1.0])
+        ax_roc.set_xlim(0.0, 1.0)
+        ax_roc.set_ylim(0.0, 1.0)
         ax_roc.set_xlabel('False Positive Rate')
         ax_roc.set_ylabel('True Positive Rate')
         ax_roc.legend(loc='lower right')
@@ -477,18 +477,22 @@ class Plotter:
         """
         width = 0.3
         if self.model_2_present:
-            model_1_x_index = x_index - width
-            align = 'edge'
+            ax.bar(
+                x_index - width,
+                auc_m1,
+                width,
+                align='edge',
+                color='red'
+            )
         else:
-            model_1_x_index = x_index
-            align = 'center'
-        ax.bar(
-            model_1_x_index,
-            auc_m1,
-            width,
-            align=align,
-            color='red'
-        )
+            ax.bar(
+                x_index,
+                auc_m1,
+                width,
+                align='center',
+                color='red'
+            )
+
         if self.model_2_present:
             ax.bar(
                 x_index,
@@ -880,7 +884,7 @@ class Plotter:
                 'Model 2\nPathogenic'
             )
 
-        ax.boxplot(boxplot_data, labels=boxplot_labels)
+        ax.boxplot(boxplot_data, label=boxplot_labels)
         ax.plot(
             np.NaN,
             np.NaN,

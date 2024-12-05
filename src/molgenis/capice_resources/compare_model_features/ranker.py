@@ -1,3 +1,4 @@
+import numpy
 import pandas as pd
 
 
@@ -17,5 +18,5 @@ class Ranker:
 
         """
         column_index = dataframe.columns.get_loc(column_name)
-        ranks = dataframe[column_name].rank(method='min', ascending=False).astype(int)
+        ranks = dataframe[column_name].rank(method='min', ascending=False).astype(numpy.int64)
         dataframe.insert(column_index + 1, column_name + '_rank', ranks)
