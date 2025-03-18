@@ -35,20 +35,22 @@ main() {
 digestCommandLine() {
 	readonly USAGE="
 	Usage:
-	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -n <arg> -p <arg> -t <arg> -m <arg> -d <arg>
+	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -n <arg> -p <arg> -t <arg> -m <arg> -d <arg> -e <arg>
     v) path/to/vkgl_file
 		c) path/to/clinvar_file
 		b) path/to/bcftools_sif
 		w) path/to/workdir
 		r) path/to/capice_resources
 		n) capice branch name
-		p) path/to/vip
+		p) path/to/vep_plugins_dir
+    e) path/to/ensembl/vep/image
+    i) path/to/vip/resources
 		t) capice production tag
 		m) capice production model file name
 		d) capice traintest data file name
 	"
 
-	while getopts v:b:c:w:r:n:p:t:m:d: flag
+	while getopts v:b:c:w:r:n:p:e:t:m:d:i: flag
 	do
 		case "${flag}" in
 			v) VKGL_FILE=${OPTARG};;
@@ -57,7 +59,9 @@ digestCommandLine() {
 			w) WORKDIR=${OPTARG};;
 			r) CAPICE_RESOURCES=${OPTARG};;
 			n) CAPICE_BRANCH=${OPTARG};;
-			p) VIP_DIR=${OPTARG};;
+			p) VEP_PLUGIN_DIR=${OPTARG};;
+      e) VEP_SIF=${OPTARG};;
+      i) VIP_RESOURCES_DIR=${OPTARG};;
 			t) PROD_CAPICE_VERSION=${OPTARG};;
 			m) PROD_MODEL=${OPTARG};;
 			d) PROD_TRAIN_FILE=${OPTARG};;
@@ -73,7 +77,7 @@ digestCommandLine() {
 
 install_capice_resources(){
 	echo "installing capice resources"
-	mkdir "${WORKDIR}/venvs/"
+	mkdir -p "${WORKDIR}/venvs/"
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	python3 -m venv "${WORKDIR}/venvs/capice-resources"
 	source "${WORKDIR}/venvs/capice-resources/bin/activate"
@@ -86,7 +90,9 @@ install_capice(){
 	echo "installing capice ${1}"
 	git clone https://github.com/molgenis/capice.git "${WORKDIR}/capice/${1}"
 	cd "${WORKDIR}/capice/${1}"
-	git checkout "${1}"
+  if [[ -n "${1}" ]]; then
+	  git checkout "${1}"
+  fi
 	module load Python/3.10.4-GCCcore-11.3.0-bare
 	python3 -m venv "${WORKDIR}/venvs/capice${1}"
 	source "${WORKDIR}/venvs/capice${1}/bin/activate"
@@ -124,11 +130,11 @@ filter_validation() {
 
 vep() {
 	echo "running vep on train test"
-	bash ${CAPICE_RESOURCES}/utility_scripts/slurm_run_vep.sh -p ${VIP_DIR} -g -i ${WORKDIR}/data/train_test.vcf.gz -o ${WORKDIR}/data/train_test_vep.vcf.gz
+	bash ${CAPICE_RESOURCES}/utility_scripts/slurm_run_vep.sh -r ${VIP_RESOURCES_DIR} -e ${VEP_SIF} -p ${VEP_PLUGIN_DIR} -g -i ${WORKDIR}/data/train_test.vcf.gz -o ${WORKDIR}/data/train_test_vep.vcf.gz
 	bash ${CAPICE}/scripts/convert_vep_vcf_to_tsv_capice.sh -p ${BCFTOOLS_SIF} -t -i ${WORKDIR}/data/train_test_vep.vcf.gz -o ${WORKDIR}/data/train_test_vep.tsv.gz
 	echo "finished running vep on train test"
 	echo "running vep on validation"
-	bash ${CAPICE_RESOURCES}/utility_scripts/slurm_run_vep.sh -p ${VIP_DIR} -g -i ${WORKDIR}/data/filtered_validation.vcf.gz -o ${WORKDIR}/data/validation_vep.vcf.gz
+	bash ${CAPICE_RESOURCES}/utility_scripts/slurm_run_vep.sh -r ${VIP_RESOURCES_DIR} -e ${VEP_SIF} -p ${VEP_PLUGIN_DIR} -g -i ${WORKDIR}/data/filtered_validation.vcf.gz -o ${WORKDIR}/data/validation_vep.vcf.gz
 	bash ${CAPICE}/scripts/convert_vep_vcf_to_tsv_capice.sh -p ${BCFTOOLS_SIF} -t -i ${WORKDIR}/data/validation_vep.vcf.gz -o ${WORKDIR}/data/validation_vep.tsv.gz
 	echo "finished running vep on validation"
 }

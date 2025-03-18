@@ -43,14 +43,12 @@ main() {
 }
 
 digestCommandLine() {
-  while getopts p:i:o:hafg flag
+  while getopts p:r:e:i:o:hafg flag
   do
     case "${flag}" in
-      p)
-        vip_path=${OPTARG}
-        resources_directory="${vip_path%/}/resources" # %/ to ensure that paths are set correct
-        vep_image="${vip_path%/}/images/vep-111.0.sif"
-        ;;
+      r) resources_directory=${OPTARG};;
+      p) plugins_dir=${OPTARG};;
+      e) vep_image=${OPTARG};;
       i) input=${OPTARG};;
       o) output=${OPTARG};;
       h)
@@ -75,16 +73,22 @@ digestCommandLine() {
 validateCommandLine() {
   local valid=true
 
-  if [ -z "${vip_path}" ]
+  if [ -z "${vep_image}" ]
   then
     valid=false
-    errcho "VIP path not set/empty"
+    errcho "VEP image path not set/empty"
   else
     if [ ! -f "${vep_image}" ]
     then
       valid=false
       errcho "VEP image '${vep_image}' does not exist"
     fi
+  fi
+
+  if [ -z "${plugins_dir}" ]
+  then
+    valid=false
+    errcho "VIP path not set/empty"
   fi
 
   if [ -z "${input}" ]
@@ -167,12 +171,12 @@ runVep() {
     args+=("--dont_skip")
     args+=("--allow_non_variant")
     args+=("--fork" "4")
-    args+=("--dir_plugins" "${resources_directory}/vep/plugins")
+    args+=("--dir_plugins" "${plugins_dir}")
     args+=("--plugin" "Grantham")
     args+=("--safe")
     args+=("--plugin" "SpliceAI,snv=${resources_directory}/GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}/GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
-    args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.0.sites.stripped.tsv.gz")
-    args+=("--custom" "${resources_directory}/GRCh38/hg38.phyloP100way.bed.gz,phyloP,bed,exact,0")
+    args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.1.sites.stripped.tsv.gz")
+    args+=("--custom" "${resources_directory}/GRCh38/hg38.phyloP100way.bw,phyloP,bigwig,exact,0")
     if [[ "${PG}" == true ]]
     then
       args+=("--per_gene")
