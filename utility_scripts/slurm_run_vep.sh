@@ -175,7 +175,7 @@ runVep() {
     args+=("--plugin" "Grantham")
     args+=("--safe")
     args+=("--plugin" "SpliceAI,snv=${resources_directory}/GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}/GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
-    args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.1.sites.stripped.tsv.gz")
+    args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.1.sites.stripped-v2.tsv.gz")
     args+=("--custom" "${resources_directory}/GRCh38/hg38.phyloP100way.bw,phyloP,bigwig,exact,0")
     if [[ "${PG}" == true ]]
     then
