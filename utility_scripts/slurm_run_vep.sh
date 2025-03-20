@@ -16,6 +16,9 @@ errcho() { echo "$@"  1>&2; }
 readonly USAGE="Run VEP script
 Usage:
 run_vep.sh -p <arg> -i <arg> -o <arg> [-a] [-g] [-f]
+-r    required: The path to the VIP resources directory
+-p    required: The path to the vep plugins dir.
+-e    required: The path to the vep sif file.
 -p    required: The path to the installed VIP directory.
 -i    required: The VEP output VCF.
 -o    required: The directory and output filename.
