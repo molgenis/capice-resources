@@ -35,7 +35,7 @@ main() {
 digestCommandLine() {
 	readonly USAGE="
 	Usage:
-	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -n <arg> -p <arg> -t <arg> -m <arg> -d <arg> -e <arg>
+	create_and_train.sh -v <arg> -c <arg> -b <arg> -w <arg> -r <arg> -n <arg> -p <arg> -t <arg> -m <arg> -d <arg> -e <arg> -i <arg>
     v) path/to/vkgl_file
 		c) path/to/clinvar_file
 		b) path/to/bcftools_sif
