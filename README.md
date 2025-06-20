@@ -90,6 +90,7 @@ For this script the user must ensure paths and variables are set correctly!
 
 ## Usage
 
+### In case of new features:
 1. Update the CAPICE tool: 
    1. Create a new branch for [CAPICE](https://github.com/molgenis/capice).
    2. Determine feature to add and check whether a VEP processor should be written for it (VEP processors usually don't
@@ -118,6 +119,10 @@ For this script the user must ensure paths and variables are set correctly!
    10. Update the README regarding [VEP plugins](https://github.com/molgenis/capice#requirements) and
    the [VEP command](https://github.com/molgenis/capice#vep) if needed.
    11. commit capice files
+### In case of new features:
+1. Clone capice-resources branch on a cluster
+
+### For both cases continue with:
 2. 
    1. Obtain the latest GRCh38 VKGL release from the cluster
    2. Download the latest public GRCh38 [Clinvar](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/) datasets (please note that these filenames are stored in the train-test and validation VCF, so file dates in the name of the files improves reproducibility). 
@@ -125,7 +130,11 @@ For this script the user must ensure paths and variables are set correctly!
       wget https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar_<date>.vcf.gz
       ```
 3. Use `<capice-resources>/utility_scripts/create_and_train.sh` to create a train-test and validation files (workdir should already exist if SLURM output and error logs are to be written here):
-   ```shell
+   
+   NOTE: make sure the data formats are correct:
+   - vkgl: YYYYMM (e.g. '202506') or MMYYYY (e.g. '062025') 
+   - clinvar: YYYYMM (e.g. '202506')
+```shell
    mkdir <workdir>
    APPTAINER_BIND=<bind> sbatch \
     --job-name=capice_create_and_train
@@ -133,16 +142,20 @@ For this script the user must ensure paths and variables are set correctly!
     --error=<workdir>/create_and_train.err \
     --export=APPTAINER_BIND \ 
    <path_to/capice-resources/>/utility_scripts/create_and_train.sh \
-    -p "<path_to/vip/>" \
-    -b "<path_to/bcftools-<version>.sif>" \
-    -w "<workdir>" \
-    -c "<path_to/clinvar_<date>.vcf.gz>" \
-    -v "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
-    -r "<path_to/capice-resources/>" \
-    -m "<capice_production_model_filename>" \
-    -t "<capice_production_git_tag>"
-    -d "<capice production traintest data file name>"
-   ```
+      -v "<path_to/vkgl_public_consensus_hg38_<date>.tsv>" \
+      -b "<path_to/bcftools-<version>.sif>" \
+      -c "<path_to/clinvar_<date>.vcf.gz>" \
+      -w "<workdir>" \
+      -r "<path_to/capice-resources/>" \
+      -n "current feature branch of capice" \
+      -p "<path_to/vep/plugin/dir/>" \
+      -e "<path_to/vep-<version>.sif>" \
+      -i "<path_to/vip/resources/dir/>" \
+      -t "<capice_production_git_tag>" \
+      -m "<capice_production_model_filename>" \
+      -d "<capice production traintest data file name>" 
+```
+NOTE: the production model, tag and train-test params are needed for the comparison in hte validation step.
    - `<workdir>/train/train.sh` can be used to train a new model on the generated train_test data:
    ```shell
       sbatch <workdir>/train/train.sh <path_to/new_model_name.ubj>
