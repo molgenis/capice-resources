@@ -23,7 +23,8 @@ class SampleWeighter:
             4: 1.0,
             3: 1.0,
             2: 0.9,
-            1: 0.8
+            1: 0.8,
+            0: 0.6
         }
         merged_frame[ColumnEnums.SAMPLE_WEIGHT.value] = merged_frame[
             TrainDataCreatorEnums.REVIEW.value].map(sample_weights)

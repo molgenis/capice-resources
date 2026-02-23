@@ -8,8 +8,8 @@ from molgenis.capice_resources.train_data_creator.utilities import correct_order
 
 
 class SplitDatasets:
-    FRACTION_TO_VALIDATION = 0.5
-    HIGH_QUALITY_WEIGHT = 0.9
+    FRACTION_TO_VALIDATION = 0.1
+    HIGH_QUALITY_WEIGHT = 0.8
 
     def split(self, merged_frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
