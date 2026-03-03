@@ -85,7 +85,7 @@ conversion_tool(){
 
 install_capice_resources(){
 	echo "installing capice-resources"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	python3 -m venv "${CAPICE_RESOURCES}/venv"
 	source "${CAPICE_RESOURCES}/venv/bin/activate"
 	pip --no-cache-dir install -e "${CAPICE_RESOURCES}[test]"
@@ -96,10 +96,9 @@ install_capice_resources(){
 
 process_vep(){
 	echo "running process_vep"
-	wget -P "${WORKDIR}/data/" https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	source "${CAPICE_RESOURCES}/venv/bin/activate"
-	process-vep -g "${WORKDIR}/data/CGD.txt.gz" -f "${CAPICE}/resources/train_features.json" -t "${WORKDIR}/data/train_input_annotated.tsv.gz" -o "${WORKDIR}/data/processed/"
+	process-vep -f "${CAPICE}/resources/train_features.json" -t "${WORKDIR}/data/train_input_annotated.tsv.gz" -o "${WORKDIR}/data/processed/"
 	deactivate
 	module purge
 	echo "finished process_vep"
@@ -110,7 +109,7 @@ install_capice(){
 	git clone https://github.com/molgenis/capice.git "${WORKDIR}/capice"
 	cd "${WORKDIR}/capice"
 	git checkout "${CAPICE_BRANCH}"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	python3 -m venv "${CAPICE}/venv"
 	source "${CAPICE}/venv/bin/activate"
 	pip --no-cache-dir install -e "${CAPICE}[test]"
@@ -130,7 +129,7 @@ create_poc_job() {
 #SBATCH --nodes=1
 #SBATCH --export=NONE
 #SBATCH --get-user-env=L60
-module load Python/3.10.4-GCCcore-11.3.0-bare
+module load Python/3.12.3-GCCcore-13.3.0
 source ${CAPICE}/venv/bin/activate
 capice -v train -t 8 -i ${WORKDIR}/data/processed/train_test.tsv.gz \
 -e ${CAPICE}/resources/train_features.json \
@@ -167,7 +166,7 @@ copy_to_capice(){
 
 run_test(){
 	echo "running test"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	python3 -m venv "${CAPICE}/venv"
 	source "${CAPICE}/venv/bin/activate"
 	pip --no-cache-dir install -e "${CAPICE}[test]"
