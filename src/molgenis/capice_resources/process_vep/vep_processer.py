@@ -12,19 +12,6 @@ class VEPProcesser:
     Please note that a print statement should be made what the processor is processing, as the
     progress printer does not know what each of these processors do.
     """
-    @staticmethod
-    def drop_genes_empty(data: pd.DataFrame) -> None:
-        """
-        Method to drop all entries where the VEP output GENE column does not contain any entries.
-
-        Args:
-            data:
-                Merged dataframe between train-test and validation.
-                It is performed inplace and does not return anything.
-
-        """
-        print('Dropping empty genes.')
-        data.drop(index=data[data[ColumnEnums.SYMBOL.value].isnull()].index, inplace=True)
 
     @staticmethod
     def process_grch38(data: pd.DataFrame) -> None:
