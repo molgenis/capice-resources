@@ -348,18 +348,11 @@ class ProcessVEP(Module):
 
         processer.drop_duplicates(data, train_features)
         progress_printer.new_shape(data)
-
-        processer.drop_genes_empty(data)
-        progress_printer.new_shape(data)
-
+        
         if build38:
             processer.process_grch38(data)
             progress_printer.new_shape(data)
 
-        processer.drop_mismatching_genes(data)
-        progress_printer.new_shape(data)
-
-        processer.drop_heterozygous_variants_in_ar_genes(data, cgd)
         progress_printer.new_shape(data)
 
         self.extract_label_and_weight(data)
