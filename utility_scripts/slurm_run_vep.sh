@@ -179,6 +179,14 @@ runVep() {
     args+=("--safe")
     args+=("--plugin" "SpliceAI,snv=${resources_directory}/GRCh38/spliceai_scores.masked.snv.hg38.vcf.gz,indel=${resources_directory}/GRCh38/spliceai_scores.masked.indel.hg38.vcf.gz")
     args+=("--plugin" "gnomAD,${resources_directory}/GRCh38/gnomad.total.v4.1.sites.stripped-v2.tsv.gz")
+    args+=("--plugin" "NMD")
+    args+=("--plugin" "pLI_LOEUF")
+    args+=("--plugin" "Downstream")
+    args+=("--plugin" "UTRannotator,${resources_directory}/GRCh38/uORF_5UTR_PUBLIC.txt")
+    args+=("--plugin" "AlphaMissense,file=${resources_directory}/GRCh38/AlphaMissense_hg38.tsv.gz")
+    args+=("--plugin" "ncER,${resources_directory}/GRCh38/GRCh38_ncER_perc.bed.gz")
+    args+=("--plugin" "FATHMM_MKL_NC,${resources_directory}/GRCh38/GRCh38_FATHMM-MKL_NC.tsv.gz")
+    args+=("--plugin" "ReMM,${resources_directory}/GRCh38/ReMM.v0.4.hg38.tsv.gz")
     args+=("--custom" "${resources_directory}/GRCh38/hg38.phyloP100way.bw,phyloP,bigwig,exact,0")
     if [[ "${PG}" == true ]]
     then
