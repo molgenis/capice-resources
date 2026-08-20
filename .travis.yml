@@ -20,14 +20,8 @@ install:
 script:
 - coverage run -m pytest --junitxml=results.xml
 - coverage xml
-- sonar-scanner
 - mypy --ignore-missing-imports src/ tests/
 - flake8 src/ tests/
-addons:
-  sonarcloud:
-    organization: molgenis
-    token:
-      secure: SO7J+zJIN6CZNI8N3EsZXXKffmC90vyeG8ZwUmhesIOIUiy4fNP+nsuRhxWzxwg84KFcF8i/DcfAKA4HcZJsPV4qyz1TMTIFAK6H2puauvFTFNZU6eKS8P/iojtWOt5+I0VIQummI690f6iWeptOyqbRrtU8OBQKKz13zNSIJUo7QsKTJkRW+zB7TfPQ64NyqrVG7BUTLlDJS0FL2k6NVd1bBrymx6EwCHTvdSepm4RYkuf2dZBL/W4CdtChqKcJNlqEPbMiGpb16bb6cGBm8rCYdXGJVrU+OADLo2L1gTGsnPMTVVaXhKVRY9YuDLFL7ERFvEV+6LtvjWre+Ds0HVjopUAfcMRGLQq7XtM6fDX+DSLzuCcbxoqYTjib6t0SYxQMQEk9bGkRmPyQSJzV0mqEq8/wBxM0a00hZRjGA/wMo9Umk4ukc7KYJ5o4XN5sJRtO5sMTqT9Kcp6W1DY8vppdJ5A/V4yWcVx4/k5MuxJSzylq0RNRirHzezQxZU1w/2Yob+AunlfggYvO2TJsf8+6yVloeuHDed5MG3TGKMHraTPXE7YstMDT2PjceyBntUisZwXyD22ZtOnvsem1hotTITT8wKHAa9/aVr9xuOeJZVXF0hkt9MXVfNncOiU1+WtQJLd7g9QjULq2p0bjpxhloPDj3yNvgkd1mHYZnzY=
 deploy:
   - provider: releases
     token:
