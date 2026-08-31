@@ -78,7 +78,7 @@ digestCommandLine() {
 install_capice_resources(){
 	echo "installing capice resources"
 	mkdir -p "${WORKDIR}/venvs/"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	python3 -m venv "${WORKDIR}/venvs/capice-resources"
 	source "${WORKDIR}/venvs/capice-resources/bin/activate"
 	pip --no-cache-dir install "${CAPICE_RESOURCES}"
@@ -93,7 +93,7 @@ install_capice(){
   if [[ -n "${1}" ]]; then
 	  git checkout "${1}"
   fi
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	python3 -m venv "${WORKDIR}/venvs/capice${1}"
 	source "${WORKDIR}/venvs/capice${1}/bin/activate"
 	pip --no-cache-dir install "${WORKDIR}/capice/${1}"
@@ -103,7 +103,7 @@ install_capice(){
 
 create_train_data() {
 	echo "running train-data-creator"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	source ${WORKDIR}/venvs/capice-resources/bin/activate
 	train-data-creator -v ${VKGL_FILE} -c ${CLINVAR_FILE} -o ${WORKDIR}/data/
 	deactivate
@@ -141,10 +141,9 @@ vep() {
 
 postprocess(){
   	echo "running process_vep"
-  	wget -P ${WORKDIR}/data/ https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz
-  	module load Python/3.10.4-GCCcore-11.3.0-bare
+  	module load Python/3.12.3-GCCcore-13.3.0
   	source ${WORKDIR}/venvs/capice-resources/bin/activate
-  	process-vep -a -g ${WORKDIR}/data/CGD.txt.gz -f ${CAPICE}/resources/train_features.json -t ${WORKDIR}/data/train_test_vep.tsv.gz -v ${WORKDIR}/data/validation_vep.tsv.gz -o ${WORKDIR}/data/processed/
+  	process-vep -a -f ${CAPICE}/resources/train_features.json -t ${WORKDIR}/data/train_test_vep.tsv.gz -v ${WORKDIR}/data/validation_vep.tsv.gz -o ${WORKDIR}/data/processed/
   	deactivate
   	module purge
   	echo "finished process_vep"
@@ -164,7 +163,7 @@ create_model_job() {
 #SBATCH --nodes=1
 #SBATCH --export=NONE
 #SBATCH --get-user-env=L60
-module load Python/3.10.4-GCCcore-11.3.0-bare
+module load Python/3.12.3-GCCcore-13.3.0
 source ${WORKDIR}/venvs/capice${CAPICE_BRANCH}/bin/activate
 capice -v train -t 8 -i ${WORKDIR}/data/processed/train_test.tsv.gz \
 -e ${CAPICE}/resources/train_features.json \
@@ -187,7 +186,7 @@ download_model() {
 
 run_capice(){
   echo "running capice ${2}"
-	module load Python/3.10.4-GCCcore-11.3.0-bare
+	module load Python/3.12.3-GCCcore-13.3.0
 	source $1/bin/activate
 	capice predict -i ${WORKDIR}/data/processed/validation.tsv.gz -m $3 -o $4
 	deactivate
@@ -196,7 +195,7 @@ run_capice(){
 
 compare_and_threshold(){
     echo "running compare_and_threshold"
-  module load Python/3.10.4-GCCcore-11.3.0-bare
+  	module load Python/3.12.3-GCCcore-13.3.0
 	source ${WORKDIR}/venvs/capice-resources/bin/activate
 	compare-model-performance -a ${WORKDIR}/validation/new_validation_predicted.tsv.gz -l ${WORKDIR}/data/processed/validation.tsv.gz -b ${WORKDIR}/validation/prod_validation_predicted.tsv.gz -o ${WORKDIR}/validation/performance
 	threshold-calculator -v ${WORKDIR}/data/processed/validation.tsv.gz -s ${WORKDIR}/validation/new_validation_predicted.tsv.gz -o ${WORKDIR}/validation/threshold/
@@ -205,7 +204,7 @@ compare_and_threshold(){
 }
 
 explain(){
-  module load Python/3.10.4-GCCcore-11.3.0-bare
+  module load Python/3.12.3-GCCcore-13.3.0
   source ${WORKDIR}/venvs/capice${CAPICE_BRANCH}/bin/activate
   mkdir -p ${WORKDIR}/explain/
   capice explain -i ${WORKDIR}/model/capice_model.ubj -o ${WORKDIR}/explain/new_explain.tsv.gz
@@ -214,7 +213,7 @@ explain(){
 }
 
 merge_rank(){
-  module load Python/3.10.4-GCCcore-11.3.0-bare
+  module load Python/3.12.3-GCCcore-13.3.0
   source ${WORKDIR}/venvs/capice-resources/bin/activate
   compare-model-features -a ${WORKDIR}/explain/new_explain.tsv.gz -b ${WORKDIR}/explain/${PROD_CAPICE_VERSION}_explain.tsv.gz -o ${WORKDIR}/explain/merged_grch38.tsv.gz
   deactivate

@@ -55,14 +55,7 @@ class ProcessVEP(Module):
             required=True,
             help='Output path (without file names)'
         )
-        required.add_argument(
-            '-g',
-            '--genes',
-            type=str,
-            required=True,
-            help='File containing all Autosomal Recessive genes, each gene on a newline. '
-                 'Available at: https://research.nhgri.nih.gov/CGD/download/txt/CGD.txt.gz'
-        )
+
         optional.add_argument(
             '-a',
             '--assembly',
@@ -93,10 +86,6 @@ class ProcessVEP(Module):
             parser.get_argument('features'),
             '.json'
         )
-        genes_argument = self.input_validator.validate_input_command_line_interface_file(
-            parser.get_argument('genes'),
-            ('.tsv.gz', '.tsv', '.txt', '.txt.gz')
-        )
         output_argument = self.input_validator.validate_output_command_line_interface_path(
             parser.get_argument('output')
         )
@@ -110,7 +99,6 @@ class ProcessVEP(Module):
             **train_test,
             **validation,
             **train_features,
-            **genes_argument,
             **output_argument,
             **assembly_flag,
             **pi_data_argument
@@ -135,7 +123,6 @@ class ProcessVEP(Module):
         self._process_vep(
             merged_datasets,
             train_features,
-            cgd,
             build38
         )
         train_test, validation = self._split_data(merged_datasets)
@@ -272,55 +259,10 @@ class ProcessVEP(Module):
         """
         return self._read_pandas_tsv(vep_file_argument, [ProcessVEPEnums.GNOMAD_HN.value])
 
-    def _read_cgd_data(self, cgd_file_argument: os.PathLike[str]) -> list[str]:
-        """
-        OO function to read in the CGD data and call the correction method.
-
-        Args:
-            cgd_file_argument:
-                Pathlike object directing to the CGD gene (gzipped) txt/tsv file.
-        Returns:
-            list:
-                List of all Autosomal Recessive (AR) containing genes, with TENM1 filtered out
-                since that gene can not ever be AR (it lies on the X chromosome, outside of PAR
-                region).
-        """
-        data = self._read_pandas_tsv(
-            cgd_file_argument,
-            [
-                CGDColumnEnums.GENE.value,
-                CGDColumnEnums.INHERITANCE.value
-            ]
-        )
-        genes = self._correct_cgd_data(data)
-        return genes
-
-    @staticmethod
-    def _correct_cgd_data(cgd_data: pd.DataFrame) -> list[str]:
-        """
-        Small utilitarian function to filter out TENM1 and return all genes that have been
-        observed AR in any way from the CGD gene list.
-
-        Args:
-            cgd_data:
-                Pandas dataframe of the loaded CGD (gzipped) txt or tsv.
-        Returns:
-            list:
-                List of all Autosomal Recessive (AR) containing genes, with TENM1 filtered out
-                since that gene can not ever be AR (it lies on the X chromosome, outside of PAR
-                region).
-        """
-        cgd_data.drop(
-            index=cgd_data[cgd_data[CGDColumnEnums.GENE.value] == 'TENM1'].index, inplace=True
-        )
-        return list(cgd_data[cgd_data[CGDColumnEnums.INHERITANCE.value].str.contains('AR')][
-                        CGDColumnEnums.GENE.value].values)
-
     def _process_vep(
             self,
             data: pd.DataFrame,
             train_features: list[str],
-            cgd: list[str],
             build38: bool
     ):
         """
@@ -348,18 +290,11 @@ class ProcessVEP(Module):
 
         processer.drop_duplicates(data, train_features)
         progress_printer.new_shape(data)
-
-        processer.drop_genes_empty(data)
-        progress_printer.new_shape(data)
-
+        
         if build38:
             processer.process_grch38(data)
             progress_printer.new_shape(data)
 
-        processer.drop_mismatching_genes(data)
-        progress_printer.new_shape(data)
-
-        processer.drop_heterozygous_variants_in_ar_genes(data, cgd)
         progress_printer.new_shape(data)
 
         self.extract_label_and_weight(data)

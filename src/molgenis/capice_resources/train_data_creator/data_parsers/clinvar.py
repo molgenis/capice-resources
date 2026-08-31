@@ -103,7 +103,7 @@ class ClinVarParser:
         clinvar_frame[TrainDataCreatorEnums.REVIEW.value] = clinvar_frame[
             TrainDataCreatorEnums.REVIEW.value].astype(np.int64)
         clinvar_frame.drop(
-            index=clinvar_frame[clinvar_frame[TrainDataCreatorEnums.REVIEW.value] < 1].index,
+            index=clinvar_frame[clinvar_frame[TrainDataCreatorEnums.REVIEW.value] < 0].index,
             inplace=True
         )
 

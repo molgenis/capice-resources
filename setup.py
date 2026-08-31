@@ -25,12 +25,11 @@ setup(
     package_data={"molgenis": ['.vcf']},  # Dirty fix, improve when switching to pyproject.toml (including MANIFEST.in)
     python_requires='>=3.10',
     install_requires=[
-        'pandas==1.5.3',
-        'numpy==1.26.4',
+        'numpy==2.2.6',
+        'pandas==2.3.3',
         'matplotlib==3.9.3',
-        'scikit-learn==1.5.2',
         'graphviz==0.20.3',
-        'seaborn==0.13.2'
+        'seaborn==0.13.2',
     ],
     extras_require={
         'test': [
